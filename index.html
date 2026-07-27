@@ -58,7 +58,7 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.20;ba
 .layout{grid-template-columns:280px minmax(0,1fr);gap:20px}.right-stack{gap:20px}.tools-panel,.tide-panel,.map-panel,.weather-panel{border:1px solid var(--line);border-radius:20px;background:linear-gradient(145deg,rgba(14,38,61,.96),rgba(8,25,43,.96));box-shadow:var(--shadow)}.tools-panel{position:sticky;top:18px;max-height:calc(100vh - 36px);display:flex;flex-direction:column}.nav-head{padding:22px 20px 14px}.nav-kicker,.nav-label{color:#5e879f;font-size:10px;font-weight:800;letter-spacing:.15em}.nav-head h2{margin:7px 0 4px;font-size:22px}.nav-head p{margin:0;color:var(--muted);font-size:12px}.grid{gap:5px;padding:6px 10px 14px;overflow:auto}.nav-label{padding:12px 10px 5px}.nav-break{margin-top:7px}.card{position:relative;gap:12px;min-height:48px;padding:8px 10px;border:1px solid transparent;border-radius:11px;background:transparent;color:#cadce8;box-shadow:none}.card:before{content:attr(data-code);display:grid;place-items:center;flex:0 0 34px;height:34px;border:1px solid rgba(111,172,207,.15);border-radius:9px;background:#0c2940;color:#73a8c6;font-size:9px;font-weight:900;letter-spacing:.05em}.card:after{content:"›";margin-left:auto;color:#45677e;font-size:20px}.card h2{font-size:13px;font-weight:650}.card:hover{transform:translateX(3px);border-color:rgba(41,211,194,.2);background:linear-gradient(90deg,rgba(41,211,194,.12),rgba(41,211,194,.025));box-shadow:none;color:#fff}.card:hover:before{border-color:rgba(41,211,194,.42);color:#61e9dd}.card:hover:after{color:#61e9dd}.nav-foot{display:flex;align-items:center;gap:9px;margin-top:auto;padding:15px 18px;border-top:1px solid var(--line);color:#7795a8;font-size:11px}.nav-foot b{margin-left:auto;color:#4d7189}
 .panel-header{padding:16px 18px;border-bottom:1px solid var(--line);background:rgba(5,20,35,.42)}.panel-header h2{display:flex;align-items:center;gap:9px;color:#f4fbff;font-size:15px;letter-spacing:-.01em}.panel-header span{color:#7f9db1}.tide-panel #tideLocationTitle{color:#f4fbff;font-size:15px;font-weight:700;letter-spacing:-.01em;white-space:normal}.panel-icon{display:inline-grid!important;place-items:center;width:32px;height:24px;border:1px solid rgba(62,166,255,.25);border-radius:7px;background:rgba(62,166,255,.10);color:#72bdff!important;font-size:8px!important;font-weight:900;letter-spacing:.08em}.panel-icon.rain{border-color:rgba(41,211,194,.25);background:rgba(41,211,194,.1);color:#67e6da!important}.button{min-height:34px;border:1px solid rgba(95,166,205,.18);border-radius:9px;background:#102d46;color:#b9d7e8;font-size:11px;letter-spacing:.02em;transition:.2s}.button:hover{border-color:rgba(41,211,194,.45);background:#143953;color:#67e6da}.location-button.active{border-color:#29d3c2;background:linear-gradient(135deg,#178c88,#0d6a71);color:#fff;box-shadow:0 7px 20px rgba(20,177,166,.18)}.select-date-button{border-color:rgba(255,174,83,.3);background:rgba(255,174,83,.10);color:#ffc078}.select-date-button:hover{background:rgba(255,174,83,.16);color:#ffd09a}
 .map-frame-wrap{height:min(65vh,720px);min-height:520px}.map-frame-wrap,.weather-frame-wrap{border-top:1px solid rgba(255,255,255,.02)}.iframe-note{padding:10px 18px;border-color:var(--line);background:rgba(5,18,31,.55);color:#69889d;font-size:10px}.tide-content{padding:18px;background:#f4f8fb}.tide-card{border-color:#d5e3ed;border-radius:12px;background:linear-gradient(145deg,#fff,#edf5fa);box-shadow:0 7px 18px rgba(26,60,82,.06)}.tide-card strong{letter-spacing:.08em;text-transform:uppercase}.tide-card .value{font-size:24px}.event-pill{border-radius:8px}.tide-graph-wrap{border-radius:13px}.weather-frame-wrap{height:600px}.modal{border:1px solid #294660;background:#eef5f9;color:#0d2437}.modal-head,.modal-body{background:#f7fafc}.modal-head{border-color:#d8e4ec}.modal-close{background:#dfeaf1}
-@media(max-width:980px){.container{padding:14px}.header{align-items:flex-start;padding:16px}.command-actions{align-self:center}.system-state{display:none}.layout{display:flex}.tools-panel{position:relative;top:auto;max-height:none}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));overflow:visible}.nav-label{grid-column:1/-1}.card{min-height:52px}.nav-foot{display:none}.tide-panel{order:2}.ais-panel{order:1}.weather-panel{order:3}}
+@media(max-width:980px){.container{padding:14px}.header{align-items:flex-start;padding:16px;position:relative}.command-actions{position:absolute;top:14px;right:14px;align-self:auto;z-index:3}.system-state{display:none}.layout{display:flex}.tools-panel{position:relative;top:auto;max-height:none}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));overflow:visible}.nav-label{grid-column:1/-1}.card{min-height:52px}.nav-foot{display:none}.tide-panel{order:2}.ais-panel{order:1}.weather-panel{order:3}}
 @media(max-width:600px){.container{padding:9px}.header{border-radius:15px;margin-bottom:10px}.title-block p{display:none}.title-block h1{font-size:24px}.eyebrow{font-size:9px}.layout,.right-stack{gap:10px}.tools-panel,.tide-panel,.map-panel,.weather-panel{border-radius:15px}.nav-head{padding:17px 15px 9px}.grid{grid-template-columns:1fr;padding:4px 8px 12px}.nav-label{grid-column:auto}.card{min-height:45px}.panel-header{padding:13px}.map-frame-wrap{min-height:400px}.weather-frame-wrap{height:430px}}
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
 
@@ -150,6 +150,58 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.20;ba
 .windy-frame-wrap iframe{display:block;width:100%;height:100%;border:0;background:#203c52}
 @media(max-width:1180px){.weather-viewers{grid-template-columns:1fr}.weather-viewers .weather-panel{height:620px}}
 @media(max-width:600px){.weather-viewers{gap:10px}.weather-viewers .weather-panel{height:500px}.weather-viewers .weather-frame-wrap iframe{width:166.667%;height:1000px;transform:scale(.6)}}
+/* ===== Live conditions ribbon ===== */
+.conditions-bar{display:grid;grid-template-columns:repeat(auto-fit,minmax(158px,1fr));gap:12px;margin:0 0 20px;padding:14px 16px;border:1px solid var(--line);border-radius:18px;background:linear-gradient(135deg,rgba(13,34,56,.92),rgba(8,25,43,.82));box-shadow:var(--shadow);backdrop-filter:blur(16px);position:relative;overflow:hidden}
+.conditions-bar:before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(41,211,194,.05) 46%,rgba(62,166,255,.06) 54%,transparent);pointer-events:none}
+.cond-cell{display:flex;align-items:center;gap:12px;min-width:0;padding:8px 6px;border-right:1px solid rgba(149,190,219,.10)}
+.cond-cell:last-child{border-right:0}
+.cond-ico{flex:0 0 40px;height:40px;display:grid;place-items:center;border:1px solid rgba(41,211,194,.22);border-radius:11px;background:rgba(41,211,194,.08);font-size:20px}
+.cond-ico.blue{border-color:rgba(62,166,255,.24);background:rgba(62,166,255,.09)}
+.cond-ico.amber{border-color:rgba(255,174,83,.28);background:rgba(255,174,83,.10)}
+.cond-body{min-width:0;display:flex;flex-direction:column;line-height:1.15}
+.cond-label{color:#7fa0b6;font-size:9.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;white-space:nowrap}
+.cond-value{color:#eef7ff;font-size:19px;font-weight:750;letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cond-value.small{font-size:15px}
+.cond-sub{color:#9fbccf;font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cond-loading{color:#7fa0b6;font-size:12px}
+.cond-updated{grid-column:1/-1;display:flex;align-items:center;gap:8px;margin-top:2px;padding-top:10px;border-top:1px solid rgba(149,190,219,.10);color:#6b8698;font-size:10.5px;letter-spacing:.04em}
+.cond-updated b{color:#8ef5eb;font-weight:700}
+.cond-refresh{margin-left:auto;border:0;background:transparent;color:#6fb4d6;font-size:11px;font-weight:700;cursor:pointer;padding:2px 6px;border-radius:6px}
+.cond-refresh:hover{color:#8ef5eb;background:rgba(41,211,194,.1)}
+@keyframes condfade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+.cond-cell{animation:condfade .4s ease both}
+@media(max-width:600px){.conditions-bar{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:12px;border-radius:14px}.cond-cell{border-right:0;padding:6px 4px;gap:9px}.cond-ico{flex:0 0 34px;height:34px;font-size:17px}.cond-value{font-size:16px}.cond-label{font-size:9px}}
+/* Clickable condition cells */
+.cond-cell.clickable{cursor:pointer;border-radius:12px;transition:.18s;position:relative}
+.cond-cell.clickable:hover{background:linear-gradient(135deg,rgba(41,211,194,.10),rgba(62,166,255,.05));box-shadow:inset 0 0 0 1px rgba(41,211,194,.25)}
+.cond-cell.clickable:after{content:"\2197";position:absolute;top:6px;right:8px;color:#4d7189;font-size:11px;font-weight:700;opacity:0;transition:.18s}
+.cond-cell.clickable:hover:after{opacity:1;color:#8ef5eb}
+.cond-ico.vessel{border-color:rgba(139,190,219,.28);background:rgba(120,170,206,.10)}
+/* Forecast detail modal */
+.forecast-modal{width:min(680px,100%)}
+.fc-hero{display:flex;align-items:center;gap:16px;padding:16px 20px;border-bottom:1px solid #d8e4ec;background:linear-gradient(135deg,#eef5f9,#e2eef5)}
+.fc-hero-ico{width:56px;height:56px;flex:0 0 56px;display:grid;place-items:center;border-radius:14px;background:#fff;box-shadow:0 6px 16px rgba(26,60,82,.10);font-size:28px}
+.fc-hero-main{min-width:0}
+.fc-hero-val{font-size:30px;font-weight:800;color:#0d2437;line-height:1.05;letter-spacing:-.02em}
+.fc-hero-sub{margin-top:3px;color:#4a687c;font-size:13px;font-weight:600}
+.fc-spark-wrap{padding:16px 20px 6px}
+.fc-spark-title{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;color:#496272;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+.fc-spark-title span{color:#8298a8;font-size:11px;font-weight:600;letter-spacing:0;text-transform:none}
+.fc-spark{width:100%;height:132px;display:block;border:1px solid #d8e4ec;border-radius:12px;background:#fff}
+.fc-table-wrap{padding:8px 20px 20px;max-height:320px;overflow:auto}
+.fc-table{width:100%;border-collapse:collapse;font-size:13px}
+.fc-table th{position:sticky;top:0;background:#f4f8fb;color:#496272;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;text-align:left;padding:9px 10px;border-bottom:2px solid #d8e4ec}
+.fc-table td{padding:9px 10px;border-bottom:1px solid #eef3f7;color:#1a3346}
+.fc-table td:first-child{font-weight:700;color:#0d2437;white-space:nowrap}
+.fc-table tr.now-row td{background:#e6f7f4;box-shadow:inset 3px 0 #29d3c2}
+.fc-badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700}
+.fc-empty{padding:26px;text-align:center;color:#7a93a3;font-size:13px}
+.fc-note{margin:0;padding:12px 20px;border-top:1px solid #e5edf2;background:#f7fafc;color:#607d90;font-size:12px;line-height:1.5}
+.fc-stat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:16px 20px}
+.fc-stat{border:1px solid #d8e4ec;border-radius:12px;background:#fff;padding:12px 14px}
+.fc-stat strong{display:block;color:#8298a8;font-size:10.5px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;margin-bottom:4px}
+.fc-stat .v{font-size:19px;font-weight:750;color:#0d2437}
+@media(max-width:560px){.fc-hero-val{font-size:24px}.fc-hero-ico{width:46px;height:46px;flex-basis:46px;font-size:23px}.fc-stat-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -164,6 +216,13 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.20;ba
     <button class="icon-button" type="button" onclick="location.reload()" title="Refresh dashboard" aria-label="Refresh dashboard">&#8635;</button>
   </div>
 </header>
+<section class="conditions-bar" id="conditionsBar" aria-label="Live harbour conditions">
+  <div class="cond-cell clickable" role="button" tabindex="0" onclick="openForecast('weather')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openForecast('weather')}"><div class="cond-ico blue" id="condWxIco">&#127777;&#65039;</div><div class="cond-body"><span class="cond-label">Weather</span><span class="cond-value" id="condTemp"><span class="cond-loading">Loading...</span></span><span class="cond-sub" id="condWxDesc">Auckland Harbour</span></div></div>
+  <div class="cond-cell clickable" role="button" tabindex="0" onclick="openForecast('wind')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openForecast('wind')}"><div class="cond-ico">&#128168;</div><div class="cond-body"><span class="cond-label">Wind</span><span class="cond-value" id="condWind">&mdash;</span><span class="cond-sub" id="condWindDir">&mdash;</span></div></div>
+  <div class="cond-cell clickable" role="button" tabindex="0" onclick="openForecast('tide')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openForecast('tide')}"><div class="cond-ico" id="condTideIco">&#127754;</div><div class="cond-body"><span class="cond-label">Next Tide</span><span class="cond-value small" id="condTide">&mdash;</span><span class="cond-sub" id="condTideSub">Auckland</span></div></div>
+  <div class="cond-cell clickable" role="button" tabindex="0" onclick="openForecast('sun')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openForecast('sun')}"><div class="cond-ico amber">&#9728;&#65039;</div><div class="cond-body"><span class="cond-label">Sun</span><span class="cond-value small" id="condSun">&mdash;</span><span class="cond-sub" id="condDaylight">&mdash;</span></div></div>
+  <div class="cond-updated"><span class="live-dot"></span><span>Live weather feed &middot; Open-Meteo</span><span id="condUpdated"></span><button class="cond-refresh" type="button" onclick="loadConditions()">Refresh &#8635;</button></div>
+</section>
 <main class="layout">
 <section class="tools-panel">
   <div class="grid">
@@ -261,6 +320,7 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.20;ba
  </div>
 </div>
 <div class="modal-backdrop" id="accessCodeModal" role="dialog" aria-modal="true" aria-labelledby="accessCodeTitle" onclick="backdropClose(event,'accessCodeModal')"><div class="modal access-code-modal"><div class="modal-head"><div><h2 id="accessCodeTitle">Edit Access Required</h2><p>Enter the access code to enable roster editing.</p></div><button class="modal-close" type="button" aria-label="Close" onclick="cancelAccessCode()">&times;</button></div><div class="modal-body"><form class="access-code-form" onsubmit="verifyRosterAccess(event)"><label class="date-label" for="rosterAccessCode">Access code</label><div class="access-code-input-wrap"><input class="access-code-input" id="rosterAccessCode" type="password" autocomplete="current-password" required aria-describedby="accessCodeStatus"><button class="access-code-toggle" type="button" onclick="toggleAccessCodeVisibility()" title="Show or hide access code" aria-label="Show or hide access code">&#128065;</button></div><div id="accessCodeStatus" class="access-code-status" aria-live="polite"></div><div class="modal-actions"><button class="button" type="button" onclick="cancelAccessCode()">Cancel</button><button id="accessCodeSubmit" class="button location-button active access-code-submit" type="submit">Verify &amp; Edit</button></div></form></div></div></div>
+<div class="modal-backdrop" id="forecastModal" role="dialog" aria-modal="true" aria-labelledby="forecastTitle" onclick="backdropClose(event,'forecastModal')"><div class="modal forecast-modal"><div class="modal-head"><div><h2 id="forecastTitle">Forecast</h2><p id="forecastSubtitle">Auckland Harbour</p></div><button class="modal-close" type="button" aria-label="Close" onclick="closeModal('forecastModal')">&times;</button></div><div id="forecastBody"><div class="fc-empty">Loading forecast...</div></div></div></div>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@4.2.1/dist/jspdf.umd.min.js"></script>
 <script>
 const SUPABASE_URL='https://wgwlnutnstrfuiiunlcu.supabase.co';
@@ -537,7 +597,111 @@ function updateAucklandClock(){
   el.textContent=new Intl.DateTimeFormat('en-NZ',{timeZone:'Pacific/Auckland',weekday:'short',day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false,timeZoneName:'short'}).format(new Date());
 }
 updateAucklandClock();setInterval(updateAucklandClock,1000);
-
+// ===== Live harbour conditions (Open-Meteo, no API key) =====
+const HARBOUR_LAT=-36.833, HARBOUR_LON=174.831;
+const WX_CODE={0:['Clear','\u2600\ufe0f'],1:['Mainly clear','\ud83c\udf24\ufe0f'],2:['Partly cloudy','\u26c5'],3:['Overcast','\u2601\ufe0f'],45:['Fog','\ud83c\udf2b\ufe0f'],48:['Rime fog','\ud83c\udf2b\ufe0f'],51:['Light drizzle','\ud83c\udf27\ufe0f'],53:['Drizzle','\ud83c\udf27\ufe0f'],55:['Heavy drizzle','\ud83c\udf27\ufe0f'],56:['Freezing drizzle','\ud83c\udf27\ufe0f'],57:['Freezing drizzle','\ud83c\udf27\ufe0f'],61:['Light rain','\ud83c\udf26\ufe0f'],63:['Rain','\ud83c\udf27\ufe0f'],65:['Heavy rain','\ud83c\udf27\ufe0f'],66:['Freezing rain','\ud83c\udf27\ufe0f'],67:['Freezing rain','\ud83c\udf27\ufe0f'],71:['Light snow','\ud83c\udf28\ufe0f'],73:['Snow','\ud83c\udf28\ufe0f'],75:['Heavy snow','\u2744\ufe0f'],77:['Snow grains','\ud83c\udf28\ufe0f'],80:['Rain showers','\ud83c\udf26\ufe0f'],81:['Rain showers','\ud83c\udf27\ufe0f'],82:['Violent showers','\u26c8\ufe0f'],85:['Snow showers','\ud83c\udf28\ufe0f'],86:['Snow showers','\ud83c\udf28\ufe0f'],95:['Thunderstorm','\u26c8\ufe0f'],96:['Thunderstorm','\u26c8\ufe0f'],99:['Thunderstorm','\u26c8\ufe0f']};
+function compass(deg){return ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'][Math.round(((deg||0)%360)/22.5)%16]}
+function hhmm(iso){try{return new Intl.DateTimeFormat('en-NZ',{timeZone:'Pacific/Auckland',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(iso))}catch(_){return '--'}}
+function setText(id,t){const el=document.getElementById(id);if(el)el.textContent=t}
+async function loadNextTide(){
+ try{const file='Auckland '+nzYear()+'.csv',events=normalizeRows(parseCSV(await fetchFile(file)),file);
+  const today=nzDate(),tomorrow=addDaysISO(today,1),nowM=nzMin();
+  const upcoming=events.filter(e=>(e.iso===today&&e.min>=nowM)||e.iso===tomorrow).sort((a,b)=>(a.iso===b.iso?a.min-b.min:a.iso<b.iso?-1:1));
+  const n=upcoming[0];if(!n){setText('condTide','--');return}
+  setText('condTide',(n.type==='HW'?'High ':'Low ')+fmtTime(n.min));
+  setText('condTideSub',fmtH(n.height)+(n.iso===tomorrow?' \u00b7 tomorrow':''));
+  const ico=document.getElementById('condTideIco');if(ico)ico.innerHTML=n.type==='HW'?'\ud83c\udf0a':'\ud83c\udfd6\ufe0f';
+ }catch(e){setText('condTide','Unavailable')}
+}
+async function loadConditions(){
+ loadNextTide();
+ const wxUrl='https://api.open-meteo.com/v1/forecast?latitude='+HARBOUR_LAT+'&longitude='+HARBOUR_LON+'&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m,wind_gusts_10m,wind_direction_10m&daily=sunrise,sunset&wind_speed_unit=kn&timezone=Pacific%2FAuckland&forecast_days=1';
+ try{
+  const wxRes=await fetch(wxUrl);
+  if(wxRes.ok){
+   const w=await wxRes.json(),c=w.current||{},d=w.daily||{};
+   const [desc,ico]=WX_CODE[c.weather_code]||['Conditions','\ud83c\udf10'];
+   setText('condTemp',Math.round(c.temperature_2m)+'\u00b0C');
+   setText('condWxDesc',desc+' \u00b7 feels '+Math.round(c.apparent_temperature)+'\u00b0');
+   const wxIco=document.getElementById('condWxIco');if(wxIco)wxIco.innerHTML=ico;
+   setText('condWind',Math.round(c.wind_speed_10m)+' kt');
+   setText('condWindDir',compass(c.wind_direction_10m)+' \u00b7 gust '+Math.round(c.wind_gusts_10m)+' kt');
+   if(d.sunrise&&d.sunset){setText('condSun','\u2191'+hhmm(d.sunrise[0])+' \u00b7 \u2193'+hhmm(d.sunset[0]));
+    const mins=Math.round((new Date(d.sunset[0])-new Date(d.sunrise[0]))/60000);setText('condDaylight',Math.floor(mins/60)+'h '+(mins%60)+'m daylight')}
+  }else{setText('condTemp','WX offline')}
+  setText('condUpdated','\u00b7 updated '+new Intl.DateTimeFormat('en-NZ',{timeZone:'Pacific/Auckland',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date()));
+ }catch(e){setText('condTemp','Feed offline');console.error('conditions',e)}
+}
+loadConditions();setInterval(loadConditions,600000);
+// ===== Hourly forecast cache =====
+let hourlyCache=null,hourlyCacheAt=0;
+async function getHourly(){
+ if(hourlyCache&&Date.now()-hourlyCacheAt<600000)return hourlyCache;
+ const wxUrl='https://api.open-meteo.com/v1/forecast?latitude='+HARBOUR_LAT+'&longitude='+HARBOUR_LON+'&hourly=temperature_2m,apparent_temperature,precipitation,precipitation_probability,weather_code,wind_speed_10m,wind_gusts_10m,wind_direction_10m&daily=sunrise,sunset,temperature_2m_max,temperature_2m_min,weather_code&wind_speed_unit=kn&timezone=Pacific%2FAuckland&forecast_days=3';
+ const res=await fetch(wxUrl);
+ hourlyCache={wx:res.ok?await res.json():null};
+ hourlyCacheAt=Date.now();return hourlyCache;
+}
+function nowHourIndex(times){const now=new Date();let best=0,diff=Infinity;for(let i=0;i<times.length;i++){const d=Math.abs(new Date(times[i])-now);if(d<diff){diff=d;best=i}}return best}
+function fcHM(iso){try{return new Intl.DateTimeFormat('en-NZ',{timeZone:'Pacific/Auckland',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(iso))}catch(_){return '--'}}
+function fcDay(iso){try{return new Intl.DateTimeFormat('en-NZ',{timeZone:'Pacific/Auckland',weekday:'short'}).format(new Date(iso))}catch(_){return ''}}
+// SVG sparkline
+function sparkline(values,opts={}){
+ const {w=620,h=132,color='#2086c7',fill='rgba(32,134,199,.14)',unit='',markers=[]}=opts;
+ const idx=values.map((v,i)=>[v,i]).filter(p=>p[0]!=null&&isFinite(p[0]));
+ if(!idx.length)return '<div class="fc-empty">No data available</div>';
+ const vals=idx.map(p=>p[0]);let mn=Math.min(...vals),mx=Math.max(...vals);if(mn===mx){mn-=1;mx+=1}
+ const padX=12,padTop=14,padBot=26,n=values.length;
+ const x=i=>padX+(n<=1?0:(i/(n-1))*(w-padX*2)),y=v=>padTop+(mx-v)/(mx-mn)*(h-padTop-padBot);
+ let d='';idx.forEach((p,k)=>{d+=(k?'L':'M')+x(p[1]).toFixed(1)+' '+y(p[0]).toFixed(1)+' '});
+ const area=d+'L '+x(idx[idx.length-1][1]).toFixed(1)+' '+(h-padBot)+' L '+x(idx[0][1]).toFixed(1)+' '+(h-padBot)+' Z';
+ let g='';for(let k=0;k<4;k++){const yy=padTop+k*(h-padTop-padBot)/3,val=mx-(k*(mx-mn)/3);g+='<line x1="'+padX+'" y1="'+yy.toFixed(1)+'" x2="'+(w-padX)+'" y2="'+yy.toFixed(1)+'" stroke="#eef3f7"/><text x="'+padX+'" y="'+(yy-3).toFixed(1)+'" font-size="9" fill="#9aabb8">'+(Math.round(val*10)/10)+unit+'</text>'}
+ let mk='';markers.forEach(mkr=>{const xx=x(mkr.i);mk+='<line x1="'+xx.toFixed(1)+'" y1="'+padTop+'" x2="'+xx.toFixed(1)+'" y2="'+(h-padBot)+'" stroke="'+(mkr.color||'#ef3124')+'" stroke-dasharray="4 4"/><text x="'+Math.min(xx+3,w-40).toFixed(1)+'" y="'+(padTop+9)+'" font-size="9" fill="'+(mkr.color||'#ef3124')+'" font-weight="700">'+(mkr.label||'')+'</text>'});
+ let lb='';for(let i=0;i<n;i+=Math.max(1,Math.round(n/6))){if(values[i]==null)continue;lb+='<text x="'+x(i).toFixed(1)+'" y="'+(h-8)+'" font-size="9" fill="#7f97a6" text-anchor="middle">'+fcHM(opts.times?opts.times[i]:'')+'</text>'}
+ return '<svg class="fc-spark" viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="none"><defs><linearGradient id="fcg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="'+color+'" stop-opacity=".28"/><stop offset="1" stop-color="'+color+'" stop-opacity="0"/></linearGradient></defs>'+g+'<path d="'+area+'" fill="url(#fcg)"/><path d="'+d+'" fill="none" stroke="'+color+'" stroke-width="2.5"/>'+mk+lb+'</svg>';
+}
+function fcSlice(data,startIdx,count,step){const out=[];for(let i=startIdx;i<data.times.length&&out.length<count;i+=step)out.push(i);return out}
+async function openForecast(type){
+ const body=document.getElementById('forecastBody'),title=document.getElementById('forecastTitle'),sub=document.getElementById('forecastSubtitle');
+ title.textContent='Loading\u2026';sub.textContent='Auckland Harbour';body.innerHTML='<div class="fc-empty">Loading forecast\u2026</div>';openModal('forecastModal');
+ try{
+  if(type==='tide'){return renderTideForecast(body,title,sub)}
+  const H=await getHourly();
+  if(type==='weather')return renderWeatherForecast(body,title,sub,H);
+  if(type==='wind')return renderWindForecast(body,title,sub,H);
+  if(type==='sun')return renderSunForecast(body,title,sub,H);
+ }catch(e){body.innerHTML='<div class="fc-empty">Forecast unavailable.<br>'+esc(e.message||e)+'</div>'}
+}
+function renderWeatherForecast(body,title,sub,H){
+ title.textContent='Weather Forecast';sub.textContent='Auckland Harbour \u00b7 next 24 hours';
+ const hw=H.wx&&H.wx.hourly;if(!hw)return void(body.innerHTML='<div class="fc-empty">Weather feed unavailable.</div>');
+ const t=hw.time,ni=nowHourIndex(t),temps=hw.temperature_2m,spark=sparkline(temps.slice(ni,ni+24),{times:t.slice(ni,ni+24),unit:'\u00b0',color:'#2086c7',markers:[{i:0,label:'Now',color:'#ef3124'}]});
+ const idxs=fcSlice({times:t},ni,10,3);let rows='';idxs.forEach(i=>{const[desc,ico]=WX_CODE[hw.weather_code[i]]||['',''];rows+='<tr'+(i===ni?' class="now-row"':'')+'><td>'+(i===ni?'Now':fcHM(t[i]))+'</td><td>'+ico+' '+Math.round(hw.temperature_2m[i])+'\u00b0</td><td>'+Math.round(hw.apparent_temperature[i])+'\u00b0</td><td>'+(hw.precipitation_probability[i]??'--')+'%</td><td>'+desc+'</td></tr>'});
+ body.innerHTML='<div class="fc-hero"><div class="fc-hero-ico">'+((WX_CODE[hw.weather_code[ni]]||['',''])[1])+'</div><div class="fc-hero-main"><div class="fc-hero-val">'+Math.round(temps[ni])+'\u00b0C</div><div class="fc-hero-sub">Feels '+Math.round(hw.apparent_temperature[ni])+'\u00b0 \u00b7 '+((WX_CODE[hw.weather_code[ni]]||['',''])[0])+'</div></div></div><div class="fc-spark-wrap"><div class="fc-spark-title">Temperature <span>next 24h</span></div>'+spark+'</div><div class="fc-table-wrap"><table class="fc-table"><thead><tr><th>Time</th><th>Temp</th><th>Feels</th><th>Rain</th><th>Sky</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+}
+function renderWindForecast(body,title,sub,H){
+ title.textContent='Wind Forecast';sub.textContent='Auckland Harbour \u00b7 next 24 hours';
+ const hw=H.wx&&H.wx.hourly;if(!hw)return void(body.innerHTML='<div class="fc-empty">Wind feed unavailable.</div>');
+ const t=hw.time,ni=nowHourIndex(t),spark=sparkline(hw.wind_speed_10m.slice(ni,ni+24),{times:t.slice(ni,ni+24),unit:'kt',color:'#0e7f74',markers:[{i:0,label:'Now',color:'#ef3124'}]});
+ const idxs=fcSlice({times:t},ni,10,3);let rows='';idxs.forEach(i=>{rows+='<tr'+(i===ni?' class="now-row"':'')+'><td>'+(i===ni?'Now':fcHM(t[i]))+'</td><td>'+Math.round(hw.wind_speed_10m[i])+' kt</td><td>'+Math.round(hw.wind_gusts_10m[i])+' kt</td><td>'+compass(hw.wind_direction_10m[i])+' ('+Math.round(hw.wind_direction_10m[i])+'\u00b0)</td></tr>'});
+ body.innerHTML='<div class="fc-hero"><div class="fc-hero-ico">\ud83d\udca8</div><div class="fc-hero-main"><div class="fc-hero-val">'+Math.round(hw.wind_speed_10m[ni])+' kt</div><div class="fc-hero-sub">'+compass(hw.wind_direction_10m[ni])+' \u00b7 gusting '+Math.round(hw.wind_gusts_10m[ni])+' kt</div></div></div><div class="fc-spark-wrap"><div class="fc-spark-title">Wind speed <span>next 24h</span></div>'+spark+'</div><div class="fc-table-wrap"><table class="fc-table"><thead><tr><th>Time</th><th>Wind</th><th>Gust</th><th>Direction</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+}
+function renderSunForecast(body,title,sub,H){
+ title.textContent='Sun & Daylight';sub.textContent='Auckland Harbour \u00b7 3-day';
+ const d=H.wx&&H.wx.daily;if(!d)return void(body.innerHTML='<div class="fc-empty">Sun data unavailable.</div>');
+ let rows='';for(let i=0;i<(d.time?d.time.length:0);i++){const mins=Math.round((new Date(d.sunset[i])-new Date(d.sunrise[i]))/60000);rows+='<tr'+(i===0?' class="now-row"':'')+'><td>'+(i===0?'Today':fcDay(d.time[i]))+'</td><td>\u2191 '+fcHM(d.sunrise[i])+'</td><td>\u2193 '+fcHM(d.sunset[i])+'</td><td>'+Math.floor(mins/60)+'h '+(mins%60)+'m</td></tr>'}
+ const mins0=Math.round((new Date(d.sunset[0])-new Date(d.sunrise[0]))/60000);
+ body.innerHTML='<div class="fc-hero"><div class="fc-hero-ico">\u2600\ufe0f</div><div class="fc-hero-main"><div class="fc-hero-val">'+fcHM(d.sunrise[0])+' \u2013 '+fcHM(d.sunset[0])+'</div><div class="fc-hero-sub">'+Math.floor(mins0/60)+'h '+(mins0%60)+'m of daylight today</div></div></div><div class="fc-table-wrap"><table class="fc-table"><thead><tr><th>Day</th><th>Sunrise</th><th>Sunset</th><th>Daylight</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+}
+async function renderTideForecast(body,title,sub){
+ title.textContent='Auckland Tide';sub.textContent='Today \u00b7 high & low water';
+ try{const file='Auckland '+nzYear()+'.csv',events=normalizeRows(parseCSV(await fetchFile(file)),file),today=nzDate(),nowM=nzMin();
+  const dayPts=events.filter(e=>e.iso===today).sort((a,b)=>a.min-b.min);if(!dayPts.length)return void(body.innerHTML='<div class="fc-empty">No tide record for today.</div>');
+  const next=dayPts.find(p=>p.min>=nowM)||dayPts[0];let rows='';dayPts.forEach(p=>{const isNext=p===next;rows+='<tr'+(isNext?' class="now-row"':'')+'><td>'+fmtTime(p.min)+'</td><td>'+(p.type==='HW'?'\ud83c\udf0a High':'\ud83c\udfd6\ufe0f Low')+'</td><td>'+fmtH(p.height)+'</td></tr>'});
+  const low=dayPts.reduce((a,b)=>a.height<b.height?a:b),high=dayPts.reduce((a,b)=>a.height>b.height?a:b);
+  body.innerHTML='<div class="fc-hero"><div class="fc-hero-ico">'+(next.type==='HW'?'\ud83c\udf0a':'\ud83c\udfd6\ufe0f')+'</div><div class="fc-hero-main"><div class="fc-hero-val">'+(next.type==='HW'?'High ':'Low ')+fmtTime(next.min)+'</div><div class="fc-hero-sub">'+fmtH(next.height)+' \u00b7 next tide</div></div></div><div class="fc-stat-grid"><div class="fc-stat"><strong>Highest today</strong><div class="v">'+fmtTime(high.min)+' \u00b7 '+fmtH(high.height)+'</div></div><div class="fc-stat"><strong>Lowest today</strong><div class="v">'+fmtTime(low.min)+' \u00b7 '+fmtH(low.height)+'</div></div></div><div class="fc-table-wrap"><table class="fc-table"><thead><tr><th>Time</th><th>Tide</th><th>Height</th></tr></thead><tbody>'+rows+'</tbody></table></div><p class="fc-note">Source: Supabase <b>tide-data</b>. Open the Tide panel below for the full graph and other locations.</p>';
+ }catch(e){body.innerHTML='<div class="fc-empty">Tide data unavailable.<br>'+esc(e.message||e)+'</div>'}
+}
 </script>
 </body>
 </html>
