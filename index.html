@@ -162,6 +162,8 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.20;ba
 .cond-label{color:#7fa0b6;font-size:9.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;white-space:nowrap}
 .cond-value{color:#eef7ff;font-size:19px;font-weight:750;letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cond-value.small{font-size:15px}
+/* Desktop: give the Sun cell (sunrise · sunset) enough room so the sunset time is not clipped */
+@media(min-width:601px){#condSun{font-size:13px;letter-spacing:-.3px}.cond-cell .cond-body{min-width:0;flex:1 1 auto}}
 .cond-sub{color:#9fbccf;font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cond-loading{color:#7fa0b6;font-size:12px}
 .cond-updated{grid-column:1/-1;display:flex;align-items:center;gap:8px;margin-top:2px;padding-top:10px;border-top:1px solid rgba(149,190,219,.10);color:#6b8698;font-size:10.5px;letter-spacing:.04em}
