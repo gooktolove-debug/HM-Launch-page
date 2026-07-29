@@ -225,6 +225,32 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.20;ba
 /* Contact popup behaviour fixes */
 #contactSaveBtn[hidden]{display:none!important}
 #contactListModal{cursor:default}
+
+/* Mobile header controls: match the 44px HM brand mark */
+@media(max-width:600px){
+  .command-actions{top:14px;right:14px;gap:7px;align-items:center}
+  .contact-open-button{
+    width:44px!important;
+    height:44px!important;
+    min-width:44px!important;
+    min-height:44px!important;
+    padding:0 4px!important;
+    border-radius:11px!important;
+    font-size:9px!important;
+    line-height:1.05!important;
+    white-space:normal!important;
+    text-align:center!important;
+  }
+  .icon-button{
+    width:44px!important;
+    height:44px!important;
+    min-width:44px!important;
+    min-height:44px!important;
+    padding:0!important;
+    border-radius:11px!important;
+    font-size:20px!important;
+  }
+}
 </style>
 </head>
 <body>
