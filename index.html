@@ -270,6 +270,67 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.20;ba
 #maydayModal .mayday-modal{position:relative;z-index:1201}
 
 #contactListModal.modal-underlay .contact-modal{filter:brightness(.72);pointer-events:none}
+
+/* MAYDAY placement inside Contact List header */
+#contactListPanel .contact-head{position:relative}
+@media(min-width:601px){
+  #contactMaydayBtn{
+    position:absolute!important;
+    left:250px!important;
+    top:18px!important;
+    right:auto!important;
+    z-index:4;
+  }
+}
+@media(max-width:600px){
+  #contactMaydayBtn{
+    position:absolute!important;
+    top:18px!important;
+    right:18px!important;
+    left:auto!important;
+    width:auto!important;
+    height:34px!important;
+    min-width:64px!important;
+    min-height:34px!important;
+    padding:7px 9px!important;
+    z-index:4;
+  }
+  #contactListPanel .contact-head-main{padding-right:84px}
+}
+
+/* Desktop MAYDAY: directly after the Last updated timestamp */
+@media(min-width:601px){
+  #contactListPanel .contact-head-main p{display:flex;align-items:center;gap:0;white-space:nowrap}
+  #contactMaydayBtn{
+    position:absolute!important;
+    left:268px!important;
+    top:45px!important;
+    right:auto!important;
+    min-height:30px!important;
+    height:30px!important;
+    padding:6px 11px!important;
+    border-radius:8px!important;
+    font-size:10px!important;
+  }
+}
+
+/* Desktop MAYDAY: below timestamp, aligned left */
+@media(min-width:601px){
+  #contactListPanel .contact-head{padding-bottom:54px!important}
+  #contactMaydayBtn{
+    position:absolute!important;
+    left:20px!important;
+    top:76px!important;
+    right:auto!important;
+    width:auto!important;
+    min-width:72px!important;
+    height:30px!important;
+    min-height:30px!important;
+    padding:6px 11px!important;
+    border-radius:8px!important;
+    font-size:10px!important;
+  }
+}
 </style>
 </head>
 <body>
