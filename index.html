@@ -251,6 +251,25 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.20;ba
     font-size:20px!important;
   }
 }
+
+/* MAYDAY team call */
+.mayday-button{border-color:#ff6b6b!important;background:linear-gradient(135deg,#b42318,#80130d)!important;color:#fff!important;box-shadow:0 0 0 3px rgba(255,72,72,.10),0 8px 22px rgba(180,35,24,.24);font-weight:900;letter-spacing:.08em}
+.mayday-button:hover{border-color:#ff9a9a!important;background:linear-gradient(135deg,#d92d20,#a31610)!important;color:#fff!important}
+.mayday-modal{width:min(560px,100%);border:2px solid #b42318}.mayday-head{background:#fff3f2!important;border-bottom-color:#fecaca!important}.mayday-title{display:flex;align-items:center;gap:10px;color:#8f1811!important}.mayday-title:before{content:"!";display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:#b42318;color:#fff;font-weight:950}.mayday-warning{margin:0 0 12px;padding:12px 14px;border:1px solid #fecaca;border-radius:10px;background:#fff3f2;color:#7f1d1d;font-size:13px;font-weight:800;line-height:1.5}.mayday-summary{margin:0 0 10px;color:#334155;font-size:13px;line-height:1.5}.mayday-list{max-height:230px;overflow:auto;margin:10px 0 0;padding:0;list-style:none;border:1px solid #d8e4ec;border-radius:10px;background:#fff}.mayday-list li{display:flex;justify-content:space-between;gap:12px;padding:8px 10px;border-bottom:1px solid #edf2f6;font-size:12px}.mayday-list li:last-child{border-bottom:0}.mayday-list b{color:#17384d}.mayday-list span{color:#607d90;overflow-wrap:anywhere}.mayday-status{min-height:18px;margin-top:10px;color:#b42318;font-size:12px;font-weight:700}.mayday-confirm{background:#b42318!important;border-color:#b42318!important;color:#fff!important}.mayday-confirm:disabled{opacity:.55;cursor:wait}
+@media(max-width:600px){.mayday-button{width:44px!important;height:44px!important;min-width:44px!important;min-height:44px!important;padding:0 3px!important;border-radius:11px!important;font-size:8px!important;line-height:1.05!important;white-space:normal!important;text-align:center!important}.command-actions{gap:5px!important}}
+
+/* MAYDAY location: Contact List popup header only */
+#contactMaydayBtn{min-height:34px;padding:8px 12px}
+@media(max-width:600px){
+  #contactMaydayBtn{width:auto!important;height:34px!important;min-width:64px!important;min-height:34px!important;padding:7px 9px!important;border-radius:9px!important;font-size:9px!important;white-space:nowrap!important}
+}
+
+/* Keep MAYDAY confirmation above the Contact List modal */
+#contactListModal{z-index:1000}
+#maydayModal{z-index:1200;background:rgba(7,24,51,.72);backdrop-filter:blur(6px)}
+#maydayModal .mayday-modal{position:relative;z-index:1201}
+
+#contactListModal.modal-underlay .contact-modal{filter:brightness(.72);pointer-events:none}
 </style>
 </head>
 <body>
@@ -372,7 +391,26 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.20;ba
 <div class="modal-backdrop" id="accessCodeModal" role="dialog" aria-modal="true" aria-labelledby="accessCodeTitle" onclick="backdropClose(event,'accessCodeModal')"><div class="modal access-code-modal"><div class="modal-head"><div><h2 id="accessCodeTitle">Edit Access Required</h2><p>Enter the access code to enable roster editing.</p></div><button class="modal-close" type="button" aria-label="Close" onclick="cancelAccessCode()">&times;</button></div><div class="modal-body"><form class="access-code-form" onsubmit="verifyRosterAccess(event)"><label class="date-label" for="rosterAccessCode">Access code</label><div class="access-code-input-wrap"><input class="access-code-input" id="rosterAccessCode" type="password" autocomplete="current-password" required aria-describedby="accessCodeStatus"><button class="access-code-toggle" type="button" onclick="toggleAccessCodeVisibility()" title="Show or hide access code" aria-label="Show or hide access code">&#128065;</button></div><div id="accessCodeStatus" class="access-code-status" aria-live="polite"></div><div class="modal-actions"><button class="button" type="button" onclick="cancelAccessCode()">Cancel</button><button id="accessCodeSubmit" class="button location-button active access-code-submit" type="submit">Verify &amp; Edit</button></div></form></div></div></div>
 <div class="modal-backdrop" id="forecastModal" role="dialog" aria-modal="true" aria-labelledby="forecastTitle" onclick="backdropClose(event,'forecastModal')"><div class="modal forecast-modal"><div class="modal-head"><div><h2 id="forecastTitle">Forecast</h2><p id="forecastSubtitle">Auckland Harbour</p></div><button class="modal-close" type="button" aria-label="Close" onclick="closeModal('forecastModal')">&times;</button></div><div id="forecastBody"><div class="fc-empty">Loading forecast...</div></div></div></div>
 
-<div class="modal-backdrop" id="contactListModal" role="dialog" aria-modal="true"><div class="modal contact-modal" id="contactListPanel"><div class="modal-head contact-head"><div class="contact-head-main"><h2>Contact List</h2><p>Last updated: <span id="contactUpdated" class="contact-updated">Loading...</span></p></div><div class="contact-head-actions"><button id="contactEditBtn" class="button contact-edit" onclick="startContactEdit()">Edit</button><button id="contactSaveBtn" class="button location-button active" onclick="saveContactList()" hidden>Save</button><button class="button contact-cancel" onclick="cancelContactEdit()">Cancel</button><button class="modal-close" onclick="closeContactList()">&times;</button></div></div><div class="contact-body"><div class="contact-format-toolbar" id="contactFormatToolbar">
+
+<div class="modal-backdrop" id="maydayModal" role="dialog" aria-modal="true" aria-labelledby="maydayTitle">
+ <div class="modal mayday-modal">
+  <div class="modal-head mayday-head">
+   <div><h2 id="maydayTitle" class="mayday-title">MAYDAY?</h2><p>Harbourmaster Team emergency group call</p></div>
+   <button class="modal-close" type="button" aria-label="Cancel Mayday call" onclick="closeMaydayDialog()">&times;</button>
+  </div>
+  <div class="modal-body">
+   <p class="mayday-warning">Use only for a genuine maritime emergency. This prepares a Microsoft Teams audio call to the entire Harbourmaster Team currently listed in Contact List.</p>
+   <p class="mayday-summary" id="maydaySummary">Loading current recipients...</p>
+   <ul class="mayday-list" id="maydayRecipientList"></ul>
+   <div class="mayday-status" id="maydayStatus" aria-live="assertive"></div>
+   <div class="modal-actions">
+    <button class="button" type="button" onclick="closeMaydayDialog()">No, cancel</button>
+    <button class="button mayday-confirm" id="maydayConfirm" type="button" onclick="confirmMaydayCall()" disabled>Yes, continue to Teams</button>
+   </div>
+  </div>
+ </div>
+</div>
+<div class="modal-backdrop" id="contactListModal" role="dialog" aria-modal="true"><div class="modal contact-modal" id="contactListPanel"><div class="modal-head contact-head"><div class="contact-head-main"><h2>Contact List</h2><p>Last updated: <span id="contactUpdated" class="contact-updated">Loading...</span></p></div><div class="contact-head-actions"><button id="contactEditBtn" class="button contact-edit" onclick="startContactEdit()">Edit</button><button id="contactMaydayBtn" class="button mayday-button" type="button" onclick="openMaydayDialog()" title="Prepare Harbourmaster team emergency call">MAYDAY</button><button id="contactSaveBtn" class="button location-button active" onclick="saveContactList()" hidden>Save</button><button class="button contact-cancel" onclick="cancelContactEdit()">Cancel</button><button class="modal-close" onclick="closeContactList()">&times;</button></div></div><div class="contact-body"><div class="contact-format-toolbar" id="contactFormatToolbar">
 <label for="contactFontSize">Size</label><select id="contactFontSize" onchange="applyContactCellStyle('fontSize',this.value)"><option value="">Default</option><option value="10px">10</option><option value="12px">12</option><option value="14px">14</option><option value="16px">16</option><option value="18px">18</option><option value="20px">20</option><option value="24px">24</option></select>
 <button class="contact-format-btn" id="contactBoldBtn" type="button" onclick="toggleContactBold()" title="Bold">B</button>
 <label for="contactTextColor">Text</label><input id="contactTextColor" type="color" value="#102536" onchange="applyContactCellStyle('color',this.value)">
@@ -820,6 +858,45 @@ function startContactEdit(){const input=document.getElementById('contactAccessCo
 function cancelContactAccess(){closeModal('contactAccessModal');const input=document.getElementById('contactAccessCode');if(input)input.value=''}
 function toggleContactAccessVisibility(){const input=document.getElementById('contactAccessCode');if(!input)return;input.type=input.type==='password'?'text':'password';input.focus()}
 async function verifyContactAccess(event){event.preventDefault();const input=document.getElementById('contactAccessCode'),status=document.getElementById('contactAccessStatus'),btn=document.getElementById('contactAccessSubmit'),code=input.value.trim();if(!code){status.textContent='Enter the access code.';status.className='access-code-status error';input.focus();return}btn.disabled=true;btn.textContent='Verifying...';status.textContent='Checking access code...';status.className='access-code-status';try{const response=await fetch(CONTACT_VERIFY_ACCESS_URL,{method:'POST',mode:'cors',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify({app:'contact_edit',code})});const raw=await response.text();let data={};try{data=raw?JSON.parse(raw):{}}catch(_){data={message:raw}}const denied=data.valid===false||data.verified===false||data.authorized===false||data.success===false||data.allowed===false||data.ok===false||data.access===false||data.denied===true;if(!response.ok||denied)throw new Error(data.message||data.error||data.detail||raw||'Access denied.');input.value='';closeModal('contactAccessModal');contactSnapshot=JSON.stringify(contactRows);contactEditing=true;syncContactMode();renderContacts();document.getElementById('contactStatus').textContent='Edit access verified'}catch(error){status.textContent=error.message||'Access verification failed.';status.className='access-code-status error';input.select()}finally{btn.disabled=false;btn.textContent='Verify & Edit'}}
+
+
+// ===== MAYDAY Harbourmaster Team group call =====
+let maydayRecipients=[];
+function extractContactEmails(text){return [...new Set((String(text||'').match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi)||[]).map(x=>x.toLowerCase()))]}
+async function getMaydayRecipients(){
+ const rows=await fetchContacts();
+ const start=rows.findIndex(r=>/harbourmaster\s*-\s*team/i.test(String(r.column_1||'')));
+ if(start<0)throw new Error('Harbourmaster - Team section was not found.');
+ let end=rows.findIndex((r,i)=>i>start&&/auckland transport\s*\(main at/i.test(String(r.column_1||'')));
+ if(end<0)end=rows.length;
+ const recipients=[];
+ for(const r of rows.slice(start+1,end)){
+  const emails=extractContactEmails([r.column_1,r.column_2,r.column_3].join(' ')).filter(x=>x.endsWith('@at.govt.nz'));
+  for(const email of emails)recipients.push({name:String(r.column_1||'').trim()||email,email});
+ }
+ return [...new Map(recipients.map(x=>[x.email,x])).values()];
+}
+async function openMaydayDialog(){
+ document.getElementById('contactListModal')?.classList.add('modal-underlay');
+ const summary=document.getElementById('maydaySummary'),list=document.getElementById('maydayRecipientList'),status=document.getElementById('maydayStatus'),btn=document.getElementById('maydayConfirm');
+ maydayRecipients=[];summary.textContent='Loading current recipients from Contact List...';list.innerHTML='';status.textContent='';btn.disabled=true;openModal('maydayModal');
+ try{maydayRecipients=await getMaydayRecipients();if(!maydayRecipients.length)throw new Error('No @at.govt.nz recipients were found in the Harbourmaster Team section.');summary.textContent='This will prepare a Teams audio call to '+maydayRecipients.length+' Harbourmaster Team member'+(maydayRecipients.length===1?'':'s')+'. Teams will show its own final call confirmation.';list.innerHTML=maydayRecipients.map(x=>'<li><b>'+esc(x.name)+'</b><span>'+esc(x.email)+'</span></li>').join('');btn.disabled=false}catch(e){status.textContent='Mayday call could not be prepared: '+(e.message||e);summary.textContent='No call will be started.'}
+}
+
+function closeMaydayDialog(){
+ closeModal('maydayModal');
+ document.getElementById('contactListModal')?.classList.remove('modal-underlay');
+}
+
+function confirmMaydayCall(){
+ const status=document.getElementById('maydayStatus'),btn=document.getElementById('maydayConfirm');
+ if(!maydayRecipients.length){status.textContent='No recipients are available.';return}
+ btn.disabled=true;btn.textContent='Opening Teams...';status.textContent='Opening Microsoft Teams for final confirmation...';
+ const users=maydayRecipients.map(x=>x.email).join(',');
+ const url='https://teams.microsoft.com/l/call/0/0?users='+encodeURIComponent(users)+'&source=HM-Mayday';
+ window.location.assign(url);
+ setTimeout(()=>{btn.disabled=false;btn.textContent='Yes, continue to Teams'},1800);
+}
 
 </script>
 </body>
