@@ -331,6 +331,59 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.20;ba
     font-size:10px!important;
   }
 }
+
+/* Android Edge dynamic viewport fix for Full Roster and Contact List */
+@media(max-width:700px){
+  html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+  #rosterManagementModal,
+  #contactListModal{
+    top:0!important;
+    bottom:auto!important;
+    width:100%!important;
+    height:var(--hm-visual-height,100dvh)!important;
+    min-height:0!important;
+    padding:max(8px,env(safe-area-inset-top)) 7px max(8px,env(safe-area-inset-bottom))!important;
+    align-items:flex-start!important;
+    justify-content:center!important;
+    overflow-y:auto!important;
+    overflow-x:hidden!important;
+    overscroll-behavior:contain;
+  }
+  #rosterManagementModal .roster-overview-modal,
+  #contactListModal .contact-modal{
+    width:100%!important;
+    max-width:100%!important;
+    height:calc(var(--hm-visual-height,100dvh) - max(16px,env(safe-area-inset-top)) - max(16px,env(safe-area-inset-bottom)))!important;
+    max-height:calc(var(--hm-visual-height,100dvh) - max(16px,env(safe-area-inset-top)) - max(16px,env(safe-area-inset-bottom)))!important;
+    min-height:0!important;
+    margin:0!important;
+    border-radius:14px!important;
+    overflow:hidden!important;
+  }
+  #rosterManagementModal .roster-overview-modal{display:flex!important;flex-direction:column!important}
+  #rosterManagementModal .modal-head,
+  #contactListModal .modal-head{flex:0 0 auto}
+  #rosterManagementModal .roster-overview-body,
+  #contactListModal .contact-body{
+    flex:1 1 auto!important;
+    min-height:0!important;
+    overflow:auto!important;
+    -webkit-overflow-scrolling:touch;
+  }
+  #rosterManagementModal .roster-sheet-wrap{
+    max-height:none!important;
+    height:auto!important;
+    min-height:0!important;
+    flex:1 1 auto;
+  }
+}
+/* Fallback for Android browsers that do not fully support dvh */
+@supports not (height:100dvh){
+  @media(max-width:700px){
+    #rosterManagementModal,#contactListModal{height:var(--hm-visual-height,100vh)!important}
+    #rosterManagementModal .roster-overview-modal,#contactListModal .contact-modal{height:calc(var(--hm-visual-height,100vh) - 16px)!important;max-height:calc(var(--hm-visual-height,100vh) - 16px)!important}
+  }
+}
 </style>
 </head>
 <body>
@@ -958,6 +1011,17 @@ function confirmMaydayCall(){
  window.location.assign(url);
  setTimeout(()=>{btn.disabled=false;btn.textContent='Yes, continue to Teams'},1800);
 }
+
+
+// Android Edge: keep large modals inside the currently visible browser viewport.
+(function syncVisibleViewport(){
+ const root=document.documentElement;
+ const update=()=>{const h=window.visualViewport?.height||window.innerHeight;root.style.setProperty('--hm-visual-height',Math.max(320,Math.round(h))+'px')};
+ update();
+ window.addEventListener('resize',update,{passive:true});
+ window.addEventListener('orientationchange',()=>setTimeout(update,120),{passive:true});
+ if(window.visualViewport){window.visualViewport.addEventListener('resize',update,{passive:true});window.visualViewport.addEventListener('scroll',update,{passive:true})}
+})();
 
 </script>
 </body>
