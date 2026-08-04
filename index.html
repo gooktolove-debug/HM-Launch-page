@@ -452,6 +452,25 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.20;ba
     z-index:6;
   }
 }
+
+/* Desktop header controls: Contact List before Systems Available; dashboard refresh restored */
+@media(min-width:981px){
+  .header{position:relative;padding-right:22px}
+  .title-roster-row{width:100%;padding-right:430px}
+  .command-actions{
+    position:absolute;
+    right:22px;
+    bottom:18px;
+    margin:0;
+    display:flex;
+    align-items:center;
+    justify-content:flex-end;
+    gap:10px;
+  }
+  .command-actions .contact-open-button{order:1}
+  .command-actions .system-state{order:2}
+  .command-actions .icon-button{order:3}
+}
 </style>
 </head>
 <body>
@@ -471,7 +490,7 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.20;ba
   <div class="cond-cell clickable" role="button" tabindex="0" onclick="openForecast('wind')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openForecast('wind')}"><div class="cond-ico">&#128168;</div><div class="cond-body"><span class="cond-label">Wind</span><span class="cond-value" id="condWind">&mdash;</span><span class="cond-sub" id="condWindDir">&mdash;</span></div></div>
   <div class="cond-cell clickable" role="button" tabindex="0" onclick="openForecast('tide')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openForecast('tide')}"><div class="cond-ico" id="condTideIco">&#127754;</div><div class="cond-body"><span class="cond-label">Next Tide</span><span class="cond-value small" id="condTide">&mdash;</span><span class="cond-sub" id="condTideSub">Auckland</span></div></div>
   <div class="cond-cell clickable" role="button" tabindex="0" onclick="openForecast('sun')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openForecast('sun')}"><div class="cond-ico amber">&#9728;&#65039;</div><div class="cond-body"><span class="cond-label">Sun</span><span class="cond-value small" id="condSun">&mdash;</span><span class="cond-sub" id="condDaylight">&mdash;</span></div></div>
-  <div class="cond-updated"><span class="live-dot"></span><span>Live weather feed &middot; Open-Meteo</span><span id="condUpdated"></span><button class="cond-refresh" type="button" onclick="loadConditions()">Refresh &#8635;</button></div>
+  <div class="cond-updated"><span class="live-dot"></span><span>Live weather feed &middot; Open-Meteo</span><span id="condUpdated"></span></div>
 </section>
 <main class="layout">
 <section class="tools-panel">
