@@ -471,6 +471,8 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.20;ba
   .command-actions .system-state{order:2}
   .command-actions .icon-button{order:3}
 }
+
+.cond-ico.do-log{border-color:rgba(255,174,83,.30);background:rgba(255,174,83,.10)}#condDoCases{font-size:19px;font-weight:850}
 </style>
 </head>
 <body>
@@ -490,6 +492,7 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.20;ba
   <div class="cond-cell clickable" role="button" tabindex="0" onclick="openForecast('wind')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openForecast('wind')}"><div class="cond-ico">&#128168;</div><div class="cond-body"><span class="cond-label">Wind</span><span class="cond-value" id="condWind">&mdash;</span><span class="cond-sub" id="condWindDir">&mdash;</span></div></div>
   <div class="cond-cell clickable" role="button" tabindex="0" onclick="openForecast('tide')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openForecast('tide')}"><div class="cond-ico" id="condTideIco">&#127754;</div><div class="cond-body"><span class="cond-label">Next Tide</span><span class="cond-value small" id="condTide">&mdash;</span><span class="cond-sub" id="condTideSub">Auckland</span></div></div>
   <div class="cond-cell clickable" role="button" tabindex="0" onclick="openForecast('sun')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openForecast('sun')}"><div class="cond-ico amber">&#9728;&#65039;</div><div class="cond-body"><span class="cond-label">Sun</span><span class="cond-value small" id="condSun">&mdash;</span><span class="cond-sub" id="condDaylight">&mdash;</span></div></div>
+  <div class="cond-cell clickable" role="button" tabindex="0" onclick="openDoLogPage()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openDoLogPage()}" aria-label="Open DO Log"><div class="cond-ico do-log">&#128203;</div><div class="cond-body"><span class="cond-label">DO LOG</span><span class="cond-value" id="condDoCases">&mdash;</span><span class="cond-sub" id="condDoSub">Open cases</span></div></div>
   <div class="cond-updated"><span class="live-dot"></span><span>Live weather feed &middot; Open-Meteo</span><span id="condUpdated"></span></div>
 </section>
 <main class="layout">
@@ -643,6 +646,7 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.20;ba
   </div>
  </div>
 </div>
+
 <script src="https://cdn.jsdelivr.net/npm/jspdf@4.2.1/dist/jspdf.umd.min.js"></script>
 <script>
 const SUPABASE_URL='https://wgwlnutnstrfuiiunlcu.supabase.co';
@@ -672,7 +676,7 @@ window.addEventListener('resize',()=>{const svg=document.getElementById('tideGra
 const TIDE_LOCATIONS=['Auckland','Onehunga','Helensville'];let selectedTideLocation='Auckland';
 function selectTideLocation(location){if(!TIDE_LOCATIONS.includes(location))return;selectedTideLocation=location;document.getElementById('tideLocationTitle').textContent=location+' Tide View';document.querySelectorAll('.location-button[data-location]').forEach(btn=>{const active=btn.dataset.location===location;btn.classList.toggle('active',active);btn.setAttribute('aria-pressed',String(active))});loadTides()}
 function openModal(id){document.getElementById(id).classList.add('open');document.body.classList.add('modal-open')}function closeModal(id){document.getElementById(id).classList.remove('open');if(!document.querySelector('.modal-backdrop.open'))document.body.classList.remove('modal-open')}function backdropClose(event,id){if(event.target===event.currentTarget)closeModal(id)}
-function openDatePicker(){const input=document.getElementById('tideDateInput');input.value=input.value||nzDate();document.getElementById('datePickerLocation').textContent='Choose a date for '+selectedTideLocation+' tide information.';openModal('datePickerModal');setTimeout(()=>input.focus(),50)}document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.modal-backdrop.open').forEach(m=>closeModal(m.id))});
+function openDatePicker(){const input=document.getElementById('tideDateInput');input.value=input.value||nzDate();document.getElementById('datePickerLocation').textContent='Choose a date for '+selectedTideLocation+' tide information.';openModal('datePickerModal');setTimeout(()=>input.focus(),50)}document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.modal-backdrop.open').forEach(m=>{if(m.id!=='opsAssistantModal')closeModal(m.id)})});
 async function loadTides(){const el=document.getElementById('tideContent'),location=selectedTideLocation;document.getElementById('tideLocationTitle').textContent=location+' Tide View';el.innerHTML='<div class="tide-msg">Loading '+location+' tide data from Supabase bucket <strong>tide-data</strong>...</div>';try{const file=location+' '+nzYear()+'.csv',txt=await fetchFile(file);if(location!==selectedTideLocation)return;renderTides(normalizeRows(parseCSV(txt),file),file)}catch(e){console.error(e);if(location!==selectedTideLocation)return;el.innerHTML='<div class="tide-msg">'+location+' tide data를 Supabase에서 불러오지 못했습니다.<br><br>'+String(e.message||e)+'</div>'}}
 async function showSelectedDateTide(){const input=document.getElementById('tideDateInput'),date=input.value;if(!date){input.focus();return}const location=selectedTideLocation,year=date.slice(0,4),content=document.getElementById('selectedTideContent');closeModal('datePickerModal');document.getElementById('selectedTideTitle').textContent=location+' Tide View';document.getElementById('selectedTideSubtitle').textContent=date+' · 24-hour tide information';content.innerHTML='<div class="tide-msg">Loading '+location+' tide data for '+date+'...</div>';openModal('selectedTideModal');try{const file=location+' '+year+'.csv',txt=await fetchFile(file),events=normalizeRows(parseCSV(txt),file);renderSelectedDateTides(events,date)}catch(e){console.error(e);content.innerHTML='<div class="tide-msg">선택한 날짜의 tide data를 불러오지 못했습니다.<br><br>'+String(e.message||e)+'</div>'}}
 function renderSelectedDateTides(events,targetDate){const el=document.getElementById('selectedTideContent'),dayPts=events.filter(e=>e.iso===targetDate).sort((a,b)=>a.min-b.min);if(!dayPts.length){el.innerHTML='<div class="tide-msg">선택한 날짜('+targetDate+')에 해당하는 tide record를 찾지 못했습니다.</div>';return}const prev=addDaysISO(targetDate,-1),nextDay=addDaysISO(targetDate,1),graphPts=events.filter(e=>e.iso===prev||e.iso===targetDate||e.iso===nextDay).map(e=>Object.assign({},e,{plotMin:e.min+(e.iso===prev?-1440:e.iso===nextDay?1440:0),isToday:e.iso===targetDate})).sort((a,b)=>a.plotMin-b.plotMin),low=dayPts.reduce((a,b)=>a.height<b.height?a:b),high=dayPts.reduce((a,b)=>a.height>b.height?a:b),pills=dayPts.map(p=>'<div class="event-pill '+(p.type==='LW'?'low':'high')+'"><b>'+p.type+'</b>'+fmtTime(p.min)+' · '+fmtH(p.height)+'</div>').join('');el.innerHTML='<div class="tide-row"><div class="tide-card"><strong>Lowest tide</strong><div class="value">'+fmtTime(low.min)+' · '+fmtH(low.height)+'</div></div><div class="tide-card"><strong>Highest tide</strong><div class="value">'+fmtTime(high.min)+' · '+fmtH(high.height)+'</div></div></div><div class="tide-events">'+pills+'</div><div class="tide-graph-wrap"><div class="tide-y-axis" id="selectedTideYAxis"></div><div class="tide-scroll" id="selectedTideScroll"><svg id="selectedTideGraph" viewBox="0 0 900 300" preserveAspectRatio="xMidYMid meet"></svg></div></div>';drawGraph(graphPts,null,null,{svg:'selectedTideGraph',axis:'selectedTideYAxis',scroll:'selectedTideScroll'})}
@@ -1111,6 +1115,92 @@ function confirmMaydayCall(){
  if(window.visualViewport){window.visualViewport.addEventListener('resize',update,{passive:true});window.visualViewport.addEventListener('scroll',update,{passive:true})}
 })();
 
+
+const M365_COPILOT_URL='https://m365.cloud.microsoft/chat/';let legalSearchResults=[];
+function openOpsAssistant(){openModal('opsAssistantModal');showOpsTab('operations');buildOpsBrief();setTimeout(()=>document.getElementById('opsSearch').focus(),50)}
+function showOpsTab(name){const legal=name==='legal';document.getElementById('opsTab').hidden=legal;document.getElementById('legalTab').hidden=!legal;document.getElementById('opsTabBtn').classList.toggle('active',!legal);document.getElementById('legalTabBtn').classList.toggle('active',legal);setTimeout(()=>document.getElementById(legal?'legalQuery':'opsSearch').focus(),40)}
+function plain(el){return(el?.innerText||el?.textContent||'').replace(/\s+/g,' ').trim()}
+let operationsSearchIndex=[];
+function rebuildOpsIndex(){
+ const items=[];
+ document.querySelectorAll('.tools-panel a.card').forEach(a=>{const title=plain(a.querySelector('h2'))||'Tool',extra=/tier 2/i.test(title)?' pollution oil spill marine pollution response contingency plan incident hotline ':'';items.push({type:'Tool',title,detail:a.href,keywords:plain(a)+extra,go:()=>window.open(a.href,'_blank','noopener')})});
+ document.querySelectorAll('#todayRosterContent .roster-chip').forEach(x=>items.push({type:'Today roster',title:plain(x),detail:document.getElementById('todayRosterDate')?.textContent||'',keywords:'roster duty officer crew today '+plain(x),go:()=>openRosterManagement()}));
+ if(Array.isArray(contactRows))contactRows.forEach((r,i)=>{const text=(r.cells||[]).filter(Boolean).join(' · ');if(text)items.push({type:'Contact',title:r.cells[0]||'Contact',detail:r.cells.slice(1).filter(Boolean).join(' · '),keywords:text,go:()=>{openContactList();setTimeout(()=>document.querySelector('#contactTableBody tr[data-row="'+i+'"]')?.scrollIntoView({behavior:'smooth',block:'center'}),350)}})});
+ document.querySelectorAll('.conditions-bar .cond-cell').forEach(x=>items.push({type:'Live condition',title:plain(x.querySelector('.cond-label'))||'Condition',detail:[plain(x.querySelector('.cond-value')),plain(x.querySelector('.cond-sub'))].filter(Boolean).join(' · '),keywords:plain(x),go:()=>x.click()}));
+ operationsSearchIndex=items;return items;
+}
+function opsSearchTokens(q){const aliases={pollution:['pollution','spill','oil','environment','environmental','hotline','response','tier'],spill:['pollution','oil','response','tier'],mooring:['moorings','moored'],vessel:['boat','craft'],tide:['onehunga','auckland','helensville']};const raw=String(q||'').toLowerCase().replace(/[^a-z0-9@.]+/g,' ').trim().split(/\s+/).filter(Boolean);return[...new Set(raw.flatMap(x=>aliases[x]||[x]))]}
+function runOpsSearch(){
+ const q=document.getElementById('opsSearch').value.trim(),host=document.getElementById('opsResults');
+ if(!q){host.innerHTML='<div class="legal-empty">Enter a query to search tools, contacts, today\'s roster and live condition cards.</div>';return}
+ const tokens=opsSearchTokens(q),ranked=rebuildOpsIndex().map((x,i)=>{const title=x.title.toLowerCase(),hay=(x.title+' '+x.detail+' '+x.keywords+' '+x.type).toLowerCase();let score=0;tokens.forEach(t=>{if(title.includes(t))score+=5;if(hay.includes(t))score+=2});if(hay.includes(q.toLowerCase()))score+=6;return{x,i,score}}).filter(v=>v.score>0).sort((a,b)=>b.score-a.score).slice(0,15);
+ if(!ranked.length){host.innerHTML='<div class="legal-empty">No dashboard match found. Try a broader term.</div>';return}
+ host.innerHTML=ranked.map((v,i)=>'<button class="ops-result" type="button" data-result="'+i+'"><b>'+esc(v.x.title)+'</b><span>'+esc(v.x.type+(v.x.detail?' · '+v.x.detail:''))+'</span></button>').join('');
+ host.querySelectorAll('[data-result]').forEach(b=>b.onclick=()=>ranked[Number(b.dataset.result)]?.x.go());
+}
+function opsQuickSearch(q){const input=document.getElementById('opsSearch');input.value=q;runOpsSearch();input.focus()}
+function firstDoValue(row,names){for(const n of names){const k=Object.keys(row||{}).find(x=>x.toLowerCase()===n);if(k&&row[k]!=null&&String(row[k]).trim()!=='')return row[k]}return null}
+function isOpenDoCase(row){
+ const closed=firstDoValue(row,['closed','is_closed','resolved','is_resolved','completed','is_completed']);
+ if(closed===true||String(closed).toLowerCase()==='true')return false;
+ const openFlag=firstDoValue(row,['open','is_open','active','is_active']);
+ if(openFlag===true||String(openFlag).toLowerCase()==='true')return true;
+ const status=String(firstDoValue(row,['status','case_status','incident_status','state'])||'').trim().toLowerCase();
+ if(status)return !['closed','resolved','completed','cancelled','canceled','archived','finalised','finalized'].includes(status);
+ const closedAt=firstDoValue(row,['closed_at','resolved_at','completed_at']);
+ return !closedAt;
+}
+function doCaseLine(row,index){
+ const ref=firstDoValue(row,['reference','reference_no','reference_number','case_number','case_no','incident_number','incident_no','log_number','id']);
+ const title=firstDoValue(row,['title','subject','incident_title','summary','description','details','event']);
+ const location=firstDoValue(row,['location','place','area','site']);
+ const opened=firstDoValue(row,['occurred_at','incident_date','event_date','date','created_at','opened_at']);
+ let line='- '+(ref?'['+String(ref)+'] ':'')+(title?String(title).replace(/\s+/g,' ').trim().slice(0,150):'Open DO Log case '+(index+1));
+ if(location)line+=' · '+String(location).replace(/\s+/g,' ').trim();
+ if(opened){const d=new Date(opened);line+=' · '+(isNaN(d)?String(opened):new Intl.DateTimeFormat('en-NZ',{timeZone:'Pacific/Auckland',dateStyle:'medium'}).format(d))}
+ return line;
+}
+async function fetchOpenDoCases(){
+ try{const rows=await rest('do_logs?select=*&order=created_at.desc&limit=500');return{available:true,rows:(rows||[]).filter(isOpenDoCase)}}
+ catch(e){
+  try{const rows=await rest('do_logs?select=*&limit=500');return{available:true,rows:(rows||[]).filter(isOpenDoCase)}}
+  catch(e2){return{available:false,rows:[],error:e2?.message||String(e2)}}
+ }
+}
+function openDoLogPage(){window.open('https://gooktolove-debug.github.io/HM-DO/','_blank','noopener')}
+function renderDoLogCondition(data){const v=document.getElementById('condDoCases'),sub=document.getElementById('condDoSub');if(!v||!sub)return;if(!data.available){v.textContent='—';sub.textContent='Unavailable';return}v.textContent=String(data.rows.length);sub.textContent=data.rows.length===1?'Open case':'Open cases'}
+async function refreshDoLogCondition(){renderDoLogCondition(await fetchOpenDoCases())}
+
+function baseBriefLines(){
+ const now=new Intl.DateTimeFormat('en-NZ',{timeZone:'Pacific/Auckland',dateStyle:'full',timeStyle:'short'}).format(new Date());
+ return ['AUCKLAND HARBOUR OPERATIONS BRIEF','Generated: '+now,'','TODAY\'S ROSTER','- '+(plain(document.getElementById('todayRosterContent'))||'Unavailable'),'','CURRENT CONDITIONS',...Array.from(document.querySelectorAll('.cond-cell')).map(x=>'- '+plain(x))];
+}
+async function buildOpsBrief(){
+ const box=document.getElementById('opsBrief'),status=document.getElementById('opsStatus');
+ box.textContent='Loading current dashboard information and DO Log open cases...';status.textContent='Refreshing briefing...';
+ const lines=baseBriefLines(),doData=await fetchOpenDoCases();
+ lines.push('','DO LOG OPEN CASES');
+ if(!doData.available)lines.push('- DO Log data unavailable from this page. Open DO Log to verify current cases.');
+ else if(!doData.rows.length)lines.push('- No open cases.');
+ else lines.push('- '+doData.rows.length+' open case'+(doData.rows.length===1?'':'s')+' requiring follow-up.');
+ box.textContent=lines.join('\n');status.textContent='';
+}
+async function copySafe(t){try{await navigator.clipboard.writeText(t)}catch(e){const x=document.createElement('textarea');x.value=t;document.body.appendChild(x);x.select();document.execCommand('copy');x.remove()}}
+async function copyOpsBrief(){await copySafe(document.getElementById('opsBrief').textContent);document.getElementById('opsStatus').textContent='Copied.'}async function askCopilotBrief(){if(document.getElementById('opsBrief').textContent.startsWith('Loading current'))await buildOpsBrief();await copySafe('Draft a concise maritime operations handover using only these facts. Do not invent information.\n\n'+document.getElementById('opsBrief').textContent);document.getElementById('opsStatus').textContent='Prompt copied. Paste it into Copilot.';window.open(M365_COPILOT_URL,'_blank','noopener')}
+function legalTerms(q){const aliases={speed:['speeding','knot','knots','exceed','exceeding','fast'],speeding:['speed','knot','knots','exceed','exceeding','fast'],pfd:['lifejacket','life jacket','personal flotation device','personal floatation device','buoyancy aid'],lifejacket:['pfd','life jacket','personal flotation device','personal floatation device','buoyancy aid'],lifejackets:['pfd','lifejacket','life jacket','personal flotation device'],boat:['vessel','craft'],vessel:['boat','craft'],jetski:['personal watercraft','personal water craft','pwc'],pwc:['jetski','personal watercraft','personal water craft'],near:['within','distance','proximity','close'],close:['near','within','distance','proximity'],wake:['wash'],wash:['wake'],pollution:['discharge','oil','spill'],collision:['collide','close quarters','risk of collision'],lookout:['look-out','look out','watch'],mooring:['moored','moor'],anchor:['anchoring','anchored'],unseaworthy:['seaworthy','unsafe vessel'],bunkering:['bunker','fuel transfer']};const raw=String(q||'').toLowerCase().replace(/[^a-z0-9.]+/g,' ').split(/\s+/).filter(x=>x.length>1);return[...new Set(raw.flatMap(x=>[x,...(aliases[x]||[])]))]}
+async function fetchLegal(date){const p='legal_provisions?select=id,provision_ref,heading,summary,keywords,provision_text,elements,fee_amount,fee_type,source_page,status,effective_from,effective_to,instrument:legal_instruments(id,title,instrument_type,hierarchy_rank,status,effective_from,effective_to,source_url,storage_path,version_label,last_verified)&status=eq.current&limit=2000';const rows=await rest(p);return(rows||[]).filter(r=>r.instrument?.status==='current'&&(!date||!r.effective_from||r.effective_from<=date)&&(!date||!r.effective_to||r.effective_to>=date))}
+function sourceUrl(r){return r.instrument?.source_url||(r.instrument?.storage_path?SUPABASE_URL+'/storage/v1/object/public/legal-documents/'+r.instrument.storage_path.split('/').map(encodeURIComponent).join('/'):'')}
+function scoreLaw(r,terms,speed,distance){const text=[r.instrument?.title,r.provision_ref,r.heading,r.summary,r.provision_text,(r.keywords||[]).join(' '),JSON.stringify(r.elements||{})].join(' ').toLowerCase();let score=0,h=[];terms.forEach(t=>{if(text.includes(t)){score+=t.includes(' ')?5:2;h.push(t)}});if(speed>5&&/(5\s*-?\s*knot|speed|exceed)/i.test(text)){score+=8;h.push('speed exceeds 5 knots')}if(distance&&/(within|distance|metre|another vessel)/i.test(text)){score+=4;h.push('distance supplied')}return{score,h:[...new Set(h)]}}
+function renderLegal(a){const h=document.getElementById('legalResults');if(!a.length){h.innerHTML='<div class="legal-empty">No indexed provision matched. This does not mean no provision applies. Check the corpus and try broader wording.</div>';return}h.innerHTML=a.map((x,i)=>{const r=x.r,u=sourceUrl(r),fee=r.fee_amount==null?'':'<div class="legal-fee">'+esc(r.fee_type||'Possible infringement fee')+': $'+Number(r.fee_amount).toLocaleString('en-NZ')+'</div>';return'<article class="legal-result"><h4>'+esc(r.instrument?.title||'Instrument')+'</h4><div class="legal-ref">'+esc(r.provision_ref)+(r.heading?' · '+esc(r.heading):'')+'</div><div class="legal-meta">'+esc(r.instrument?.instrument_type||'Instrument')+' · Status '+esc(r.status||'verify')+(r.instrument?.last_verified?' · Verified '+esc(r.instrument.last_verified):'')+'</div>'+(r.summary?'<div class="legal-why">'+esc(r.summary)+'</div>':'')+'<div class="legal-why"><b>Why surfaced:</b> '+esc(x.h.join(' · '))+'</div>'+fee+'<div class="ops-actions"><button class="button" '+(u?'onclick="window.open(sourceUrl(legalSearchResults['+i+'].r),\'_blank\',\'noopener\')"':'disabled')+'>View source</button><button class="button" onclick="copyLegal('+i+')">Copy assessment</button></div></article>'}).join('')+'<div class="ops-actions"><button class="button location-button active" onclick="askCopilotLegal()">Ask Copilot to draft assessment</button></div>'}
+async function runLegalSearch(){const q=document.getElementById('legalQuery').value.trim(),st=document.getElementById('legalStatus');if(!q){st.textContent='Describe observed conduct first.';return}st.textContent='Searching verified legal index...';try{const rows=await fetchLegal(''),terms=legalTerms(q);legalSearchResults=rows.map(r=>({r,...scoreLaw(r,terms,0,0)})).filter(x=>x.score>=2).sort((a,b)=>b.score-a.score).slice(0,12);renderLegal(legalSearchResults);st.textContent=legalSearchResults.length?'':'No indexed provision matched.'}catch(e){st.textContent='Legal index unavailable.';document.getElementById('legalResults').innerHTML='<div class="legal-empty">'+esc(e.message||e)+'</div>'}}
+function clearLegalSearch(){['legalQuery'].forEach(x=>{const el=document.getElementById(x);if(el)el.value=''});document.getElementById('legalResults').innerHTML='<div class="legal-empty">Enter observed conduct.</div>'}
+function lawText(i){const x=legalSearchResults[i],r=x.r;return[r.instrument?.title,r.provision_ref+' '+(r.heading||''),r.summary||'',r.fee_amount!=null?(r.fee_type||'Possible infringement fee')+': $'+r.fee_amount:'','Why surfaced: '+x.h.join(', '),'Source: '+(sourceUrl(r)||'not configured'),'Decision-support only. Verify current law, jurisdiction, exceptions and evidence.'].filter(Boolean).join('\n')}
+async function copyLegal(i){await copySafe(lawText(i));document.getElementById('legalStatus').textContent='Assessment copied.'}async function askCopilotLegal(){const q=document.getElementById('legalQuery').value,date='',c=legalSearchResults.map((x,i)=>lawText(i)).join('\n\n---\n\n');const p='Prepare a preliminary internal legal issue-spotting note using only the candidate records below. Do not conclude an offence occurred. Separate potentially applicable provisions, elements requiring proof, missing facts, exceptions, possible infringement fees and source checks. Do not aggregate fees.\n\nObserved conduct: '+q+'\nOccurrence date: '+date+'\n\nCandidate records:\n'+c;await copySafe(p);document.getElementById('legalStatus').textContent='Prompt copied. Paste it into Copilot.';window.open(M365_COPILOT_URL,'_blank','noopener')}
+
+document.getElementById('opsSearch')?.addEventListener('keydown',e=>{if(e.key==='Enter')runOpsSearch()});
+document.getElementById('legalQuery')?.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='Enter')runLegalSearch()});
+
+refreshDoLogCondition();setInterval(refreshDoLogCondition,300000);
 </script>
 </body>
 </html>
