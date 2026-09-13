@@ -512,14 +512,27 @@ async function copyLegal(i){await copySafe(lawText(i));document.getElementById('
 document.getElementById('opsSearch')?.addEventListener('keydown',e=>{if(e.key==='Enter')runOpsSearch()});
 document.getElementById('legalQuery')?.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='Enter')runLegalSearch()});
 
-const WRECK_SUPABASE_URL='https://hjrcnsuzrztaiwnttxnr.supabase.co';
-const WRECK_SUPABASE_KEY='sb_publishable_8vscwHQ7y50eUj-RywvmLQ_JGpSp2HE';
+const WRECK_SUPABASE_URL=SUPABASE_URL;
+const WRECK_SUPABASE_KEY=SUPABASE_KEY;
+const WRECK_TABLE='wreck_abandoned_vessels';
 function openWreckPage(){window.open('https://gooktolove-debug.github.io/HM-wreck-abandoned/','_blank','noopener')}
 async function fetchWreckAbandonedCounts(){
- const response=await fetch(WRECK_SUPABASE_URL+'/rest/v1/vessels?select=type,deleted_at',{headers:{apikey:WRECK_SUPABASE_KEY,Authorization:'Bearer '+WRECK_SUPABASE_KEY}});
+ const query=WRECK_TABLE+'?select=type&deleted_at=is.null&limit=1000';
+ const response=await fetch(WRECK_SUPABASE_URL+'/rest/v1/'+query,{
+  cache:'no-store',
+  headers:{
+   apikey:WRECK_SUPABASE_KEY,
+   Authorization:'Bearer '+WRECK_SUPABASE_KEY,
+   Accept:'application/json'
+  }
+ });
  if(!response.ok)throw new Error((await response.text())||('HTTP '+response.status));
- const active=(await response.json()).filter(row=>!row.deleted_at);
- return{available:true,wreck:active.filter(row=>row.type==='Wreck').length,abandoned:active.filter(row=>row.type==='Abandoned').length};
+ const active=await response.json();
+ return{
+  available:true,
+  wreck:active.filter(row=>row.type==='Wreck').length,
+  abandoned:active.filter(row=>row.type==='Abandoned').length
+ };
 }
 function renderWreckAbandonedCounts(data){const w=document.getElementById('condWreckCount'),a=document.getElementById('condAbandonedCount');if(!w||!a)return;if(!data.available){w.textContent='—';a.textContent='—';return}w.textContent=String(data.wreck);a.textContent=String(data.abandoned)}
 async function refreshWreckAbandonedCounts(){try{renderWreckAbandonedCounts(await fetchWreckAbandonedCounts())}catch(e){console.error('Wreck/Abandoned counts',e);renderWreckAbandonedCounts({available:false})}}
