@@ -2,8 +2,10 @@ const SUPABASE_URL='https://wgwlnutnstrfuiiunlcu.supabase.co';
 const SUPABASE_KEY='sb_publishable_iC7kbinoy61_5eQCnrV25Q_OioA7Y1x';
 const TIDE_BUCKET='tide-data';
 const PUBLIC_BASE=SUPABASE_URL+'/storage/v1/object/public/'+TIDE_BUCKET+'/';
-function nzDate(d=new Date()){return new Intl.DateTimeFormat('en-CA',{timeZone:'Pacific/Auckland',year:'numeric',month:'2-digit',day:'2-digit'}).format(d)}
-function addDaysISO(iso,days){const d=new Date(iso+'T12:00:00+12:00');d.setDate(d.getDate()+days);return nzDate(d)}
+const AUCKLAND_TIME_ZONE='Pacific/Auckland';
+function nzDate(d=new Date()){return new Intl.DateTimeFormat('en-CA',{timeZone:AUCKLAND_TIME_ZONE,year:'numeric',month:'2-digit',day:'2-digit'}).format(d)}
+// Date-only arithmetic must not use a fixed Auckland UTC offset. Work in UTC calendar space.
+function addDaysISO(iso,days){const [y,m,d]=iso.split('-').map(Number),x=new Date(Date.UTC(y,m-1,d));x.setUTCDate(x.getUTCDate()+days);return x.toISOString().slice(0,10)}
 function nzYear(d=new Date()){return new Intl.DateTimeFormat('en-CA',{timeZone:'Pacific/Auckland',year:'numeric'}).format(d)}
 function nzMin(d=new Date()){const s=new Intl.DateTimeFormat('en-NZ',{timeZone:'Pacific/Auckland',hour:'2-digit',minute:'2-digit',hour12:false}).format(d).split(':');return Number(s[0])*60+Number(s[1])}
 function fmtTime(m){m=((Math.round(m)%1440)+1440)%1440;return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0')}
@@ -11,9 +13,21 @@ function fmtH(h){return (Math.round(Number(h)*10)/10).toFixed(1)+' m'}
 function publicUrl(path){return PUBLIC_BASE+path.split('/').map(encodeURIComponent).join('/')}
 async function fetchFile(path){const r=await fetch(publicUrl(path),{headers:{apikey:SUPABASE_KEY}});if(!r.ok)throw new Error(path+' '+r.status);return await r.text()}
 function parseCSV(text){const lines=text.replace(/^\uFEFF/,'').split(/\r?\n/).map(x=>x.trim()).filter(Boolean);const split=line=>{let out=[],s='',q=false;for(let i=0;i<line.length;i++){const ch=line[i];if(ch==='"'){if(q&&line[i+1]==='"'){s+='"';i++}else q=!q}else if(ch===','&&!q){out.push(s.trim());s=''}else{s+=ch}}out.push(s.trim());return out};return lines.map(split)}
-function makeDate(y,mo,da,h,mi){return new Date(`${y}-${String(mo).padStart(2,'0')}-${String(da).padStart(2,'0')}T${String(h).padStart(2,'0')}:${String(mi).padStart(2,'0')}:00+12:00`)}
+// Convert a wall-clock time in Pacific/Auckland to an absolute Date.
+// The tide CSV already contains local Standard or Daylight Time, so no extra hour is added.
+function aucklandOffsetMs(instant){
+ const parts=new Intl.DateTimeFormat('en-CA',{timeZone:AUCKLAND_TIME_ZONE,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'}).formatToParts(instant);
+ const p=Object.fromEntries(parts.filter(x=>x.type!=='literal').map(x=>[x.type,Number(x.value)]));
+ return Date.UTC(p.year,p.month-1,p.day,p.hour,p.minute,p.second)-instant.getTime();
+}
+function makeDate(y,mo,da,h,mi){
+ const wallUtc=Date.UTC(y,mo-1,da,h,mi,0);
+ let instant=new Date(wallUtc);
+ for(let i=0;i<3;i++)instant=new Date(wallUtc-aucklandOffsetMs(instant));
+ return instant;
+}
 function parseTime(s){const m=String(s||'').trim().match(/^(\d{1,2}):(\d{2})$/);return m?{h:Number(m[1]),mi:Number(m[2])}:null}
-function normalizeRows(rows,path){const events=[];for(const row of rows){const day=Number(row[0]),month=Number(row[2]),year=Number(row[3]);if(!day||!month||!year)continue;for(let i=4;i<row.length-1;i+=2){const time=String(row[i]||'').trim();const height=parseFloat(String(row[i+1]||'').replace(/[^0-9.\-]/g,''));if(!time||!isFinite(height))continue;const t=parseTime(time);if(!t)continue;const d=makeDate(year,month,day,t.h,t.mi);events.push({date:d,iso:nzDate(d),min:nzMin(d),height,type:height>=2.0?'HW':'LW',source:path})}}return events.sort((a,b)=>a.date-b.date)}
+function normalizeRows(rows,path){const events=[];for(const row of rows){const day=Number(row[0]),month=Number(row[2]),year=Number(row[3]);if(!day||!month||!year)continue;for(let i=4;i<row.length-1;i+=2){const time=String(row[i]||'').trim();const height=parseFloat(String(row[i+1]||'').replace(/[^0-9.\-]/g,''));if(!time||!isFinite(height))continue;const t=parseTime(time);if(!t)continue;const d=makeDate(year,month,day,t.h,t.mi),iso=`${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`,min=t.h*60+t.mi;events.push({date:d,iso,min,height,type:height>=2.0?'HW':'LW',source:path})}}return events.sort((a,b)=>a.date-b.date)}
 function pointMin(p){return p.plotMin!=null?p.plotMin:p.min}
 function interp(points,x){if(!points.length)return null;points=points.slice().sort((a,b)=>pointMin(a)-pointMin(b));if(x<=pointMin(points[0]))return points[0].height;if(x>=pointMin(points[points.length-1]))return points[points.length-1].height;for(let i=0;i<points.length-1;i++){const a=points[i],b=points[i+1],am=pointMin(a),bm=pointMin(b);if(x>=am&&x<=bm){const t=(x-am)/(bm-am);const ease=(1-Math.cos(Math.PI*t))/2;return a.height+(b.height-a.height)*ease}}return null}
 function renderTides(events,path){const el=document.getElementById('tideContent'),today=nzDate();document.getElementById('tideDateLabel').textContent='Today · '+today;const todayPts=events.filter(e=>e.iso===today).sort((a,b)=>a.min-b.min);if(!todayPts.length){el.innerHTML=`<div class="tide-msg">오늘 날짜(${today})에 해당하는 tide record를 찾지 못했습니다.</div>`;return}const prev=addDaysISO(today,-1),nextDay=addDaysISO(today,1);const graphPts=events.filter(e=>e.iso===prev||e.iso===today||e.iso===nextDay).map(e=>Object.assign({},e,{plotMin:e.min+(e.iso===prev?-1440:e.iso===nextDay?1440:0),isToday:e.iso===today})).sort((a,b)=>a.plotMin-b.plotMin);const nowM=nzMin(),nowH=interp(graphPts,nowM),next=todayPts.find(p=>p.min>=nowM);const pills=todayPts.map(p=>`<div class="event-pill ${p.type==='LW'?'low':'high'}"><b>${p.type}</b>${fmtTime(p.min)} · ${fmtH(p.height)}</div>`).join('');el.innerHTML=`<div class="tide-row"><div class="tide-card"><strong>Current estimate</strong><div class="value">${nowH==null?'--':fmtH(nowH)}</div></div><div class="tide-card"><strong>Next tide</strong><div class="value">${next?`${next.type} ${fmtTime(next.min)} · ${fmtH(next.height)}`:'--'}</div></div></div><div class="tide-events">${pills}</div><div class="tide-graph-wrap"><div class="tide-y-axis" id="tideYAxis"></div><div class="tide-scroll" id="tideScroll"><svg id="tideGraph" viewBox="0 0 900 300" preserveAspectRatio="xMidYMid meet"></svg></div></div>`;drawGraph(graphPts,nowM,nowH)}
