@@ -222,19 +222,25 @@ function fixedDutyForDate(date){
  return member.id;
 }
 async function enforceDutyRotation(days,data){
- const rotationDays=days.filter(d=>d>=DO_ROTATION_START);
- if(!rotationDays.length)return data;
- const expected=new Map(rotationDays.map(d=>[d,fixedDutyForDate(d)]));
- const current=data.filter(a=>a.assignment_role==='duty_officer'&&a.roster_date>=DO_ROTATION_START);
- const currentByDate=new Map();
- current.forEach(a=>{if(!currentByDate.has(a.roster_date))currentByDate.set(a.roster_date,[]);currentByDate.get(a.roster_date).push(a)});
- const needsRepair=rotationDays.some(d=>{const rows=currentByDate.get(d)||[];return rows.length!==1||rows[0].member_id!==expected.get(d)});
- if(!needsRepair)return data;
- const rangeEnd=rotationDays[rotationDays.length-1];
- await rest('roster_assignments?roster_date=gte.'+DO_ROTATION_START+'&roster_date=lte.'+rangeEnd+'&assignment_role=eq.duty_officer',{method:'DELETE',headers:{Prefer:'return=minimal'}});
- const rows=rotationDays.map(d=>({roster_date:d,member_id:expected.get(d),team_no:null,assignment_role:'duty_officer',is_present:true,absence_reason:null,note:null,source:'fixed_rotation'}));
- for(let i=0;i<rows.length;i+=100)await rest('roster_assignments',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify(rows.slice(i,i+100))});
- return rest('roster_assignments?select=id,roster_date,team_no,assignment_role,is_present,absence_reason,note,source,member_id&roster_date=gte.'+days[0]+'&roster_date=lte.'+days[days.length-1]+'&order=roster_date.asc&limit=10000');
+ // Use the fixed rotation only as a display fallback for dates with no saved Duty Officer.
+ // Never delete or overwrite a manually saved/inline Duty Officer assignment while loading.
+ const out=(data||[]).slice();
+ const savedDates=new Set(out.filter(a=>a.assignment_role==='duty_officer').map(a=>a.roster_date));
+ for(const date of days){
+  if(date<DO_ROTATION_START||savedDates.has(date))continue;
+  out.push({
+   id:'rotation-preview-'+date,
+   roster_date:date,
+   member_id:fixedDutyForDate(date),
+   team_no:null,
+   assignment_role:'duty_officer',
+   is_present:true,
+   absence_reason:null,
+   note:null,
+   source:'fixed_rotation_preview'
+  });
+ }
+ return out;
 }
 async function generatorFetch(path,options={},timeoutMs=12000){
  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),timeoutMs);
