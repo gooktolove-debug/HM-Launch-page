@@ -193,19 +193,15 @@ const BLOCK_PATTERNS={
     2:[1,1,1,1,0,0,1,1,1,1,0,0,0,0]
   },
   three:{
-    // Six-week cycle aligned to Monday. Each team works 23 x 10-hour shifts per cycle.
-    // Every rolling 14-day window is capped at 8 shifts (80 hours).
-    // Weekdays permit 1, 2 or 3 teams, with 2+ teams preferred wherever the 80-hour cap allows.
-    // Weekends always have at least two teams; this cycle uses exactly two to preserve Sunday roster-off.
-    // Sunday roster-off rotates Crew 1 -> Crew 2 -> Crew 3.
-    // Note: under the rolling 14-day/80-hour cap, avoiding 3-team weekdays maximises the number of days with 2+ teams;
-    // every added 3-team day would force an additional 1-team day elsewhere in the same workload envelope.
-    1:[1,0,1,1,0,1,0, 0,1,1,0,0,1,1, 0,1,1,0,1,0,1, 0,1,1,0,0,1,0, 1,1,1,0,0,1,1, 0,1,0,0,0,1,1],
-    2:[0,1,0,1,1,0,1, 1,0,1,0,0,1,0, 1,1,0,1,0,1,1, 1,0,0,1,0,0,1, 1,1,0,0,1,1,0, 1,0,1,1,0,0,1],
-    3:[0,1,1,0,0,1,1, 0,1,0,1,1,0,1, 0,0,1,1,0,1,0, 1,1,0,0,1,1,1, 0,0,1,1,0,0,1, 1,1,0,0,1,1,0]
+    // 14-day repeating pattern, anchored to a Monday.
+    // Each team works exactly 8 x 10-hour shifts in every rolling 14-day window.
+    // Every Saturday and Sunday has exactly two teams rostered.
+    1:[1,1,0,0,1,1,1, 0,0,1,1,1,0,0],
+    2:[0,0,1,1,1,1,0, 0,0,0,1,1,1,1],
+    3:[1,1,0,0,0,0,1, 1,1,1,0,0,1,1]
   }
 };
-const THREE_TEAM_PATTERN_ANCHOR='2026-10-19'; // Monday
+const THREE_TEAM_PATTERN_ANCHOR='2026-10-26'; // Monday = day 1 of the approved cycle.
 function blockTeamIsOn(mode,team,dayIndex,date){
  const pattern=BLOCK_PATTERNS[mode][team];
  if(mode==='three'){
