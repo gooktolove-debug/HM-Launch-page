@@ -193,14 +193,26 @@ const BLOCK_PATTERNS={
     2:[1,1,1,1,0,0,1,1,1,1,0,0,0,0]
   },
   three:{
-    1:[0,0,1,1,1,0,0,1,1,1,0,0,1,1],
-    2:[0,0,0,0,1,1,1,0,0,1,1,1,0,0,1,1,1,0,0,1,1,1,1,0,0,0,1,1],
-    3:[1,1,1,0,0,1,1,1,1,0,0,0,1,1,0,0,0,1,1,1,1,0,0,1,1,1,0,0]
+    // Six-week cycle aligned to Monday. Each team works 23 x 10-hour shifts per cycle.
+    // Every rolling 14-day window is capped at 8 shifts (80 hours).
+    // Weekdays permit 1, 2 or 3 teams, with 2+ teams preferred wherever the 80-hour cap allows.
+    // Weekends always have at least two teams; this cycle uses exactly two to preserve Sunday roster-off.
+    // Sunday roster-off rotates Crew 1 -> Crew 2 -> Crew 3.
+    // Note: under the rolling 14-day/80-hour cap, avoiding 3-team weekdays maximises the number of days with 2+ teams;
+    // every added 3-team day would force an additional 1-team day elsewhere in the same workload envelope.
+    1:[1,0,1,1,0,1,0, 0,1,1,0,0,1,1, 0,1,1,0,1,0,1, 0,1,1,0,0,1,0, 1,1,1,0,0,1,1, 0,1,0,0,0,1,1],
+    2:[0,1,0,1,1,0,1, 1,0,1,0,0,1,0, 1,1,0,1,0,1,1, 1,0,0,1,0,0,1, 1,1,0,0,1,1,0, 1,0,1,1,0,0,1],
+    3:[0,1,1,0,0,1,1, 0,1,0,1,1,0,1, 0,0,1,1,0,1,0, 1,1,0,0,1,1,1, 0,0,1,1,0,0,1, 1,1,0,0,1,1,0]
   }
 };
-function blockTeamIsOn(mode,team,dayIndex){
+const THREE_TEAM_PATTERN_ANCHOR='2026-10-19'; // Monday
+function blockTeamIsOn(mode,team,dayIndex,date){
  const pattern=BLOCK_PATTERNS[mode][team];
- if(mode==='two'&&team===2){if(dayIndex===0)return false;return pattern[(dayIndex-1)%pattern.length]===1}
+ if(mode==='three'){
+  const cycleIndex=((daysBetween(THREE_TEAM_PATTERN_ANCHOR,date)%pattern.length)+pattern.length)%pattern.length;
+  return pattern[cycleIndex]===1;
+ }
+ if(team===2){if(dayIndex===0)return false;return pattern[(dayIndex-1)%pattern.length]===1}
  return pattern[dayIndex%pattern.length]===1;
 }
 function timedRest(path,options={},ms=15000){return Promise.race([rest(path,options),new Promise((_,reject)=>setTimeout(()=>reject(new Error('Supabase request timed out after '+Math.round(ms/1000)+' seconds.')),ms))])}
@@ -246,7 +258,7 @@ async function generatorFetch(path,options={},timeoutMs=12000){
  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),timeoutMs);
  try{return await rest(path,{...options,signal:controller.signal})}catch(e){if(e.name==='AbortError')throw new Error('Supabase request timed out. Please try again.');throw e}finally{clearTimeout(timer)}
 }
-async function generateBlockSchedule(){if(!validateBlockDates())return;const start=document.getElementById('blockStart').value,end=document.getElementById('blockEnd').value,crew3=[document.getElementById('blockTeam3Slot1').value,document.getElementById('blockTeam3Slot2').value].filter(Boolean),count=crew3.length===2?3:2,mode=count===3?'three':'two',teams=selectedBlockTeams(count),status=document.getElementById('blockStatus'),btn=document.getElementById('blockGenerateBtn');if(crew3.length===1){status.textContent='Select both Crew 3 members, or leave both blank.';return}for(let t=1;t<=count;t++)if(teams[t].length!==2){status.textContent='Select 2 fixed members for Crew '+t+'.';return}const all=Object.values(teams).flat();if(new Set(all).size!==all.length){status.textContent='Each crew member can only be assigned once.';return}btn.disabled=true;btn.textContent='Building...';try{const dates=[];for(let d=start;d<=end;d=addISO(d,1))dates.push(d);overviewDays=[...new Set([...overviewDays,...dates])].sort();overviewData=overviewData.filter(a=>!(a.assignment_role==='crew'&&a.roster_date>=start&&a.roster_date<=end));const selectedIds=new Set(all),unselectedCrew=rosterMembers.filter(m=>m.active&&m.role!=='duty_officer'&&!selectedIds.has(m.id));dates.forEach((d,dayIndex)=>{for(let t=1;t<=count;t++){const isOn=blockTeamIsOn(mode,t,dayIndex);for(const member_id of teams[t])overviewData.push({roster_date:d,member_id,team_no:t,assignment_role:'crew',is_present:isOn,absence_reason:null,note:null,source:isOn?'block_on':'block_off'})}for(const member of unselectedCrew)overviewData.push({roster_date:d,member_id:member.id,team_no:member.default_team??null,assignment_role:'crew',is_present:false,absence_reason:null,note:null,source:'block_off'})});markRosterDirty();closeModal('blockScheduleModal');openModal('rosterManagementModal');renderRosterOverview(overviewDays,overviewData)}catch(e){status.textContent='Generation failed: '+(e.message||e);status.style.color='#b42318'}finally{btn.disabled=false;btn.textContent='Generate'}}
+async function generateBlockSchedule(){if(!validateBlockDates())return;const start=document.getElementById('blockStart').value,end=document.getElementById('blockEnd').value,crew3=[document.getElementById('blockTeam3Slot1').value,document.getElementById('blockTeam3Slot2').value].filter(Boolean),count=crew3.length===2?3:2,mode=count===3?'three':'two',teams=selectedBlockTeams(count),status=document.getElementById('blockStatus'),btn=document.getElementById('blockGenerateBtn');if(crew3.length===1){status.textContent='Select both Crew 3 members, or leave both blank.';return}for(let t=1;t<=count;t++)if(teams[t].length!==2){status.textContent='Select 2 fixed members for Crew '+t+'.';return}const all=Object.values(teams).flat();if(new Set(all).size!==all.length){status.textContent='Each crew member can only be assigned once.';return}btn.disabled=true;btn.textContent='Building...';try{const dates=[];for(let d=start;d<=end;d=addISO(d,1))dates.push(d);overviewDays=[...new Set([...overviewDays,...dates])].sort();overviewData=overviewData.filter(a=>!(a.assignment_role==='crew'&&a.roster_date>=start&&a.roster_date<=end));const selectedIds=new Set(all),unselectedCrew=rosterMembers.filter(m=>m.active&&m.role!=='duty_officer'&&!selectedIds.has(m.id));dates.forEach((d,dayIndex)=>{for(let t=1;t<=count;t++){const isOn=blockTeamIsOn(mode,t,dayIndex,d);for(const member_id of teams[t])overviewData.push({roster_date:d,member_id,team_no:t,assignment_role:'crew',is_present:isOn,absence_reason:null,note:null,source:isOn?'block_on':'block_off'})}for(const member of unselectedCrew)overviewData.push({roster_date:d,member_id:member.id,team_no:member.default_team??null,assignment_role:'crew',is_present:false,absence_reason:null,note:null,source:'block_off'})});markRosterDirty();closeModal('blockScheduleModal');openModal('rosterManagementModal');renderRosterOverview(overviewDays,overviewData)}catch(e){status.textContent='Generation failed: '+(e.message||e);status.style.color='#b42318'}finally{btn.disabled=false;btn.textContent='Generate'}}
 loadTodayRoster();
 
 
