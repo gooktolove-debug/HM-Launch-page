@@ -321,5 +321,53 @@ function closePublicQr() {
 }
 </script>
 <script src="./app.js"></script>
+<script id="contactRowInsertEnhancement">
+/* Contact List: insert a new row directly below the selected row. */
+function addContactRow() {
+  const selectedIndex = selectedContactCell?.dataset?.row != null
+    ? Number(selectedContactCell.dataset.row)
+    : -1;
+
+  captureContactText();
+
+  const insertIndex = Number.isInteger(selectedIndex) &&
+    selectedIndex >= 0 &&
+    selectedIndex < contactRows.length
+      ? selectedIndex + 1
+      : contactRows.length;
+
+  contactRows.splice(insertIndex, 0, {
+    id: null,
+    cells: ['', '', ''],
+    row_type: 'normal',
+    display_order: 0,
+    style_data: safeStyleData(null)
+  });
+
+  contactRows.forEach((row, index) => {
+    row.display_order = (index + 1) * 10;
+  });
+
+  renderContacts();
+
+  const newEditor = document.querySelector(
+    '#contactTableBody tr[data-row="' + insertIndex + '"] td:first-child .contact-cell-editor'
+  );
+
+  newEditor?.focus();
+  newEditor?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+/* Update the edit-mode instruction without changing app.js. */
+document.addEventListener('click', function (event) {
+  if (!event.target.closest('#contactEditBtn, #contactAccessSubmit')) return;
+  window.setTimeout(function () {
+    const hint = document.getElementById('contactHint');
+    if (hint && contactEditing) {
+      hint.textContent = 'Select a cell, then use + Add row to insert directly below that row. Use ↑ and ↓ to reorder rows, then Save.';
+    }
+  }, 250);
+});
+</script>
 </body>
 </html>
