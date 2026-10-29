@@ -113,6 +113,41 @@
   }
 }
 </style>
+
+<style id="contactStickyAddRowStyle">
+/* Keep the formatting controls and Add row action visible while the contact list scrolls. */
+#contactListModal .contact-format-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f4f8fb;
+  box-shadow: 0 2px 7px rgba(10, 47, 70, 0.14);
+}
+#contactListModal .contact-format-note {
+  margin-left: auto;
+}
+#contactListModal .contact-add-row-sticky {
+  flex: 0 0 auto;
+  margin-left: 8px;
+  white-space: nowrap;
+}
+@media (max-width: 700px) {
+  #contactListModal .contact-format-toolbar {
+    flex-wrap: wrap;
+  }
+  #contactListModal .contact-format-note {
+    order: 3;
+    width: 100%;
+    margin-left: 0;
+  }
+  #contactListModal .contact-add-row-sticky {
+    margin-left: auto;
+  }
+}
+</style>
 </head>
 <body>
 <div class="container">
@@ -262,7 +297,7 @@
 <label for="contactTextColor">Text</label><input id="contactTextColor" type="color" value="#102536" onchange="applyContactCellStyle('color',this.value)">
 <label for="contactRowColor">Row</label><input id="contactRowColor" type="color" value="#ffffff" onchange="applyContactRowBackground(this.value)">
 <button class="contact-format-btn" type="button" onclick="clearContactFormatting()" title="Clear selected cell formatting">Clear</button>
-<span class="contact-format-note">Select a cell, then apply formatting. Row colour applies to the entire row.</span></div><div class="contact-toolbar"><span id="contactHint" class="contact-hint"></span><span id="contactStatus" class="contact-status"></span><button class="button contact-add-row" onclick="addContactRow()">+ Add row</button></div><div class="contact-table-wrap"><table class="contact-table"><colgroup><col><col><col></colgroup><tbody id="contactTableBody"></tbody></table></div></div></div></div>
+<span class="contact-format-note">Select a cell, then apply formatting. Row colour applies to the entire row.</span><button class="button contact-add-row contact-add-row-sticky" type="button" onclick="addContactRow()">+ Add row</button></div><div class="contact-toolbar"><span id="contactHint" class="contact-hint"></span><span id="contactStatus" class="contact-status"></span></div><div class="contact-table-wrap"><table class="contact-table"><colgroup><col><col><col></colgroup><tbody id="contactTableBody"></tbody></table></div></div></div></div>
 <div class="modal-backdrop" id="phoneChoiceModal" role="dialog" aria-modal="true" onclick="backdropClose(event,'phoneChoiceModal')"><div class="modal phone-modal"><div class="modal-head"><div><h2>Call this number?</h2><p>Choose how to place the call.</p></div><button class="modal-close" onclick="closeModal('phoneChoiceModal')">&times;</button></div><div class="modal-body"><div id="phoneNumberDisplay" class="phone-number-display"></div><div class="phone-choice-grid"><button id="phoneNativeCall" class="phone-choice" onclick="placeNativeCall()">Call</button><button id="phoneTeamsCall" class="phone-choice" onclick="placeTeamsCall()">Microsoft Teams</button></div><p id="phoneChoiceNote" class="phone-note"></p></div></div></div>
 
 <div class="modal-backdrop" id="contactAccessModal" role="dialog" aria-modal="true" aria-labelledby="contactAccessTitle" onclick="backdropClose(event,'contactAccessModal')">
