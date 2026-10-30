@@ -119,7 +119,7 @@ async function downloadRosterPdf(){
  btn.disabled=true;btn.textContent='Creating...';status.textContent='Preparing '+dates.length+' roster date'+(dates.length===1?'':'s')+'...';status.className='pdf-range-status';
  try{const {jsPDF}=window.jspdf,doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'}),datesPerPage=14,chunks=[];for(let i=0;i<dates.length;i+=datesPerPage)chunks.push(dates.slice(i,i+datesPerPage));chunks.forEach((chunk,i)=>{if(i)doc.addPage('a4','landscape');drawRosterPdfPage(doc,chunk,i,chunks.length,start,end)});doc.save('Patrol_Boat_Roster_'+start+'_to_'+end+'.pdf');status.textContent='PDF downloaded.';setTimeout(()=>closeModal('rosterPdfModal'),500)}catch(e){console.error(e);status.textContent='PDF generation failed: '+(e.message||String(e));status.className='pdf-range-status error'}finally{btn.disabled=false;btn.textContent='Download PDF'}
 }
-const VERIFY_ACCESS_URL='https://hjrcnsuzrztaiwnttxnr.supabase.co/functions/v1/verify-access';
+const VERIFY_ACCESS_URL='https://wgwlnutnstrfuiiunlcu.supabase.co/functions/v1/hyper-responder';
 let rosterAccessVerified=false;
 function cloneRosterData(data){return JSON.parse(JSON.stringify(data||[]))}
 function beginRosterDraft(){rosterEditSnapshot=cloneRosterData(overviewData);rosterEditDaysSnapshot=overviewDays.slice();rosterEditDirty=false;setRosterEditMode(true)}
@@ -410,7 +410,7 @@ async function saveContactList(){captureContactText();const b=document.getElemen
 function closeContactList(){if(contactEditing&&!confirm('Close without saving?'))return;contactEditing=false;closeModal('contactListModal')}
 function choosePhoneCall(e,p){e.preventDefault();selectedPhone=p;document.getElementById('phoneNumberDisplay').textContent=p;const desktop=matchMedia('(pointer:fine)').matches;document.getElementById('phoneTeamsCall').classList.toggle('recommended',desktop);document.getElementById('phoneNativeCall').classList.toggle('recommended',!desktop);document.getElementById('phoneChoiceNote').textContent=desktop?'Microsoft Teams is recommended on this computer.':'Call is recommended on this mobile device.';openModal('phoneChoiceModal')}
 function nzPhoneUri(p){let d=p.replace(/\D/g,'');if(d.startsWith('0'))d='64'+d.slice(1);return'+'+d}function placeNativeCall(){location.href='tel:'+nzPhoneUri(selectedPhone)}function placeTeamsCall(){location.href='https://teams.microsoft.com/l/call/0/0?users='+encodeURIComponent('4:'+nzPhoneUri(selectedPhone))}
-const CONTACT_VERIFY_ACCESS_URL='https://hjrcnsuzrztaiwnttxnr.supabase.co/functions/v1/verify-access';
+const CONTACT_VERIFY_ACCESS_URL='https://wgwlnutnstrfuiiunlcu.supabase.co/functions/v1/hyper-responder';
 function startContactEdit(){const input=document.getElementById('contactAccessCode'),status=document.getElementById('contactAccessStatus');input.value='';input.type='password';status.textContent='';status.className='access-code-status';openModal('contactAccessModal');setTimeout(()=>input.focus(),50)}
 function cancelContactAccess(){closeModal('contactAccessModal');const input=document.getElementById('contactAccessCode');if(input)input.value=''}
 function toggleContactAccessVisibility(){const input=document.getElementById('contactAccessCode');if(!input)return;input.type=input.type==='password'?'text':'password';input.focus()}
