@@ -120,11 +120,14 @@
   position: sticky;
   top: 0;
   z-index: 30;
-  display: flex;
+  display: none;
   align-items: center;
   gap: 8px;
   background: #f4f8fb;
   box-shadow: 0 2px 7px rgba(10, 47, 70, 0.14);
+}
+#contactListModal #contactListPanel.editing .contact-format-toolbar {
+  display: flex;
 }
 #contactListModal .contact-format-note {
   margin-left: auto;
@@ -146,6 +149,104 @@
   #contactListModal .contact-add-row-sticky {
     margin-left: auto;
   }
+}
+</style>
+
+<style id="contactSaveFeedbackStyle">
+.contact-save-feedback {
+  position: fixed;
+  inset: 0;
+  z-index: 100000;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(7, 28, 43, 0.36);
+  backdrop-filter: blur(2px);
+}
+.contact-save-feedback[hidden] {
+  display: none !important;
+}
+.contact-save-feedback-card {
+  width: min(360px, calc(100vw - 40px));
+  min-height: 150px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 26px 28px;
+  border: 1px solid rgba(19, 79, 104, 0.18);
+  border-radius: 16px;
+  background: #ffffff;
+  color: #102f43;
+  text-align: center;
+  box-shadow: 0 20px 55px rgba(4, 29, 45, 0.3);
+}
+.contact-save-spinner {
+  width: 34px;
+  height: 34px;
+  box-sizing: border-box;
+  border: 4px solid #d7e8ef;
+  border-top-color: #009b8f;
+  border-radius: 50%;
+  animation: contactSaveSpin .75s linear infinite;
+}
+.contact-save-feedback-title {
+  font-size: 21px;
+  line-height: 1.25;
+  font-weight: 800;
+}
+.contact-save-feedback-message {
+  font-size: 13px;
+  line-height: 1.45;
+  color: #587181;
+}
+.contact-save-feedback.is-success .contact-save-spinner {
+  width: 42px;
+  height: 42px;
+  border: 0;
+  animation: none;
+  background: #0aa58f;
+  position: relative;
+}
+.contact-save-feedback.is-success .contact-save-spinner::after {
+  content: '';
+  position: absolute;
+  left: 13px;
+  top: 8px;
+  width: 11px;
+  height: 20px;
+  border: solid #ffffff;
+  border-width: 0 4px 4px 0;
+  transform: rotate(45deg);
+}
+.contact-save-feedback.is-error .contact-save-spinner {
+  width: 42px;
+  height: 42px;
+  border: 0;
+  animation: none;
+  background: #c83b2d;
+  position: relative;
+}
+.contact-save-feedback.is-error .contact-save-spinner::before,
+.contact-save-feedback.is-error .contact-save-spinner::after {
+  content: '';
+  position: absolute;
+  left: 19px;
+  top: 9px;
+  width: 4px;
+  height: 24px;
+  border-radius: 2px;
+  background: #ffffff;
+  transform: rotate(45deg);
+}
+.contact-save-feedback.is-error .contact-save-spinner::after {
+  transform: rotate(-45deg);
+}
+@keyframes contactSaveSpin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .contact-save-spinner { animation-duration: 1.5s; }
 }
 </style>
 </head>
@@ -403,6 +504,67 @@ document.addEventListener('click', function (event) {
     }
   }, 250);
 });
+</script>
+
+<!-- Contact save progress popup -->
+<div id="contactSaveFeedback" class="contact-save-feedback" hidden aria-hidden="true">
+  <div class="contact-save-feedback-card" role="status" aria-live="assertive" aria-atomic="true">
+    <div id="contactSaveSpinner" class="contact-save-spinner" aria-hidden="true"></div>
+    <div id="contactSaveFeedbackTitle" class="contact-save-feedback-title">Saving...</div>
+    <div id="contactSaveFeedbackMessage" class="contact-save-feedback-message">Please wait while the contact list is saved.</div>
+  </div>
+</div>
+
+<script id="contactSaveFeedbackScript">
+(function () {
+  const popup = document.getElementById('contactSaveFeedback');
+  const title = document.getElementById('contactSaveFeedbackTitle');
+  const message = document.getElementById('contactSaveFeedbackMessage');
+  const status = document.getElementById('contactStatus');
+  const saveButton = document.getElementById('contactSaveBtn');
+  let closeTimer = null;
+
+  if (!popup || !title || !message || !status || !saveButton) return;
+
+  function showSaving() {
+    window.clearTimeout(closeTimer);
+    popup.classList.remove('is-success', 'is-error');
+    title.textContent = 'Saving...';
+    message.textContent = 'Please wait while the contact list is saved.';
+    popup.hidden = false;
+    popup.setAttribute('aria-hidden', 'false');
+  }
+
+  function showSuccess() {
+    popup.classList.remove('is-error');
+    popup.classList.add('is-success');
+    title.textContent = 'Saved successfully';
+    message.textContent = 'The contact list has been updated.';
+    closeTimer = window.setTimeout(hidePopup, 1600);
+  }
+
+  function showError(text) {
+    popup.classList.remove('is-success');
+    popup.classList.add('is-error');
+    title.textContent = 'Save failed';
+    message.textContent = text || 'The contact list could not be saved. Please try again.';
+    closeTimer = window.setTimeout(hidePopup, 3500);
+  }
+
+  function hidePopup() {
+    popup.hidden = true;
+    popup.setAttribute('aria-hidden', 'true');
+    popup.classList.remove('is-success', 'is-error');
+  }
+
+  saveButton.addEventListener('click', showSaving, true);
+
+  new MutationObserver(function () {
+    const text = status.textContent.trim();
+    if (/^Saved to Supabase$/i.test(text)) showSuccess();
+    else if (/^Save failed:/i.test(text)) showError(text.replace(/^Save failed:\s*/i, ''));
+  }).observe(status, { childList: true, characterData: true, subtree: true });
+})();
 </script>
 </body>
 </html>
