@@ -251,6 +251,46 @@
 </style>
 
 <style id="quizIntegrationStyles">
+
+/* Header action layout: reserve a dedicated lane so roster chips never sit under buttons. */
+@media (min-width: 901px) {
+  .header { overflow: hidden; }
+  .header .title-roster-row {
+    width: 100% !important;
+    min-width: 0 !important;
+    padding-right: 304px !important;
+  }
+  .header .today-roster {
+    min-width: 0 !important;
+    overflow: hidden !important;
+  }
+  .header .roster-gridline {
+    min-width: 0 !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    scrollbar-width: thin;
+    padding-bottom: 3px;
+  }
+  .header .command-actions {
+    right: 18px !important;
+    gap: 8px !important;
+    flex-wrap: nowrap !important;
+    white-space: nowrap !important;
+  }
+  .header .quiz-open-button,
+  .header .public-qr-button,
+  .header .contact-open-button,
+  .header .icon-button { flex: 0 0 auto !important; }
+}
+@media (min-width: 901px) and (max-width: 1180px) {
+  .header .title-roster-row { padding-right: 272px !important; }
+  .header .command-actions { gap: 5px !important; right: 12px !important; }
+  .header .quiz-open-button,
+  .header .public-qr-button,
+  .header .contact-open-button { padding-left: 10px !important; padding-right: 10px !important; }
+}
+
 .quiz-open-button {
   min-height:42px;
   padding:9px 15px;
@@ -318,7 +358,6 @@
     <h1>Operations <span>Monitoring Page</span></h1>
   </div><section class="today-roster" aria-live="polite"><div class="roster-topline"><span class="live-dot"></span><span id="todayRosterDate">TODAY ROSTER</span><button class="button roster-manage-btn" type="button" onclick="openRosterManagement()">Full Roster</button></div><div id="todayRosterContent" class="roster-gridline"><span class="roster-loading">Loading roster...</span></div></section></div>
   <div class="command-actions"><button class="button quiz-open-button" type="button" onclick="openMaritimeQuiz()" aria-haspopup="dialog" aria-controls="maritimeQuizShell">Quiz</button><button class="button public-qr-button" type="button" onclick="openPublicQr()" aria-haspopup="dialog" aria-controls="publicQrModal">Public QR</button><button class="button contact-open-button" type="button" onclick="openContactList()">Contact List</button>
-    <div class="system-state"><i></i><div><strong>Systems available</strong><span id="aucklandClock">Auckland time</span></div></div>
     <button class="icon-button" type="button" onclick="location.reload()" title="Refresh dashboard" aria-label="Refresh dashboard">&#8635;</button>
   </div>
 </header>
