@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Emergency Mooring Board</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+  <style>
+    :root{--ink:#14213d;--muted:#5b677a;--line:#d9e1ec;--panel:#fff;--bg:#f8fafc;--navy:#111827;--green:#22c55e;--red:#ef4444;--orange:#f97316;--blue:#2563eb}
+    *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);font-family:Arial,Helvetica,sans-serif;font-size:14px}.wrap{max-width:1120px;margin:0 auto;padding:34px 22px 60px}h1{text-align:center;font-size:42px;line-height:1;margin:0 0 8px;color:#020617}h2,h3,h4{margin:0 0 14px}.top-refresh{display:block;margin:0 auto 26px;padding:4px 14px;font-size:11px;border:1px solid #b9c6d6;background:#fff;border-radius:4px;cursor:pointer}.stats{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:22px}.card{background:var(--panel);border:1px solid var(--line);border-radius:18px;box-shadow:0 8px 24px rgba(15,23,42,.06)}.stat{height:132px;display:flex;align-items:center;padding:24px}.stat.available{border-color:#bbf7d0}.stat.occupied{border-color:#fecaca}.icon{width:48px;height:48px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:25px;margin-right:24px}.available .icon{background:#ccfbf1;color:#0891b2}.occupied .icon{background:#ffe4e6;color:#e11d48}.stat-label{font-size:12px;color:#334155;margin-bottom:4px}.stat-num{font-size:34px;font-weight:800;color:#0f172a}.stat-sub{font-size:11px;color:#64748b;margin-top:4px}.nearest{padding:22px;text-align:center;margin-bottom:22px}.nearest h3{font-size:18px}.btn{border:1px solid #cbd5e1;background:#fff;color:#0f172a;border-radius:8px;padding:10px 14px;font-weight:800;cursor:pointer}.btn.small{font-size:12px;padding:8px 12px}.btn.primary{background:#0f172a;border-color:#0f172a;color:#fff}.btn.blue{background:#2563eb;border-color:#2563eb;color:#fff}.btn.red{background:#ef4444;border-color:#ef4444;color:#fff}.btn.green{background:#22c55e;border-color:#22c55e;color:#fff}.btn.danger{border-color:#fca5a5;color:#b91c1c}.hint{color:#64748b;font-size:13px;line-height:1.45}.nearest-list{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}.nearest-item{text-align:left;border:1px solid var(--line);background:#fff;border-radius:12px;padding:12px;cursor:pointer}.nearest-item:first-child{background:#eff6ff}.content{display:grid;grid-template-columns:minmax(0,1fr) 340px;grid-template-areas:"map detail" "list detail";gap:20px;align-items:start}.left-stack{display:contents}#map{grid-area:map;height:620px;border-radius:18px;border:1px solid var(--line);overflow:hidden;background:#dbeafe}.list-card{grid-area:list;padding:18px;max-height:410px;overflow:auto}.list-title{text-align:center;font-size:18px;font-weight:800;margin-bottom:14px}.list{display:grid;gap:8px}.item{width:100%;text-align:left;border:1px solid #cfd8e3;background:#fff;border-radius:9px;padding:12px;cursor:pointer;color:#111827}.item.selected{background:#111827;color:#fff}.item-title{font-weight:900;font-size:13px}.item-meta{font-size:11px;line-height:1.35;color:#334155}.selected .item-meta{color:#d1d5db}.detail{grid-area:detail;padding:28px 22px;min-height:620px}.detail h2{text-align:center;font-size:29px;color:#475569;line-height:1.15}.detail-center{text-align:center}.gps-dm{font-weight:800;color:#334155}.gps-dd{margin-top:3px}.actions{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin:18px 0 24px}.form label{display:block;text-align:center;font-size:13px;font-weight:800;margin:12px 0 7px}.form input,.form select,.form textarea{width:100%;border:1px solid #cbd5e1;border-radius:8px;padding:10px;background:#fff;font-size:13px}.form textarea{min-height:86px;resize:vertical}#editStatus.status-available{background:#dcfce7;color:#166534;border-color:#86efac;font-weight:800}#editStatus.status-occupied{background:#fee2e2;color:#991b1b;border-color:#fca5a5;font-weight:800}#editStatus option[value="available"]{background:#dcfce7;color:#166534}#editStatus option[value="occupied"]{background:#fee2e2;color:#991b1b}.photo-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.photo{border:1px solid var(--line);border-radius:10px;overflow:hidden}.photo img{display:block;width:100%;height:120px;object-fit:cover}.photo-body{padding:8px}.history-box{border:1px solid var(--line);border-radius:10px;padding:12px;display:flex;align-items:center;justify-content:space-between;gap:10px}.modal-bg{position:fixed;inset:0;background:rgba(15,23,42,.56);display:none;align-items:center;justify-content:center;z-index:6000;padding:22px}.modal{background:#fff;border-radius:18px;max-width:560px;width:100%;max-height:80vh;overflow:auto;padding:20px}.modal-head{display:flex;justify-content:space-between;align-items:center}.x{width:34px;height:34px;border-radius:999px;padding:0}.history-item{border-bottom:1px solid var(--line);padding:10px 0}.history-item:last-child{border-bottom:0}.marker-dot{width:18px;height:18px;border-radius:999px;border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.35)}.marker-dot.highlight{width:24px;height:24px;border:3px solid #fb923c}.user-dot{width:18px;height:18px;border-radius:999px;background:#2563eb;border:3px solid #fff;box-shadow:0 0 0 5px rgba(37,99,235,.25),0 2px 8px rgba(0,0,0,.35)}
+
+    .top-actions{display:none;justify-content:center;align-items:center;gap:8px;margin:0 auto 26px;flex-wrap:wrap}.top-actions .top-refresh{margin:0}.top-location{font-size:11px;padding:4px 14px;border-radius:4px}
+    .nearest{display:none!important}
+    .photo img{cursor:zoom-in;transition:opacity .15s ease,transform .15s ease}.photo img:hover{opacity:.92;transform:scale(1.01)}
+    .photo-modal{max-width:min(1100px,96vw);width:100%;height:min(86vh,820px);padding:16px;display:flex;flex-direction:column;overflow:hidden}.photo-modal .modal-head{gap:12px}.photo-modal-title{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.photo-tools{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;margin:10px 0 14px}.photo-tools .zoom-level{min-width:54px;text-align:center;font-weight:800;color:#334155}.photo-viewer{flex:1;min-height:260px;border:1px solid var(--line);border-radius:14px;background:#0f172a;overflow:auto;display:flex;align-items:center;justify-content:center;position:relative}.photo-viewer img{display:block;max-width:100%;max-height:100%;transform-origin:center center;transition:transform .12s ease;user-select:none}.photo-viewer.zoomed{align-items:flex-start;justify-content:flex-start}.photo-caption{margin-top:10px;text-align:center;color:#64748b;font-size:12px;line-height:1.4}.photo-hint{font-size:12px;color:#64748b;text-align:center;margin-top:8px}
+    .mobile-detail-close{display:none}
+    @media(max-width:900px){
+      .wrap{display:flex;flex-direction:column;padding:18px 10px 34px;max-width:100%}
+      h1{font-size:31px;line-height:.98;margin:2px 0 10px;order:0}.top-actions{order:1;display:flex!important;margin:0 auto 14px}.top-location{font-size:12px;padding:6px 12px;border-radius:6px}
+      .content,.left-stack{display:contents!important}
+      #map{order:2;height:430px;border-radius:16px}.stats{order:3;display:grid;grid-template-columns:1fr;gap:14px;margin:16px 0}.stat{height:auto;padding:26px 24px;border-radius:18px}.stat .icon{margin-right:24px}.stat-num{font-size:34px}
+      .list-card{order:4;max-height:520px;padding:16px;border-radius:16px}.list-title{font-size:22px}.item{padding:14px;border-radius:10px}.item-title{font-size:16px}.item-meta{font-size:12px}
+      .detail{display:none;position:fixed;z-index:4500;left:10px;right:10px;top:12px;bottom:12px;overflow:auto;min-height:0;padding:52px 22px 24px;border-radius:18px;box-shadow:0 22px 70px rgba(15,23,42,.32)}
+      .detail.mobile-open{display:block;background:#fff;color:var(--ink)}body.detail-modal-open::before{content:"";position:fixed;inset:0;background:rgba(15,23,42,.48);z-index:4400}.mobile-detail-close{display:flex;position:absolute;top:12px;right:12px;align-items:center;justify-content:center}.detail h2{font-size:28px}.actions{gap:8px}.actions .btn{font-size:13px}.photo-grid{grid-template-columns:1fr}
+      body.detail-modal-open{overflow:hidden}
+    }
+    @media(max-width:900px){.nearest-list{grid-template-columns:1fr}}
+  
+/* ===== Auckland Harbourmaster unified command-centre theme ===== */
+:root{--bg:#06111f;--bg2:#091a2d;--surface:#0d2238;--surface2:#102a43;--text:#eaf5ff;--muted:#8fa8bd;--line:rgba(149,190,219,.18);--accent:#29d3c2;--accent2:#3ea6ff;--shadow:0 24px 60px rgba(0,7,16,.38)}
+html{background:#06111f}body{background:radial-gradient(circle at 78% -10%,rgba(31,132,183,.22),transparent 38rem),radial-gradient(circle at 0 40%,rgba(21,198,179,.08),transparent 34rem),#06111f;color:var(--text);font-family:Inter,"Segoe UI",Arial,sans-serif;min-height:100vh}
+body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.20;background-image:linear-gradient(rgba(255,255,255,.018) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.018) 1px,transparent 1px);background-size:34px 34px}
+.wrap{position:relative;max-width:1800px;padding:24px 30px 48px}
+h1{position:relative;text-align:left;margin:0 0 22px;padding:27px 24px 25px 82px;border:1px solid var(--line);border-radius:20px;background:linear-gradient(135deg,rgba(13,34,56,.96),rgba(8,25,43,.91));box-shadow:var(--shadow);color:#f4fbff;font-size:clamp(28px,3vw,42px);letter-spacing:-.045em}
+h1:before{content:"HM";position:absolute;left:24px;top:50%;display:grid;place-items:center;width:38px;height:38px;transform:translateY(-50%);border:1px solid rgba(41,211,194,.5);border-radius:9px;color:#61f4e5;background:rgba(41,211,194,.09);font-size:12px;letter-spacing:0}
+h1:after{content:"AUCKLAND HARBOURMASTER";display:block;margin-top:7px;color:#8fb4ca;font-size:10px;font-weight:800;letter-spacing:.16em}
+.card{border:1px solid var(--line);background:linear-gradient(145deg,rgba(14,38,61,.96),rgba(8,25,43,.96));box-shadow:var(--shadow);color:var(--text)}
+.stats{gap:20px}.stat{height:126px;border-radius:18px}.stat.available{border-color:rgba(41,211,194,.36)}.stat.occupied{border-color:rgba(255,107,107,.33)}.available .icon{background:rgba(41,211,194,.12);color:#62e9dc}.occupied .icon{background:rgba(239,68,68,.12);color:#ff8b8b}.stat-label,.stat-sub,.hint{color:var(--muted)}.stat-num{color:#f4fbff}
+#map{border-color:var(--line);box-shadow:var(--shadow)}.list-card,.detail{background:linear-gradient(145deg,rgba(14,38,61,.97),rgba(8,25,43,.97))}.list-title{color:#f4fbff}.item{border-color:rgba(111,172,207,.18);background:#0b2941;color:#e8f6ff}.item:hover{border-color:rgba(41,211,194,.42);background:#10344d}.item.selected{border-color:#29d3c2;background:linear-gradient(135deg,#178c88,#0d6a71);color:#fff}.item-meta,.selected .item-meta{color:#9fbccf}.detail h2{color:#f4fbff}.gps-dm{color:#8ef5eb}
+.btn{border:1px solid rgba(95,166,205,.22);border-radius:9px;background:#102d46;color:#cce7f6}.btn:hover{border-color:rgba(41,211,194,.48);background:#143953;color:#8ef5eb}.btn.primary{border-color:#29d3c2;background:linear-gradient(135deg,#178c88,#0d6a71);color:#fff}.btn.blue{border-color:#3ea6ff;background:#176eaa}.btn.green{background:#17865f;border-color:#35d495}.btn.red{background:#b42318;border-color:#ff7168}.form input,.form select,.form textarea{border-color:#294c65;background:#071b2d;color:#eef7ff}.form label{color:#9fbccf}.photo,.history-box{border-color:var(--line);background:rgba(5,20,35,.45)}
+.modal-bg{background:rgba(0,7,16,.72);backdrop-filter:blur(6px)}.modal{border:1px solid #294660;background:#eef5f9;color:#0d2437}.modal .hint{color:#607d90}.photo-viewer{border-color:#294660;background:#06111f}
+@media(max-width:900px){.wrap{padding:10px 9px 34px}h1{padding:21px 18px 20px 68px;border-radius:15px;font-size:28px}h1:before{left:18px;width:34px;height:34px}.detail.mobile-open{background:linear-gradient(145deg,#0e263d,#08192b);color:var(--text)}.detail h2{color:#f4fbff}.form input,.form select,.form textarea{background:#071b2d;color:#eef7ff}.stats{gap:10px}.stat{border-radius:15px}}
+
+
+    /* Compact History photo thumbnails */
+    .history-photos{display:flex;flex-wrap:wrap;align-items:flex-start;gap:8px;margin:10px 0 16px}
+    .history-photo{flex:0 0 72px;width:72px;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#fff}
+    .history-photo img.history-photo-thumb{display:block;width:72px!important;height:72px!important;max-width:72px!important;object-fit:cover;cursor:zoom-in}
+    .history-photo-meta{display:none}
+
+    /* Compact current Occupied detail photo thumbnails */
+    .detail .photo-grid{display:flex!important;flex-wrap:wrap;align-items:flex-start;gap:8px;margin-top:10px}
+    .detail .photo{flex:0 0 82px;width:82px;border-radius:8px}
+    .detail .photo img.photo-thumb{display:block;width:80px!important;height:80px!important;max-width:80px!important;object-fit:cover;cursor:zoom-in}
+    .detail .photo-body{padding:5px;text-align:center}
+    .detail .photo-body .hint{font-size:9px;line-height:1.2;white-space:normal}
+    .detail .photo-body .btn{font-size:9px;padding:4px 6px;margin-top:4px}
+
+    /* Mobile default full-map mode and map/list toggle */
+    .mobile-map-toggle{display:none}
+    @media(max-width:900px){
+      .mobile-map-toggle{display:flex;position:fixed;top:12px;right:12px;z-index:4300;width:42px;height:42px;padding:0;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.5);border-radius:10px;background:#0e314d;color:#fff;box-shadow:0 4px 14px rgba(0,0,0,.3);font-size:20px;line-height:1}
+      body.mobile-full-map{overflow:hidden}
+      body.mobile-full-map .wrap{max-width:none;margin:0;padding:0;height:100dvh}
+      body.mobile-full-map .wrap>h1,
+      body.mobile-full-map .wrap>.top-actions,
+      body.mobile-full-map .wrap>.stats,
+      body.mobile-full-map .wrap>.nearest,
+      body.mobile-full-map .list-card{display:none!important}
+      body.mobile-full-map .content{display:block!important;margin:0!important;height:100dvh}
+      body.mobile-full-map .left-stack{display:block!important;height:100dvh}
+      body.mobile-full-map #map{width:100vw!important;height:100dvh!important;min-height:100dvh!important;border:0!important;border-radius:0!important;margin:0!important}
+      body:not(.mobile-full-map) .mobile-map-toggle{position:absolute;top:12px;right:12px}
+    }
+</style>
+<style id="dashboardIntegrationStyle">
+.dashboard-back{position:fixed;z-index:120000;right:14px;bottom:14px;display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:0 14px;border:1px solid rgba(125,211,252,.55);border-radius:999px;background:rgba(7,24,40,.94);color:#e8f6ff;text-decoration:none;font:800 12px/1 Segoe UI,Arial,sans-serif;box-shadow:0 10px 28px rgba(0,0,0,.35)}
+.dashboard-back:hover,.dashboard-back:focus-visible{border-color:#67e8f9;background:#0c2a43;outline:none}
+@media(max-width:700px){.dashboard-back{right:8px;bottom:8px;min-height:38px;padding:0 11px;font-size:11px}}
+</style></head>
+<body><a href="../" class="dashboard-back" title="Return to Auckland Harbour Operations Monitoring Page">← Dashboard</a>
+  <button id="mobileMapToggle" class="btn mobile-map-toggle" type="button" aria-label="Show dashboard and mooring list" title="Show dashboard and mooring list">▣</button>
+  <div class="wrap">
+    <h1>Emergency Mooring Board</h1><div class="top-actions"><button id="locateTop" class="btn blue top-location">Current Location</button></div>
+    <section class="stats"><div class="card stat available"><div class="icon">⚓</div><div><div class="stat-label">Available Moorings:</div><div id="availableCount" class="stat-num">0</div><div id="availableSub" class="stat-sub">Out of 0 total moorings</div></div></div><div class="card stat occupied"><div class="icon">⛔</div><div><div class="stat-label">Occupied Moorings:</div><div id="occupiedCount" class="stat-num">0</div><div class="stat-sub">Currently attached / in use</div></div></div></section>
+    <section class="card nearest"><h3>Nearest Available Moorings</h3><button id="locateBtn" class="btn blue small">Use my current location</button><div id="locationMsg" class="hint" style="margin-top:14px">Allow location access to see the 3 nearest available moorings.</div><div id="nearestList" class="nearest-list"></div></section>
+    <section class="content"><div class="left-stack"><div id="map" class="card"></div><div class="card list-card"><div class="list-title">Mooring List</div><div id="listStatus" class="hint">Loading...</div><div id="mooringList" class="list"></div></div></div><aside id="detail" class="card detail"><p class="hint detail-center">Select a mooring to view details.</p></aside></section>
+  </div>
+  <div id="historyModal" class="modal-bg"><div class="modal"><div class="modal-head"><h3>History</h3><button id="closeHistory" class="btn x">×</button></div><p id="historySub" class="hint"></p><div id="historyList"></div></div></div>
+  <div id="photoModal" class="modal-bg"><div class="modal photo-modal"><div class="modal-head"><h3 id="photoModalTitle" class="photo-modal-title">Photo</h3><button id="closePhoto" class="btn x">×</button></div><div class="photo-tools"><button id="zoomOut" class="btn small">−</button><span id="zoomLevel" class="zoom-level">100%</span><button id="zoomIn" class="btn small">+</button><button id="zoomReset" class="btn small">Reset</button><a id="openPhotoNewTab" class="btn small" href="#" target="_blank" rel="noopener">Open original</a></div><div id="photoViewer" class="photo-viewer"><img id="photoModalImg" src="" alt="Mooring photo enlarged"></div><div id="photoCaption" class="photo-caption"></div><div class="photo-hint">Tip: use + / − buttons, mouse wheel, or double-click to zoom. Drag scrollbars when zoomed in.</div></div></div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script>
+    const SUPABASE_URL="https://wgwlnutnstrfuiiunlcu.supabase.co";
+    const SUPABASE_ANON_KEY="sb_publishable_iC7kbinoy61_5eQCnrV25Q_OioA7Y1x";
+    const db=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+    const PHOTO_BUCKET="emcy-pin-photos";
+    const s={pins:[],photos:[],logs:[],selected:"",user:null,nearest:[],map:null,markers:null,userMarkers:null,loading:false};
+    const $=id=>document.getElementById(id);
+    const esc=v=>String(v??"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
+    const num=v=>{const n=Number(v);return Number.isFinite(n)?n:null}; const fixed=(v,d=5)=>num(v)===null?"-":num(v).toFixed(d); const dt=v=>v?new Date(v).toLocaleString():"-";
+    function dm(v,isLat=true){const n=num(v);if(n===null)return"-";const a=Math.abs(n),deg=Math.floor(a),min=((a-deg)*60).toFixed(3),dir=isLat?(n>=0?"N":"S"):(n>=0?"E":"W");return `${deg}° ${min}' ${dir}`}
+    function rad(d){return d*Math.PI/180} function dist(a,b,c,d){const R=6371,x=rad(c-a),y=rad(d-b),q=Math.sin(x/2)**2+Math.cos(rad(a))*Math.cos(rad(c))*Math.sin(y/2)**2;return R*2*Math.atan2(Math.sqrt(q),Math.sqrt(1-q))}
+    const pin=()=>s.pins.find(p=>p.id===s.selected)||null;
+    const allPinPhotos=()=>s.photos.filter(p=>p.pin_id===s.selected);
+    const allPinLogs=()=>s.logs.filter(l=>l.pin_id===s.selected);
+    const pinLogs=()=>allPinLogs().slice(0,10);
+    function currentOccupiedStartedAt(){
+      const p=pin(); if(!p||p.status!=="occupied")return null;
+      const row=allPinLogs().find(l=>l.new_status==="occupied");
+      return row&&row.changed_at?new Date(row.changed_at).getTime():null;
+    }
+    function pinPhotos(){
+      const p=pin(); if(!p||p.status!=="occupied")return [];
+      const started=currentOccupiedStartedAt();
+      return allPinPhotos().filter(ph=>!started||new Date(ph.created_at).getTime()>=started);
+    }
+    function initMap(){s.map=L.map("map").setView([-36.85,174.76],10);L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"&copy; OpenStreetMap contributors"}).addTo(s.map);s.markers=L.layerGroup().addTo(s.map);s.userMarkers=L.layerGroup().addTo(s.map)}
+    function color(p){return p.status==="occupied"?"#dc2626":(p.availability_class||"normal")==="orange"?"#f97316":"#16a34a"}
+    function icon(p,hi){return L.divIcon({className:"",html:`<div class="marker-dot ${hi?"highlight":""}" style="background:${color(p)}"></div>`,iconSize:hi?[24,24]:[18,18],iconAnchor:hi?[12,12]:[9,9]})}
+    function userIcon(){return L.divIcon({className:"",html:`<div class="user-dot"></div>`,iconSize:[18,18],iconAnchor:[9,9]})}
+    function renderMap(){if(!s.map)return;s.markers.clearLayers();s.userMarkers.clearLayers();const hi=s.nearest.map(p=>p.id);s.pins.filter(p=>p.lat!=null&&p.lng!=null).forEach(p=>{const m=L.marker([Number(p.lat),Number(p.lng)],{icon:icon(p,hi.includes(p.id)||s.selected===p.id)}).bindPopup(`<b>${esc(p.mooring_code||"NO-CODE")} - ${esc(p.title||"Untitled")}</b><br>Status: ${esc(p.status||"-")}<br>Availability class: ${esc(p.availability_class||"normal")}${p.current_vessel_name?`<br>Vessel: ${esc(p.current_vessel_name)}`:""}`);m.on("click",()=>selectPin(p.id));m.addTo(s.markers)});if(s.user)L.marker([s.user.lat,s.user.lng],{icon:userIcon()}).bindPopup("My current location").addTo(s.userMarkers)}
+    function computeNearest(){s.nearest=s.user?s.pins.filter(p=>p.status==="available"&&p.lat!=null&&p.lng!=null).map(p=>({...p,distanceKm:dist(s.user.lat,s.user.lng,Number(p.lat),Number(p.lng))})).sort((a,b)=>a.distanceKm-b.distanceKm).slice(0,3):[]}
+    function renderSummary(){const av=s.pins.filter(p=>p.status==="available").length,oc=s.pins.filter(p=>p.status==="occupied").length;$("availableCount").textContent=av;$("occupiedCount").textContent=oc;$("availableSub").textContent=`Out of ${s.pins.length} total moorings`}
+    function renderList(){if(s.loading){$("listStatus").textContent="Loading...";$("mooringList").innerHTML="";return} if(!s.pins.length){$("listStatus").textContent="No moorings found.";$("mooringList").innerHTML="";return} $("listStatus").textContent="";$("mooringList").innerHTML=s.pins.map(p=>`<button class="item ${p.id===s.selected?"selected":""}" data-id="${esc(p.id)}"><div class="item-title">${esc(p.mooring_code||"NO-CODE")} - ${esc(p.title||"Untitled")}</div><div class="item-meta">Status: ${esc(p.status||"-")}<br>Availability class: ${esc(p.availability_class||"normal")}<br>${p.current_vessel_name?`Vessel: ${esc(p.current_vessel_name)}`:"No vessel attached"}</div></button>`).join("");document.querySelectorAll(".item").forEach(b=>b.onclick=()=>selectPin(b.dataset.id))}
+    function renderNearest(){if(!s.user){$("nearestList").innerHTML="";return} if(!s.nearest.length){$("nearestList").innerHTML="";$("locationMsg").textContent="There are currently no available moorings.";return} $("locationMsg").textContent="Nearest available moorings based on current device location.";$("nearestList").innerHTML=s.nearest.map((p,i)=>`<button class="nearest-item" data-id="${esc(p.id)}"><b>${i+1}. ${esc(p.mooring_code||"NO-CODE")} - ${esc(p.title||"Untitled")}</b><br><span class="hint">${p.distanceKm.toFixed(2)} km away</span></button>`).join("");document.querySelectorAll(".nearest-item").forEach(b=>b.onclick=()=>selectPin(b.dataset.id))}
+    function renderDetail(){
+      const p=pin();
+      if(!p){$("detail").innerHTML='<p class="hint detail-center">Select a mooring to view details.</p>';return}
+      const photos=pinPhotos(),logs=pinLogs(),isOcc=p.status==="occupied";
+      const currentVessel=isOcc?(p.current_vessel_name||""):"";
+      const currentNote=isOcc?(p.note||""):"";
+      const currentSection=isOcc?`<label>Current Vessel Name</label><input id="vessel" value="${esc(currentVessel)}"><label>Note</label><textarea id="note">${esc(currentNote)}</textarea>`:`<input id="vessel" type="hidden" value=""><textarea id="note" style="display:none"></textarea>`;
+      const photoSection=isOcc?`<div class="detail-center"><input id="photoInput" type="file" accept="image/*" style="display:none"><button id="uploadBtn" class="btn">Upload Photo</button><div id="uploadMsg" class="hint" style="margin-top:8px"></div></div>${photos.length?`<div class="photo-grid">${photos.map(ph=>`<div class="photo"><img class="photo-thumb" src="${esc(ph.signed_url||"")}" alt="Mooring photo" title="Click to enlarge" data-src="${esc(ph.signed_url||"")}" data-date="${esc(dt(ph.created_at))}"><div class="photo-body"><div class="hint">${dt(ph.created_at)}</div><button class="btn danger small del" data-id="${esc(ph.id)}">Delete</button></div></div>`).join("")}</div>`:'<p class="hint detail-center">No photos uploaded for the current occupancy.</p>'}`:``;
+      $("detail").innerHTML=`<button id="closeDetail" class="btn x mobile-detail-close">×</button><h2>${esc(p.mooring_code||"NO-CODE")} - ${esc(p.title||"Untitled")}</h2><div class="detail-center hint"><div class="gps-dm">${dm(p.lat,true)} / ${dm(p.lng,false)}</div><div class="gps-dd">lat ${fixed(p.lat)} / lng ${fixed(p.lng)}</div></div><div class="actions">${isOcc?'<button id="ava" class="btn green small">Mark as Available</button>':'<button id="occ" class="btn red small">Mark as Occupied</button>'}</div><div class="form"><div class="detail-center" style="font-weight:800;margin:0 0 16px">Last updated: ${dt(p.last_updated_at)}</div><label>Status</label><select id="editStatus" class="${p.status==="available"?"status-available":p.status==="occupied"?"status-occupied":""}"><option value="">Select status</option><option value="available" ${p.status==="available"?"selected":""}>Available</option><option value="occupied" ${p.status==="occupied"?"selected":""}>Occupied</option></select>${currentSection}<button id="save" class="btn primary" style="width:100%;margin-top:12px">Save Detailed Update</button></div><hr style="border:0;border-top:1px solid var(--line);margin:28px 0">${photoSection}<hr style="border:0;border-top:1px solid var(--line);margin:28px 0"><h4 class="detail-center">Status History</h4>${(logs.length||allPinPhotos().length)?`<div class="history-box"><div><small>Latest update</small><br><b>${dt(logs[0].changed_at)}</b></div><button id="hist" class="btn primary small">History</button></div>`:'<p class="hint detail-center">No status history yet.</p>'}`;
+      const statusSelect=$("editStatus");statusSelect.onchange=()=>{statusSelect.classList.remove("status-available","status-occupied");if(statusSelect.value)statusSelect.classList.add(`status-${statusSelect.value}`)};
+      if($("occ"))$("occ").onclick=quickOcc;if($("ava"))$("ava").onclick=quickAva;$("save").onclick=detailed;
+      if($("uploadBtn")){$("uploadBtn").onclick=()=>$("photoInput").click();$("photoInput").onchange=uploadPhoto}
+      document.querySelectorAll(".del").forEach(b=>b.onclick=()=>deletePhoto(photos.find(x=>String(x.id)===String(b.dataset.id))));
+      document.querySelectorAll(".photo-thumb").forEach(img=>img.onclick=()=>openPhotoModal(img.dataset.src,img.dataset.date));
+      if($("closeDetail"))$("closeDetail").onclick=closeDetailModal;if($("hist"))$("hist").onclick=showHistory
+    }
+    function render(){renderSummary();computeNearest();renderList();renderNearest();renderDetail();renderMap()}
+    function isMobile(){return window.matchMedia&&window.matchMedia("(max-width:900px)").matches}
+    function openDetailModal(){if(isMobile()&&s.selected){$("detail").classList.add("mobile-open");document.body.classList.add("detail-modal-open")}}
+    function closeDetailModal(){$("detail").classList.remove("mobile-open");document.body.classList.remove("detail-modal-open")}
+    function selectPin(id){s.selected=id||"";render();openDetailModal()}
+    async function loadData(){s.loading=true;renderList();const [a,b,c]=await Promise.all([db.from("emcy_pins").select("*").order("mooring_code",{ascending:true}),db.from("emcy_photos").select("*").order("created_at",{ascending:false}),db.from("emcy_status_logs").select("*").order("changed_at",{ascending:false})]);s.loading=false;if(a.error)alert("Failed to load moorings: "+a.error.message);else{s.pins=a.data||[];if(s.selected&&!s.pins.some(p=>p.id===s.selected))s.selected=""} if(b.error){alert("Failed to load photos: "+b.error.message);s.photos=[]}else{const rows=b.data||[],paths=rows.map(ph=>ph.file_path).filter(Boolean);let signed={};if(paths.length){const sr=await db.storage.from(PHOTO_BUCKET).createSignedUrls(paths,3600);if(sr.error)console.error("Failed to sign photo URLs:",sr.error);else (sr.data||[]).forEach(x=>{if(x.signedUrl)signed[x.path]=x.signedUrl})}s.photos=rows.map(ph=>({...ph,signed_url:signed[ph.file_path]||""}))} if(c.error)alert("Failed to load status logs: "+c.error.message);else s.logs=c.data||[];render()}
+    async function saveStatus(newStatus,vessel,note){const p=pin();if(!p)return false;const vv=newStatus==="available"?null:(vessel||null);let r=await db.from("emcy_pins").update({status:newStatus,current_vessel_name:vv,note:note||null,last_updated_at:new Date().toISOString()}).eq("id",p.id);if(r.error){alert("Failed to update status: "+r.error.message);return false} r=await db.from("emcy_status_logs").insert({pin_id:p.id,old_status:p.status||"available",new_status:newStatus,vessel_name:vv,note:note||null});if(r.error){alert("Failed to save status log: "+r.error.message);return false} await loadData();return true}
+    function promptRequired(message,defaultValue=""){while(true){const value=prompt(message,defaultValue);if(value===null)return null;const trimmed=value.trim();if(trimmed)return trimmed;alert("This field is required. Please enter a value.");defaultValue=""}}
+    async function quickOcc(){const v=promptRequired("Enter the vessel name currently using this mooring.","");if(v===null)return;const placedBy=promptRequired("Placed by (Initial)","");if(placedBy===null)return;if(await saveStatus("occupied",v,placedBy))alert("Marked as occupied.")}
+    async function quickAva(){const removedBy=promptRequired("Removed by (Initial)","");if(removedBy===null)return;if(await saveStatus("available",null,removedBy))alert("Marked as available.")}
+    async function detailed(){const st=$("editStatus").value;if(!st){alert("Please select a status before saving the detailed update.");return} if(await saveStatus(st,$("vessel").value.trim(),$("note").value.trim()))alert("Detailed update saved.")}
+    async function uploadPhoto(e){const file=e.target.files&&e.target.files[0],p=pin();if(!file||!p)return;if(p.status!=="occupied"){alert("Photos can only be uploaded while the mooring is occupied.");e.target.value="";return;}$("uploadMsg").textContent="Uploading...";const ext=file.name.split(".").pop(),name=`${p.id}/${Date.now()}.${ext}`;let r=await db.storage.from(PHOTO_BUCKET).upload(name,file,{upsert:false,contentType:file.type||undefined});if(r.error){alert("Failed to upload photo: "+r.error.message);$("uploadMsg").textContent="";return}r=await db.from("emcy_photos").insert({pin_id:p.id,file_path:name});if(r.error){await db.storage.from(PHOTO_BUCKET).remove([name]);alert("Failed to save photo record: "+r.error.message);$("uploadMsg").textContent="";return}e.target.value="";await loadData()}
+    async function deletePhoto(ph){if(!ph||!confirm("Delete this photo?"))return;const path=String(ph.file_path||"");if(path){const storageResult=await db.storage.from(PHOTO_BUCKET).remove([path]);if(storageResult.error){alert("Failed to delete photo file: "+storageResult.error.message);return}}const r=await db.from("emcy_photos").delete().eq("id",ph.id);if(r.error)alert("Failed to delete photo record: "+r.error.message);else await loadData()}
+    function locate(){const btns=[$("locateBtn"),$("locateTop")].filter(Boolean),setBtns=(busy)=>btns.forEach(b=>{b.disabled=busy;b.textContent=busy?"Getting location...":(b.id==="locateTop"?"Current Location":"Use my current location")});if(!navigator.geolocation){$("locationMsg").textContent="Location services are not available on this device.";return}setBtns(true);navigator.geolocation.getCurrentPosition(pos=>{s.user={lat:pos.coords.latitude,lng:pos.coords.longitude};setBtns(false);render()},err=>{const m={1:"Location permission was denied.",2:"Unable to determine current location.",3:"Location request timed out."};$("locationMsg").textContent=m[err.code]||"Failed to get location.";setBtns(false)},{enableHighAccuracy:true,timeout:10000,maximumAge:60000})}
+
+    let photoZoom=1;
+    function applyPhotoZoom(){const img=$("photoModalImg"),viewer=$("photoViewer");if(!img||!viewer)return;$("zoomLevel").textContent=`${Math.round(photoZoom*100)}%`;viewer.classList.toggle("zoomed",photoZoom>1.01);if(photoZoom>1.01){img.style.transform="none";img.style.maxWidth="none";img.style.maxHeight="none";img.style.width=`${Math.round(photoZoom*100)}%`;img.style.height="auto"}else{img.style.transform="none";img.style.maxWidth="100%";img.style.maxHeight="100%";img.style.width="";img.style.height=""}}
+    function setPhotoZoom(value){photoZoom=Math.min(4,Math.max(.25,value));applyPhotoZoom()}
+    function openPhotoModal(src,caption=""){if(!src)return;photoZoom=1;$("photoModalImg").src=src;$("photoModalTitle").textContent="Mooring Photo";$("photoCaption").textContent=caption?`Uploaded: ${caption}`:"";$("openPhotoNewTab").href=src;$("photoModal").style.display="flex";$("photoViewer").scrollTop=0;$("photoViewer").scrollLeft=0;applyPhotoZoom()}
+    function closePhotoModal(){$("photoModal").style.display="none";$("photoModalImg").src=""}
+    function historyHtml(x){return `<div class="history-item"><div class="hint">${dt(x.changed_at)}</div><b>${esc(x.old_status||"-")} → ${esc(x.new_status||"-")}</b><br>Vessel: ${esc(x.vessel_name||"None")}<br>Note: ${esc(x.note||"-")}</div>`}
+    function showHistory(){
+      const p=pin(),logs=allPinLogs(),photos=allPinPhotos();if(!p)return;
+      $("historySub").textContent=`Previous status updates, notes and photos for ${p.mooring_code||"NO-CODE"} - ${p.title||"Untitled"}`;
+      const photoHtml=photos.length?`<h4>Previous Photos (${photos.length})</h4><div class="history-photos">${photos.map(ph=>`<div class="history-photo"><img class="history-photo-thumb" src="${esc(ph.signed_url||"")}" alt="Previous mooring photo" data-src="${esc(ph.signed_url||"")}" data-date="${esc(dt(ph.created_at))}"><div class="history-photo-meta">Uploaded: ${dt(ph.created_at)}</div></div>`).join("")}</div>`:'<p class="hint">No previous photos.</p>';
+      const logHtml=logs.length?`<h4>Status and Note History (${logs.length})</h4>${logs.map(historyHtml).join("")}`:'<p class="hint">No previous status or note history yet.</p>';
+      $("historyList").innerHTML=photoHtml+logHtml;
+      document.querySelectorAll(".history-photo-thumb").forEach(img=>img.onclick=()=>openPhotoModal(img.dataset.src,img.dataset.date));
+      $("historyModal").style.display="flex"
+    }
+    function setMobileFullMap(enabled){
+      if(!isMobile())enabled=false;
+      document.body.classList.toggle("mobile-full-map",enabled);
+      const btn=$("mobileMapToggle");
+      if(btn){
+        btn.textContent=enabled?"▣":"⛶";
+        btn.setAttribute("aria-label",enabled?"Show dashboard and mooring list":"Show full map");
+        btn.title=enabled?"Show dashboard and mooring list":"Show full map";
+      }
+      setTimeout(()=>{if(s.map)s.map.invalidateSize()},80);
+    }
+    function toggleMobileMap(){setMobileFullMap(!document.body.classList.contains("mobile-full-map"))}
+    if($("mobileMapToggle"))$("mobileMapToggle").onclick=toggleMobileMap;
+    window.addEventListener("resize",()=>{
+      if(!isMobile())document.body.classList.remove("mobile-full-map");
+      setTimeout(()=>{if(s.map)s.map.invalidateSize()},80)
+    });
+    $("locateBtn").onclick=locate;if($("locateTop"))$("locateTop").onclick=locate;$("closeHistory").onclick=()=>$("historyModal").style.display="none";$("historyModal").onclick=e=>{if(e.target===$("historyModal"))$("historyModal").style.display="none"};$("closePhoto").onclick=closePhotoModal;$("photoModal").onclick=e=>{if(e.target===$("photoModal"))closePhotoModal()};$("zoomIn").onclick=()=>setPhotoZoom(photoZoom+.25);$("zoomOut").onclick=()=>setPhotoZoom(photoZoom-.25);$("zoomReset").onclick=()=>setPhotoZoom(1);$("photoViewer").ondblclick=()=>setPhotoZoom(photoZoom>1.01?1:2);$("photoViewer").addEventListener("wheel",e=>{if($("photoModal").style.display!=="flex")return;e.preventDefault();setPhotoZoom(photoZoom+(e.deltaY<0?.15:-.15))},{passive:false});document.addEventListener("keydown",e=>{if($("photoModal").style.display==="flex"){if(e.key==="Escape")closePhotoModal();if(e.key==="+"||e.key==="=")setPhotoZoom(photoZoom+.25);if(e.key==="-"||e.key==="_")setPhotoZoom(photoZoom-.25);if(e.key==="0")setPhotoZoom(1);return}if(e.key==="Escape"&&document.body.classList.contains("detail-modal-open"))closeDetailModal()});$("detail").addEventListener("click",e=>{if(isMobile()&&e.target===$("detail"))closeDetailModal()});initMap();setMobileFullMap(isMobile());loadData();
+  </script>
+</body>
+</html>

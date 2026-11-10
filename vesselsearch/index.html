@@ -1,0 +1,531 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Vessel Search</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root { --bg:#f6f7f9; --card:#fff; --text:#17202a; --muted:#687385; --line:#d8dee8; --primary:#0f6cbd; --primary-dark:#0b5cab; --success:#107c10; --danger:#c50f1f; --radius:14px; --shadow:0 10px 24px rgba(15,23,42,.08); }
+    * { box-sizing:border-box; } body { margin:0; font-family:Arial, Helvetica, sans-serif; background:var(--bg); color:var(--text); }
+    header { background:#0b1f33; color:white; padding:18px 22px; position:sticky; top:0; z-index:10; box-shadow:0 3px 14px rgba(0,0,0,.18); }
+    header h1 { margin:0; font-size:22px; } header p { margin:5px 0 0; color:#cbd7e6; font-size:13px; } main { max-width:1280px; margin:0 auto; padding:18px; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); padding:16px; margin-bottom:16px; }
+    .toolbar { display:grid; grid-template-columns:1fr auto auto auto auto; gap:10px; align-items:end; } label { display:block; font-size:12px; font-weight:700; color:var(--muted); margin-bottom:6px; }
+    input, select, textarea { width:100%; border:1px solid var(--line); border-radius:10px; padding:10px 11px; font-size:14px; background:white; color:var(--text); } textarea { min-height:96px; resize:vertical; }
+    button { border:0; border-radius:10px; padding:10px 14px; font-size:14px; font-weight:700; cursor:pointer; background:var(--primary); color:white; white-space:nowrap; } button:hover { background:var(--primary-dark); }
+    button.secondary { background:#eef3f8; color:#123; border:1px solid var(--line); } button.secondary:hover { background:#e2ebf5; } button.success { background:var(--success); }
+    .status { color:var(--muted); font-size:13px; margin-top:10px; } .pill { display:inline-block; padding:3px 8px; border-radius:999px; background:#eef3f8; color:#334155; font-size:12px; }
+    .table-wrap { overflow-x:auto; border:1px solid var(--line); border-radius:12px; } table { width:100%; border-collapse:collapse; min-width:1100px; } th, td { padding:10px; border-bottom:1px solid var(--line); text-align:left; vertical-align:top; font-size:13px; } th { background:#f0f4f8; color:#334155; position:sticky; top:0; } tr:hover td { background:#fbfdff; }
+    .grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; } .empty { padding:28px; text-align:center; color:var(--muted); }
+    dialog { width:min(980px, calc(100vw - 24px)); border:0; border-radius:16px; box-shadow:0 22px 60px rgba(0,0,0,.32); padding:0; } dialog::backdrop { background:rgba(8,15,28,.55); }
+    .modal-head { padding:16px 18px; background:#0b1f33; color:white; border-radius:16px 16px 0 0; display:flex; justify-content:space-between; gap:12px; align-items:center; } .modal-head h2 { margin:0; font-size:18px; }
+    .modal-body { padding:16px 18px; max-height:74vh; overflow:auto; } .modal-actions { display:flex; justify-content:flex-end; gap:10px; padding-top:14px; border-top:1px solid var(--line); margin-top:14px; }
+    .note-item { border:1px solid var(--line); border-radius:12px; padding:10px; margin:8px 0; background:#fbfdff; } .note-time { color:var(--muted); font-size:12px; font-weight:700; margin-bottom:4px; }
+    @media (max-width:760px) { main { padding:12px; } .toolbar, .grid { grid-template-columns:1fr; } button { width:100%; } .modal-actions { flex-direction:column-reverse; } th,td { font-size:12px; padding:8px; } }
+    /* Photo gallery */
+    .photo-section { margin-top:18px; }
+    .photo-section-head { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px; }
+    .photo-section-head h3 { margin:0; font-size:16px; }
+    .photo-gallery { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px; }
+    .photo-thumb { position:relative; border:1px solid var(--line); border-radius:12px; overflow:hidden; background:#f0f4f8; box-shadow:0 4px 12px rgba(15,23,42,.06); }
+    .photo-thumb img { width:100%; height:120px; object-fit:cover; display:block; cursor:zoom-in; background:#e6edf5; }
+    .photo-thumb .ph-skel { width:100%; height:120px; background:linear-gradient(100deg,#e6edf5 30%,#eff4f9 50%,#e6edf5 70%); background-size:200% 100%; animation:ph-shine 1.1s linear infinite; }
+    @keyframes ph-shine { from{background-position:200% 0} to{background-position:-200% 0} }
+    .photo-thumb .pdf-tile { width:100%; height:120px; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:6px; color:#0b5cab; font-size:13px; font-weight:700; text-decoration:none; background:#eef3f8; }
+    .photo-thumb .pdf-tile span { font-size:30px; }
+    .photo-cap { padding:7px 9px; font-size:11px; color:#334155; border-top:1px solid var(--line); word-break:break-word; line-height:1.3; }
+    .photo-actions { position:absolute; top:6px; right:6px; display:flex; gap:5px; opacity:0; transition:opacity .15s; }
+    .photo-thumb:hover .photo-actions { opacity:1; }
+    .photo-act-btn { width:26px; height:26px; padding:0; border-radius:8px; color:#fff; font-size:14px; line-height:1; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 6px rgba(0,0,0,.25); }
+    .photo-act-btn.del { background:rgba(197,15,31,.94); }
+    .photo-act-btn.rename { background:rgba(15,108,189,.94); }
+    .photo-loading, .photo-empty { grid-column:1/-1; padding:22px; text-align:center; color:var(--muted); font-size:13px; border:1px dashed var(--line); border-radius:12px; }
+    .photo-empty small { display:block; margin-top:6px; color:#93a1b0; font-size:11px; }
+    .photo-uploading { font-size:12px; color:var(--primary); font-weight:700; }
+    .photo-upload-label { display:inline-flex; align-items:center; gap:7px; padding:9px 13px; border-radius:10px; font-size:13px; font-weight:700; cursor:pointer; background:var(--success); color:#fff; }
+    .photo-upload-label:hover { filter:brightness(.94); }
+    .photo-upload-label input { display:none; }
+    /* Lightbox (native dialog so it renders above other modals via the browser top-layer) */
+    #lightbox { width:auto; max-width:96vw; max-height:96vh; background:transparent; border:0; box-shadow:none; padding:0; overflow:visible; }
+    #lightbox::backdrop { background:rgba(4,10,20,.9); }
+    #lightbox .lb-inner { position:relative; display:flex; align-items:center; justify-content:center; }
+    #lightbox img { max-width:92vw; max-height:88vh; border-radius:10px; box-shadow:0 30px 80px rgba(0,0,0,.5); display:block; background:#0b1f33; }
+    #lightbox .lb-close { position:fixed; top:16px; right:20px; width:44px; height:44px; border-radius:50%; background:rgba(255,255,255,.16); color:#fff; font-size:24px; }
+    #lightbox .lb-close:hover { background:rgba(255,255,255,.28); }
+    #lightbox .lb-cap { position:fixed; bottom:18px; left:0; right:0; text-align:center; color:#dbe7f4; font-size:13px; padding:0 20px; }
+    /* Rename dialog */
+    #renameDialog { width:min(460px, calc(100vw - 24px)); }
+    #renameDialog .rn-preview { width:100%; height:150px; object-fit:cover; border-radius:10px; border:1px solid var(--line); margin-bottom:12px; background:#e6edf5; }
+    #renameDialog .rn-current { font-size:12px; color:var(--muted); word-break:break-word; margin:0 0 14px; }
+    #renameDialog .rn-current b { color:var(--text); }
+    #renameDialog .rn-preview-name { font-size:12px; color:var(--primary-dark); font-weight:700; word-break:break-word; margin:10px 0 0; min-height:16px; }
+    .unknown-note { padding:10px 12px; border:1px solid #f0d48a; background:#fff8e6; border-radius:10px; color:#7a5b12; font-size:12px; line-height:1.5; margin:0 0 14px; }
+    .unknown-search-row { position:sticky; top:0; z-index:2; display:flex; align-items:center; gap:12px; background:var(--card); padding:0 0 12px; margin:0 0 4px; }
+    .unknown-search-row input { flex:1; }
+    .unknown-count { font-size:12px; font-weight:700; color:var(--muted); white-space:nowrap; }
+    /* Access code gate - MVP client-side gate */
+    body.access-locked header,
+    body.access-locked main,
+    body.access-locked #recordDialog {
+      display: none !important;
+    }
+    #accessGate {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      background: linear-gradient(135deg, #0b1f33, #123b5d);
+    }
+    body.access-locked #accessGate {
+      display: flex;
+    }
+    .access-card {
+      width: min(420px, 100%);
+      background: #fff;
+      border-radius: 18px;
+      box-shadow: 0 24px 70px rgba(0,0,0,.35);
+      padding: 22px;
+      border: 1px solid rgba(255,255,255,.2);
+    }
+    .access-card h2 { margin: 0 0 8px; font-size: 22px; color: var(--text); }
+    .access-card p { margin: 0 0 16px; color: var(--muted); font-size: 14px; line-height: 1.4; }
+    .access-actions { display: flex; gap: 10px; align-items: center; }
+    .access-error { min-height: 18px; color: var(--danger); font-size: 13px; font-weight: 700; margin-top: 10px; }
+    @media (max-width:760px) {
+      .access-actions { flex-direction: column; }
+      .access-actions button { width: 100%; }
+    }
+  </style>
+<style id="dashboardIntegrationStyle">
+.dashboard-back{position:fixed;z-index:120000;right:14px;bottom:14px;display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:0 14px;border:1px solid rgba(125,211,252,.55);border-radius:999px;background:rgba(7,24,40,.94);color:#e8f6ff;text-decoration:none;font:800 12px/1 Segoe UI,Arial,sans-serif;box-shadow:0 10px 28px rgba(0,0,0,.35)}
+.dashboard-back:hover,.dashboard-back:focus-visible{border-color:#67e8f9;background:#0c2a43;outline:none}
+@media(max-width:700px){.dashboard-back{right:8px;bottom:8px;min-height:38px;padding:0 11px;font-size:11px}}
+</style></head>
+<body class="access-locked"><a href="../" class="dashboard-back" title="Return to Auckland Harbour Operations Monitoring Page">← Dashboard</a>
+<div id="accessGate" role="dialog" aria-modal="true" aria-labelledby="accessTitle">
+  <div class="access-card">
+    <h2 id="accessTitle">Access Code Required</h2>
+    <p>Please enter the access code to open Vessel Search.</p>
+    <form id="accessForm">
+      <label for="accessCodeInput">Access code</label>
+      <div class="access-actions">
+        <input id="accessCodeInput" type="password" autocomplete="off" placeholder="Enter access code" />
+        <button type="submit">Unlock</button>
+      </div>
+      <div id="accessError" class="access-error"></div>
+    </form>
+  </div>
+</div>
+<header><h1>Vessel Search</h1><p></p></header>
+<main>
+  <section class="card"><div class="toolbar">
+    <div><label for="searchText">Search vessel, mooring, or customer</label><input id="searchText" placeholder="Type vessel name, mooring code, or customer name" autocomplete="off" /></div>
+    <button id="searchBtn">Search</button><button id="insertBtn" class="success">Insert New</button><button id="unknownBtn" class="secondary" type="button">Unknown Owners</button><button id="photoSearchBtn" class="secondary" type="button">SharePoint</button>
+  </div><div class="status" id="statusText">Ready. Search by vessel name, mooring code, or customer name.</div></section>
+  <section class="card"><div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:10px;flex-wrap:wrap;"><strong>Results</strong><span class="pill" id="resultCount">0 records</span></div><div class="table-wrap" id="tableWrap"><div class="empty">No search performed yet.</div></div></section>
+</main>
+<dialog id="recordDialog"><form method="dialog" id="recordForm"><div class="modal-head"><h2 id="modalTitle">Edit Vessel</h2><button type="button" class="secondary" onclick="closeDialog()">Close</button></div><div class="modal-body">
+  <input type="hidden" id="recordId" />
+  <div class="grid"><div><label>Vessel name</label><input id="boat_vessel_name" /></div><div><label>Mooring code</label><input id="mooring_code" /></div><div><label>Permit date of issue</label><input id="mooring_permit_date_of_issue" placeholder="YYYY-MM-DD or original text" /></div><div><label>Customer name</label><input id="customer_name" /></div></div>
+  <div class="grid" style="margin-top:12px;"><div><label>Mobile</label><input id="customer_phonemob" /></div><div><label>Email</label><input id="customer_email" /></div><div><label>Phone A/H</label><input id="customer_phoneah" /></div><div><label>Phone Work</label><input id="customer_phonewk" /></div></div>
+  <hr style="border:0;border-top:1px solid var(--line);margin:18px 0;" />
+  <div class="photo-section"><div class="photo-section-head"><h3>Photos</h3><div style="display:flex;align-items:center;gap:10px;"><span id="photoUploadStatus" class="photo-uploading"></span><label class="photo-upload-label">&#128247; Add photos<input type="file" id="photoUploadInput" accept="image/*,application/pdf" multiple /></label></div></div><div class="photo-gallery" id="photoGallery"><div class="photo-empty">Save the vessel first to attach photos.</div></div></div>
+  <hr style="border:0;border-top:1px solid var(--line);margin:18px 0;" /><h3 style="margin:0 0 8px;">Notes</h3><p class="status" style="margin-top:0;">Each new note is saved with timestamp and displayed newest first.</p>
+  <div class="grid"><div><label for="newNote">Add note</label><textarea id="newNote" placeholder="Type new note here..."></textarea><button type="button" id="addNoteBtn" class="secondary" style="margin-top:8px;">Add Note</button></div><div><label>Note history</label><div id="notesList"><div class="empty">No notes.</div></div></div></div>
+  <div class="modal-actions"><button type="button" class="secondary" onclick="closeDialog()">Cancel</button><button type="button" id="saveBtn">Save Record</button></div>
+</div></form></dialog>
+<dialog id="unknownDialog"><div class="modal-head"><h2>Unknown Owners</h2><button type="button" class="secondary" onclick="document.getElementById('unknownDialog').close()">Close</button></div><div class="modal-body"><p class="unknown-note">Photos whose filename has no recognisable mooring code (2 letters + 2-3 digits) and no vessel-name match. Use <b>Rename</b> to assign a mooring code and/or vessel name &mdash; the photo will then appear automatically in that vessel's Edit window. Or delete if not needed.</p><div class="unknown-search-row"><input id="unknownSearch" type="text" placeholder="Filter by filename (type text or numbers)..." autocomplete="off" /><span class="unknown-count" id="unknownCount"></span></div><div class="photo-gallery" id="unknownGallery"><div class="photo-loading">Loading unmatched photos...</div></div></div></dialog>
+<dialog id="renameDialog"><form method="dialog"><div class="modal-head"><h2>Rename Photo</h2><button type="button" class="secondary" onclick="document.getElementById('renameDialog').close()">Close</button></div><div class="modal-body">
+  <img id="renamePreview" class="rn-preview" alt="" />
+  <p class="rn-current">Current file: <b id="renameCurrent"></b></p>
+  <div class="grid"><div><label for="renameMooring">Mooring code (2 letters + 2-3 digits)</label><input id="renameMooring" placeholder="e.g. AB001" autocomplete="off" /></div><div><label for="renameVessel">Vessel name</label><input id="renameVessel" placeholder="e.g. Jaspa II" autocomplete="off" /></div></div>
+  <p class="rn-preview-name" id="renamePreviewName"></p>
+  <div class="modal-actions"><button type="button" class="secondary" onclick="document.getElementById('renameDialog').close()">Cancel</button><button type="button" id="renameSaveBtn">Rename &amp; Match</button></div>
+</div></form></dialog>
+<dialog id="lightbox"><div class="lb-inner"><button class="lb-close" type="button" onclick="closeLightbox()">&times;</button><img id="lightboxImg" alt="" /><div class="lb-cap" id="lightboxCap"></div></div></dialog>
+<script>
+  // Access-code verification through Supabase Edge Function. No code stored in this file.
+  const ACCESS_FUNCTION_URL = 'https://wgwlnutnstrfuiiunlcu.supabase.co/functions/v1/hyper-responder';
+  const ACCESS_APP_NAME = 'vessel_search';
+  const ACCESS_SESSION_KEY = 'vesselSearchAccessSession';
+  const ACCESS_SESSION_DURATION_MS = 8 * 60 * 60 * 1000;
+  function saveAccessSession() { sessionStorage.setItem(ACCESS_SESSION_KEY, JSON.stringify({ granted:true, expiresAt: Date.now()+ACCESS_SESSION_DURATION_MS })); }
+  function hasValidAccessSession() {
+    try {
+      const s = sessionStorage.getItem(ACCESS_SESSION_KEY); if(!s) return false;
+      const session = JSON.parse(s);
+      if(session.granted!==true || typeof session.expiresAt!=='number' || Date.now()>=session.expiresAt){ sessionStorage.removeItem(ACCESS_SESSION_KEY); return false; }
+      return true;
+    } catch(e){ sessionStorage.removeItem(ACCESS_SESSION_KEY); return false; }
+  }
+  function unlockAccessGate(){ document.body.classList.remove('access-locked'); saveAccessSession(); }
+  async function verifyAccessCode(accessCode){
+    const controller = new AbortController(); const t = setTimeout(()=>controller.abort(),10000);
+    try {
+      const response = await fetch(ACCESS_FUNCTION_URL, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ app:ACCESS_APP_NAME, code:accessCode }), signal:controller.signal });
+      let result; try { result = await response.json(); } catch(e){ throw new Error('The server returned an invalid response.'); }
+      if(!response.ok || result.valid!==true) return { valid:false, message: result.message || 'Incorrect access code. Please try again.' };
+      return { valid:true, message:'Access granted.' };
+    } finally { clearTimeout(t); }
+  }
+  function initAccessGate(){
+    const accessForm=document.getElementById('accessForm'), accessInput=document.getElementById('accessCodeInput'), accessError=document.getElementById('accessError');
+    const submitButton = accessForm?.querySelector('button[type="submit"]');
+    if(hasValidAccessSession()){ document.body.classList.remove('access-locked'); return; }
+    sessionStorage.removeItem(ACCESS_SESSION_KEY);
+    setTimeout(()=>accessInput?.focus(),50);
+    accessForm?.addEventListener('submit', async (event)=>{
+      event.preventDefault();
+      const enteredCode=(accessInput.value||'').trim();
+      if(enteredCode.length<8){ accessError.style.color='var(--danger)'; accessError.textContent='Please enter a valid access code.'; accessInput.focus(); return; }
+      accessError.textContent='Checking access code...'; accessError.style.color='var(--muted)'; accessInput.disabled=true;
+      if(submitButton){ submitButton.disabled=true; submitButton.textContent='Checking...'; }
+      try {
+        const result=await verifyAccessCode(enteredCode);
+        if(result.valid){ accessError.textContent=''; accessError.style.color='var(--danger)'; accessInput.value=''; unlockAccessGate(); return; }
+        accessError.style.color='var(--danger)'; accessError.textContent='Incorrect access code. Please try again.'; accessInput.value='';
+      } catch(error){
+        console.error('Access verification failed:', error);
+        accessError.style.color='var(--danger)';
+        accessError.textContent = error.name==='AbortError' ? 'The request timed out. Please try again.' : 'Unable to verify access. Please try again.';
+      } finally {
+        accessInput.disabled=false;
+        if(submitButton){ submitButton.disabled=false; submitButton.textContent='Unlock'; }
+        accessInput.focus();
+      }
+    });
+  }
+  initAccessGate();
+  const SUPABASE_URL = 'https://wgwlnutnstrfuiiunlcu.supabase.co';
+  const SUPABASE_ANON_KEY = 'sb_publishable_iC7kbinoy61_5eQCnrV25Q_OioA7Y1x';
+  const PHOTO_SEARCH_URL = 'https://aucklandtransport.sharepoint.com/sites/ahmfs/PublishingImages/Forms/AllItems.aspx?id=%2Fsites%2Fahmfs%2FPublishingImages%2FBoat%20image&viewid=64a01bc5%2De980%2D457b%2D8a07%2De269d1c17c4e';
+  const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const PHOTO_BUCKET = 'vessel-photos';
+  const IMAGE_EXT = ['jpg','jpeg','png','gif','webp','bmp','heic'];
+  const MOORING_RE = /^\s*([A-Za-z]{2}\d{2,3})(?![A-Za-z0-9])/;
+  let photoIndex = null;      // cached parsed list of ALL objects (root + subfolders)
+  let photoTotalCount = 0;
+  function norm(s){ return String(s??'').toLowerCase().replace(/[^a-z0-9 ]+/g,' ').replace(/\s+/g,' ').trim(); }
+  function parsePhotoName(name){
+    const raw = name;
+    const dot = name.lastIndexOf('.');
+    let ext = dot>0 ? name.slice(dot+1).toLowerCase().replace(/_\d+$/,'') : '';
+    let base = dot>0 ? name.slice(0,dot) : name;
+    base = base.replace(/\.pdf.*$/i,'').replace(/\.webp$/i,'').trim();
+    const m = base.match(MOORING_RE);
+    let mooring = null, rest = base;
+    if(m){ mooring = m[1].toUpperCase(); rest = base.slice(m[0].length).replace(/^[\s\-_,]+/,''); }
+    let vessel = rest.split(/[,\-_]/)[0].replace(/\b\d{4,}\b/g,'').replace(/\b\d{1,2}\b\s*$/,'').trim();
+    return { raw, ext, mooring, vessel, mooringNorm: mooring?norm(mooring):'', vesselNorm: norm(vessel) };
+  }
+  function isImage(p){ return IMAGE_EXT.includes((p.ext||'').toLowerCase()); }
+  // Recursively list every object (root + sub-folders) with pagination.
+  async function listAllObjects(prefix, depth){
+    prefix = prefix || ''; depth = depth || 0;
+    const out = [];
+    if(depth > 6) return out;
+    let offset = 0; const PAGE = 100;
+    while(true){
+      const { data, error } = await supabaseClient.storage.from(PHOTO_BUCKET)
+        .list(prefix, { limit: PAGE, offset, sortBy:{ column:'name', order:'asc' } });
+      if(error){ console.error('list', prefix, error); break; }
+      const batch = data || [];
+      for(const item of batch){
+        const full = prefix ? (prefix + '/' + item.name) : item.name;
+        if(item.id === null){
+          if(item.name === '.emptyFolderPlaceholder') continue;
+          const nested = await listAllObjects(full, depth+1);
+          out.push(...nested);
+        } else if(item.name && item.name !== '.emptyFolderPlaceholder') {
+          out.push(full);
+        }
+      }
+      if(batch.length < PAGE) break;
+      offset += PAGE;
+    }
+    return out;
+  }
+  async function loadPhotoIndex(force=false){
+    if(photoIndex && !force) return photoIndex;
+    const paths = await listAllObjects('', 0);
+    photoTotalCount = paths.length;
+    photoIndex = paths.map(full => {
+      const name = full.includes('/') ? full.slice(full.lastIndexOf('/')+1) : full;
+      return { ...parsePhotoName(name), path: full };
+    });
+    return photoIndex;
+  }
+  // Sign URLs in chunks (avoids request-size limits on large galleries).
+  async function signPaths(paths){
+    const map = {};
+    if(!paths.length) return map;
+    const CHUNK = 100;
+    for(let i=0;i<paths.length;i+=CHUNK){
+      const slice = paths.slice(i, i+CHUNK);
+      const { data, error } = await supabaseClient.storage.from(PHOTO_BUCKET).createSignedUrls(slice, 3600);
+      if(error){ console.error('sign', error); continue; }
+      (data||[]).forEach(d=>{ if(d.signedUrl) map[d.path]=d.signedUrl; });
+    }
+    return map;
+  }
+  // Match a photo to a specific record: mooring code first, then vessel name (both always checked).
+  function photoMatchesRecord(p, rec){
+    const mc = norm(rec.mooring_code), vn = norm(rec.boat_vessel_name);
+    if(p.mooringNorm && mc && p.mooringNorm===mc) return true;
+    if(vn && p.vesselNorm){
+      if(p.vesselNorm===vn) return true;
+      if(vn.length>=3 && p.vesselNorm.startsWith(vn)) return true;
+      if(p.vesselNorm.length>=3 && vn.startsWith(p.vesselNorm)) return true;
+    }
+    return false;
+  }
+  let recordKeyCache = null;
+  async function loadRecordKeys(force=false){
+    if(recordKeyCache && !force) return recordKeyCache;
+    const { data, error } = await supabaseClient.from('vessel_search_records').select('mooring_code,boat_vessel_name').limit(5000);
+    if(error){ console.error('keys', error); recordKeyCache={vessels:[]}; return recordKeyCache; }
+    const vessels=[];
+    (data||[]).forEach(r=>{ const vn=norm(r.boat_vessel_name); if(vn)vessels.push(vn); });
+    recordKeyCache={vessels}; return recordKeyCache;
+  }
+  function photoIsClaimed(p, keys){
+    if(p.mooring) return true;
+    if(p.vesselNorm){
+      return keys.vessels.some(vn => p.vesselNorm===vn || (vn.length>=3 && p.vesselNorm.startsWith(vn)) || (p.vesselNorm.length>=3 && vn.startsWith(p.vesselNorm)));
+    }
+    return false;
+  }
+  // ---- Lazy image loading via IntersectionObserver: sign & load only when scrolled into view ----
+  let photoObserver = null;
+  function ensureObserver(){
+    if(photoObserver) return photoObserver;
+    photoObserver = new IntersectionObserver((entries)=>{
+      entries.forEach(async entry=>{
+        if(!entry.isIntersecting) return;
+        const el = entry.target; photoObserver.unobserve(el);
+        const path = el.getAttribute('data-path');
+        try {
+          const { data } = await supabaseClient.storage.from(PHOTO_BUCKET).createSignedUrl(path, 3600);
+          const url = data && data.signedUrl;
+          if(!url) return;
+          const raw = el.getAttribute('data-raw') || '';
+          if(el.getAttribute('data-kind') === 'pdf'){
+            el.innerHTML = '<a class="pdf-tile" href="'+esc(url)+'" target="_blank" rel="noopener"><span>&#128196;</span>Open file</a>';
+          } else {
+            const img = new Image();
+            img.loading='lazy'; img.alt=raw; img.src=url;
+            img.onclick = ()=>openLightbox(url, raw);
+            el.innerHTML=''; el.appendChild(img);
+          }
+        } catch(e){ console.error('lazy sign', e); }
+      });
+    }, { rootMargin: '300px 0px' });
+    return photoObserver;
+  }
+  // Render gallery with lazy media (no bulk signing). photos: array of parsed objects.
+  function renderGalleryLazy(container, photos, opts){
+    opts = opts || {};
+    const editable = !!opts.editable, renamable = !!opts.renamable;
+    if(!photos.length){ container.innerHTML = opts.emptyHtml || '<div class="photo-empty">No photos found.</div>'; return; }
+    const obs = ensureObserver();
+    container.innerHTML = (opts.prependHtml||'') + photos.map(p=>{
+      const safePath = esc(p.path).replace(/'/g,"\\'");
+      const kind = isImage(p) ? 'img' : 'pdf';
+      const holder = '<div class="ph-media" data-path="'+esc(p.path)+'" data-raw="'+esc(p.raw)+'" data-kind="'+kind+'"><div class="ph-skel"></div></div>';
+      let actions='';
+      if(renamable || editable){
+        actions='<div class="photo-actions">';
+        if(renamable) actions+='<button type="button" class="photo-act-btn rename" title="Rename / assign to a vessel" onclick="openRenameLazy(this)">&#9998;</button>';
+        if(editable) actions+='<button type="button" class="photo-act-btn del" title="Delete photo" onclick="deletePhoto(\''+safePath+'\')">&times;</button>';
+        actions+='</div>';
+      }
+      return '<div class="photo-thumb" data-path="'+esc(p.path)+'" data-raw="'+esc(p.raw)+'">'+holder+actions+'<div class="photo-cap">'+esc(p.raw)+'</div></div>';
+    }).join('');
+    container.querySelectorAll('.ph-media').forEach(el=>obs.observe(el));
+  }
+  async function loadRecordPhotos(rec){
+    const gal = $('photoGallery');
+    if(!rec || !rec.id){ gal.innerHTML='<div class="photo-empty">Save the vessel first to attach photos.</div>'; return; }
+    gal.innerHTML='<div class="photo-loading">Loading photos...</div>';
+    const terms = [];
+    if(rec.mooring_code) terms.push(rec.mooring_code.trim());
+    if(rec.boat_vessel_name){ const vn=rec.boat_vessel_name.trim(); terms.push(vn); const first=vn.split(/[\s,\-_]+/)[0]; if(first && first.length>=3 && first.toLowerCase()!==vn.toLowerCase()) terms.push(first); }
+    const resultSets = await Promise.all(terms.map(searchStorage));
+    const seen = new Set(); const candidates = [];
+    resultSets.forEach(set => set.forEach(p => { if(!seen.has(p.path)){ seen.add(p.path); candidates.push(p); } }));
+    const mine = candidates.filter(p=>photoMatchesRecord(p, rec)).sort((a,b)=>a.path.localeCompare(b.path));
+    renderGalleryLazy(gal, mine, { editable:true, emptyHtml:'<div class="photo-empty">No photos matched this vessel.<small>Searched by mooring code and vessel name. If you expect a photo here, check its filename or use Unknown Owners &rarr; Rename.</small></div>' });
+  }
+  // Server-side targeted search for a single vessel (fast; no full scan).
+  async function searchStorage(term){
+    term = (term||'').trim();
+    if(!term) return [];
+    const { data, error } = await supabaseClient.storage.from(PHOTO_BUCKET)
+      .list('', { limit: 200, search: term, sortBy:{ column:'name', order:'asc' } });
+    if(error){ console.error('search', term, error); return []; }
+    return (data||[]).filter(f=>f.name && f.id!==null && f.name!=='.emptyFolderPlaceholder')
+      .map(f=>({ ...parsePhotoName(f.name), path:f.name }));
+  }
+  async function handlePhotoUpload(files){
+    if(!activeRecord || !activeRecord.id){ alert('Please save the vessel first, then add photos.'); return; }
+    const status=$('photoUploadStatus'); const list=[...files]; if(!list.length) return;
+    const mc=(activeRecord.mooring_code||'').trim(), vn=(activeRecord.boat_vessel_name||'').trim();
+    const prefix=[mc,vn].filter(Boolean).join(' ').replace(/[\\/]/g,' ').trim() || 'vessel';
+    let done=0;
+    for(const file of list){
+      status.textContent='Uploading '+(done+1)+'/'+list.length+'...';
+      const dot=file.name.lastIndexOf('.'); const ext=dot>0?file.name.slice(dot):'';
+      const stamp=Date.now().toString(36)+Math.floor(Math.random()*1000);
+      const path=(prefix+' '+stamp+ext).replace(/\s+/g,' ').trim();
+      const { error } = await supabaseClient.storage.from(PHOTO_BUCKET).upload(path, file, { upsert:false, contentType:file.type||undefined });
+      if(error){ console.error('upload', error); alert('Upload failed for '+file.name+': '+error.message); break; }
+      done++;
+    }
+    status.textContent = done? ('Uploaded '+done+' photo'+(done===1?'':'s')+'.') : '';
+    photoIndex=null; recordKeyCache=null; // invalidate caches
+    await loadRecordPhotos(activeRecord);
+    setTimeout(()=>{ status.textContent=''; }, 4000);
+  }
+  async function deletePhoto(path){
+    if(!confirm('Delete this photo?\n\n'+path)) return;
+    const { error } = await supabaseClient.storage.from(PHOTO_BUCKET).remove([path]);
+    if(error){ console.error('delete', error); alert('Delete failed: '+error.message); return; }
+    photoIndex=null;
+    if(activeRecord) await loadRecordPhotos(activeRecord);
+    if(document.getElementById('unknownDialog').open) await openUnknownOwners(true);
+  }
+  let unknownPhotos = [];
+  const UNKNOWN_RENDER_CAP = 120;
+  async function openUnknownOwners(force=false){
+    const dlg=$('unknownDialog'), gal=$('unknownGallery');
+    if(!dlg.open){ $('unknownSearch').value=''; dlg.showModal(); }
+    gal.innerHTML='<div class="photo-loading">Scanning photos (filenames only)...</div>';
+    const [all, keys] = await Promise.all([loadPhotoIndex(force), loadRecordKeys(force)]);
+    unknownPhotos = all.filter(p=>!photoIsClaimed(p, keys));
+    applyUnknownFilter();
+  }
+  function applyUnknownFilter(){
+    const gal=$('unknownGallery');
+    const q = ($('unknownSearch').value||'').toLowerCase().trim();
+    const filtered = q ? unknownPhotos.filter(p => (p.raw||'').toLowerCase().includes(q)) : unknownPhotos;
+    $('unknownCount').textContent = q
+      ? (filtered.length.toLocaleString()+' of '+unknownPhotos.length.toLocaleString())
+      : (unknownPhotos.length.toLocaleString()+' photo'+(unknownPhotos.length===1?'':'s'));
+    if(!filtered.length){ gal.innerHTML='<div class="photo-empty">'+(q?'No filenames match "'+esc(q)+'".':'No unmatched photos.')+'</div>'; return; }
+    const shown = filtered.slice(0, UNKNOWN_RENDER_CAP);
+    const capNote = filtered.length > UNKNOWN_RENDER_CAP
+      ? '<div class="photo-empty" style="grid-column:1/-1;">Showing the first '+UNKNOWN_RENDER_CAP+' of '+filtered.length.toLocaleString()+'. Type in the filter above to narrow the results.</div>'
+      : '';
+    renderGalleryLazy(gal, shown, { editable:true, renamable:true, prependHtml:capNote });
+  }
+  // ---- Rename ----
+  let renameActivePath = null;
+  function buildRenamedName(mooring, vessel, ext){
+    const parts = [];
+    if(mooring) parts.push(mooring.toUpperCase());
+    if(vessel) parts.push(vessel);
+    let base = parts.join(' ').replace(/[\\/]/g,' ').replace(/\s+/g,' ').trim();
+    if(!base) base = 'vessel';
+    return base + (ext ? ('.'+ext.replace(/^\./,'')) : '');
+  }
+  function updateRenamePreview(){
+    const ext = renameActivePath ? (renameActivePath.includes('.') ? renameActivePath.slice(renameActivePath.lastIndexOf('.')+1) : '') : '';
+    const name = buildRenamedName($('renameMooring').value.trim(), $('renameVessel').value.trim(), ext);
+    $('renamePreviewName').textContent = 'New name: ' + name;
+  }
+  function openRename(path, url){
+    renameActivePath = path;
+    const nameOnly = path.includes('/') ? path.slice(path.lastIndexOf('/')+1) : path;
+    const parsed = parsePhotoName(nameOnly);
+    $('renameCurrent').textContent = path;
+    $('renameMooring').value = parsed.mooring || '';
+    $('renameVessel').value = parsed.vessel || '';
+    const img = $('renamePreview');
+    if(url){ img.src = url; img.style.display='block'; } else { img.style.display='none'; }
+    updateRenamePreview();
+    $('renameDialog').showModal();
+  }
+  // Rename trigger from a lazily-rendered thumb: resolve path & a signed URL for the preview.
+  async function openRenameLazy(btn){
+    const thumb = btn.closest('.photo-thumb'); if(!thumb) return;
+    const path = thumb.getAttribute('data-path');
+    let url = '';
+    const existingImg = thumb.querySelector('img');
+    if(existingImg){ url = existingImg.src; }
+    else { try { const { data } = await supabaseClient.storage.from(PHOTO_BUCKET).createSignedUrl(path, 3600); url = data && data.signedUrl || ''; } catch(e){} }
+    openRename(path, url);
+  }
+  async function doRename(){
+    if(!renameActivePath) return;
+    const btn = $('renameSaveBtn');
+    const mooring = $('renameMooring').value.trim();
+    const vessel = $('renameVessel').value.trim();
+    if(!mooring && !vessel){ alert('Enter a mooring code and/or a vessel name.'); return; }
+    if(mooring && !/^[A-Za-z]{2}\d{2,3}$/.test(mooring)){
+      if(!confirm('"'+mooring+'" is not the usual mooring format (2 letters + 2-3 digits).\nSave anyway?')) return;
+    }
+    const ext = renameActivePath.includes('.') ? renameActivePath.slice(renameActivePath.lastIndexOf('.')+1) : '';
+    let newName = buildRenamedName(mooring, vessel, ext);
+    if(newName === renameActivePath){ $('renameDialog').close(); return; }
+    // Collision check against the current unknown set + cached index.
+    const existing = new Set((photoIndex||[]).map(p=>p.path.toLowerCase()));
+    if(existing.has(newName.toLowerCase())){
+      const dotN = newName.lastIndexOf('.');
+      const stamp = Date.now().toString(36)+Math.floor(Math.random()*1000);
+      newName = dotN>0 ? (newName.slice(0,dotN)+' '+stamp+newName.slice(dotN)) : (newName+' '+stamp);
+    }
+    btn.disabled = true; btn.textContent = 'Renaming...';
+    try {
+      const mv = await supabaseClient.storage.from(PHOTO_BUCKET).move(renameActivePath, newName);
+      if(mv.error){
+        const cp = await supabaseClient.storage.from(PHOTO_BUCKET).copy(renameActivePath, newName);
+        if(cp.error){ throw cp.error; }
+        const rm = await supabaseClient.storage.from(PHOTO_BUCKET).remove([renameActivePath]);
+        if(rm.error){ console.warn('copy ok but original not removed', rm.error); }
+      }
+      photoIndex=null; recordKeyCache=null; // invalidate so Edit window recognises it immediately
+      $('renameDialog').close();
+      if(document.getElementById('unknownDialog').open) await openUnknownOwners(true);
+      if(activeRecord && document.getElementById('recordDialog').open) await loadRecordPhotos(activeRecord);
+    } catch(e){
+      console.error('rename', e);
+      alert('Rename failed: '+(e.message||e));
+    } finally {
+      btn.disabled = false; btn.textContent = 'Rename & Match';
+      renameActivePath = null;
+    }
+  }
+  // ---- Lightbox ----
+  function openLightbox(src, cap){ $('lightboxImg').src=src; $('lightboxCap').textContent=cap||''; const lb=$('lightbox'); if(!lb.open) lb.showModal(); }
+  function closeLightbox(){ const lb=$('lightbox'); if(lb.open) lb.close(); $('lightboxImg').src=''; }
+  const fieldIds = ['boat_vessel_name','mooring_code','mooring_permit_date_of_issue','customer_name','customer_phonemob','customer_email','customer_phoneah','customer_phonewk'];
+  const displayColumns = [['boat_vessel_name','Vessel name'],['mooring_code','Mooring code'],['mooring_permit_date_of_issue','Permit date'],['customer_name','Customer name'],['customer_phonemob','Mobile'],['customer_email','Email'],['customer_phoneah','Phone A/H'],['customer_phonewk','Phone Work']];
+  let currentRows = [], activeRecord = null;
+  const $ = id => document.getElementById(id);
+  const esc = v => String(v ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+  function setStatus(message, isError=false) { $('statusText').textContent = message; $('statusText').style.color = isError ? 'var(--danger)' : 'var(--muted)'; }
+  async function searchRecords() { const text=$('searchText').value.trim(); if(!text){renderTable([]);setStatus('Please enter a vessel name, mooring code, or customer name.',true);return;} setStatus('Searching...'); const safeText=text.replace(/[,%()]/g,' ').trim(); const searchFilter=`boat_vessel_name.ilike.%${safeText}%,mooring_code.ilike.%${safeText}%,customer_name.ilike.%${safeText}%`; const {data,error}=await supabaseClient.from('vessel_search_records').select('*').or(searchFilter).order('boat_vessel_name', {ascending:true}).limit(300); if(error){console.error(error);setStatus(error.message,true);return;} currentRows=data||[]; renderTable(currentRows); setStatus(`Search complete. ${currentRows.length} record(s) found across vessel name, mooring code, and customer name.`); }
+  function renderTable(rows) { $('resultCount').textContent=`${rows.length} record${rows.length===1?'':'s'}`; if(!rows.length){ $('tableWrap').innerHTML='<div class="empty">No matching records.</div>'; return; } const thead=`<thead><tr>${displayColumns.map(c=>`<th>${c[1]}</th>`).join('')}<th>Action</th></tr></thead>`; const tbody=rows.map((row,idx)=>`<tr>${displayColumns.map(([key])=>`<td>${esc(row[key])}</td>`).join('')}<td><button class="secondary" onclick="openEdit(${idx})">Edit / Notes</button></td></tr>`).join(''); $('tableWrap').innerHTML=`<table>${thead}<tbody>${tbody}</tbody></table>`; }
+  async function openEdit(index) { activeRecord=currentRows[index]; $('modalTitle').textContent='Edit Vessel'; $('recordId').value=activeRecord.id; fieldIds.forEach(id=>$(id).value=activeRecord[id]||''); $('newNote').value=''; $('photoUploadStatus').textContent=''; await loadNotes(activeRecord.id); $('recordDialog').showModal(); loadRecordPhotos(activeRecord); }
+  function openInsert() { activeRecord=null; $('modalTitle').textContent='Insert New Vessel'; $('recordId').value=''; fieldIds.forEach(id=>$(id).value=''); $('newNote').value=''; $('photoUploadStatus').textContent=''; renderNotes([]); $('photoGallery').innerHTML='<div class="photo-empty">Save the vessel first to attach photos.</div>'; $('recordDialog').showModal(); }
+  function closeDialog() { $('recordDialog').close(); }
+  function getFormPayload() { const payload={}; fieldIds.forEach(id=>payload[id]=$(id).value.trim()||null); payload.updated_at=new Date().toISOString(); return payload; }
+  async function saveRecord() { const id=$('recordId').value, payload=getFormPayload(); if(!payload.boat_vessel_name&&!payload.mooring_code&&!payload.customer_name){alert('Please enter at least Vessel name, Mooring code, or Customer name.');return;} let result=id?await supabaseClient.from('vessel_search_records').update(payload).eq('id',id).select().single():await supabaseClient.from('vessel_search_records').insert({...payload,created_at:new Date().toISOString()}).select().single(); if(result.error){console.error(result.error);alert(result.error.message);return;} activeRecord=result.data; $('recordId').value=activeRecord.id; if($('newNote').value.trim()) await addNote(true); recordKeyCache=null; closeDialog(); await searchRecords(); }
+  async function loadNotes(vesselId) { const {data,error}=await supabaseClient.from('vessel_search_notes').select('*').eq('vessel_id',vesselId).order('created_at',{ascending:false}); if(error){console.error(error); renderNotes([]); return;} renderNotes(data||[]); }
+  function renderNotes(notes) { if(!notes.length){ $('notesList').innerHTML='<div class="empty">No notes.</div>'; return; } $('notesList').innerHTML=notes.map(n=>`<div class="note-item"><div class="note-time">${esc(new Date(n.created_at).toLocaleString())}</div><div>${esc(n.note).replace(/\n/g,'<br>')}</div></div>`).join(''); }
+  async function addNote(silent=false) { const vesselId=$('recordId').value, note=$('newNote').value.trim(); if(!vesselId){if(!silent)alert('Please save the new vessel first, then add notes.'); return;} if(!note){if(!silent)alert('Please type a note.'); return;} const {error}=await supabaseClient.from('vessel_search_notes').insert({vessel_id:vesselId,note}); if(error){console.error(error);alert(error.message);return;} $('newNote').value=''; await loadNotes(vesselId); }
+  $('searchBtn').addEventListener('click', searchRecords); $('insertBtn').addEventListener('click', openInsert); $('photoSearchBtn').addEventListener('click', () => window.open(PHOTO_SEARCH_URL, '_blank', 'noopener,noreferrer')); $('unknownBtn').addEventListener('click', () => openUnknownOwners(true)); $('saveBtn').addEventListener('click', saveRecord); $('addNoteBtn').addEventListener('click', () => addNote(false)); $('searchText').addEventListener('keydown', e => { if(e.key==='Enter') searchRecords(); });
+  $('photoUploadInput').addEventListener('change', e => { const f=e.target.files; if(f&&f.length) handlePhotoUpload(f); e.target.value=''; });
+  $('renameSaveBtn').addEventListener('click', doRename);
+  $('renameMooring').addEventListener('input', updateRenamePreview);
+  $('renameVessel').addEventListener('input', updateRenamePreview);
+  $('lightbox').addEventListener('click', e=>{ if(e.target.id==='lightbox') closeLightbox(); });
+  let unknownFilterTimer=null;
+  $('unknownSearch').addEventListener('input', ()=>{ clearTimeout(unknownFilterTimer); unknownFilterTimer=setTimeout(applyUnknownFilter, 180); });
+</script>
+</body>
+</html>

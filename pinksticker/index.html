@@ -1,0 +1,1943 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Pink Sticker Registry</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+          },
+        },
+      },
+    };
+  </script>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      min-height: 100%;
+      background: #f8fafc;
+      font-family: 'Inter', sans-serif;
+      color: #111827;
+    }
+
+    #root {
+      min-height: 100vh;
+    }
+
+    .camera-input::-webkit-file-upload-button {
+      visibility: hidden;
+      display: none;
+    }
+
+    .camera-input::file-selector-button {
+      visibility: hidden;
+      display: none;
+    }
+
+    .thumb-scroll {
+      scrollbar-width: thin;
+      scrollbar-color: #cbd5e1 transparent;
+    }
+
+    .thumb-scroll::-webkit-scrollbar {
+      height: 6px;
+      width: 6px;
+    }
+
+    .thumb-scroll::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 9999px;
+    }
+
+    #detail-map {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      height: auto;
+      border-radius: 1rem;
+      overflow: hidden;
+      z-index: 0;
+      background: #dbeafe;
+      border: 2px solid #1f2937;
+    }
+    #detail-map .leaflet-container,
+    #detail-map .leaflet-pane,
+    #detail-map .leaflet-tile-pane {
+      border-radius: 1rem;
+    }
+
+    #search-map {
+      width: 100%;
+      height: 560px;
+      min-height: 420px;
+      border-radius: 1rem;
+      overflow: hidden;
+      z-index: 0;
+      background: #dbeafe;
+      border: 2px solid #1f2937;
+    }
+    #search-map .leaflet-container,
+    #search-map .leaflet-pane,
+    #search-map .leaflet-tile-pane {
+      border-radius: 1rem;
+    }
+    @media (max-width: 1024px) {
+      #search-map {
+        height: 420px;
+      }
+    }
+    /* Mobile sticker detail: information first, notes immediately below */
+    .detail-layout {
+      display: flex;
+      flex-direction: column;
+    }
+    .detail-info { order: 1; }
+    .detail-notes { order: 2; }
+    .detail-photos { order: 3; }
+    .detail-location { order: 4; }
+
+    /* Desktop sticker detail: location left, record content right */
+    @media (min-width: 1024px) {
+      .detail-layout {
+        display: grid;
+        grid-template-columns: minmax(420px, 0.95fr) minmax(0, 1.25fr);
+        grid-template-areas:
+          "location info"
+          "location notes"
+          "location photos";
+        gap: 1rem;
+        align-items: start;
+      }
+      .detail-info { grid-area: info; }
+      .detail-notes { grid-area: notes; }
+      .detail-photos { grid-area: photos; }
+      .detail-location {
+        grid-area: location;
+        position: sticky;
+        top: 108px;
+      }
+      .detail-location #detail-map {
+        aspect-ratio: auto;
+        height: min(72vh, 760px);
+        min-height: 520px;
+      }
+    }
+    .resolve-modal-backdrop {
+      background: rgba(1, 8, 18, .76);
+      backdrop-filter: blur(6px);
+    }
+    /* Detail rendered inside the Search page right-hand panel */
+    .search-inline-detail .detail-layout {
+      display: flex;
+      flex-direction: column;
+    }
+    .search-inline-detail .detail-location {
+      display: none;
+    }
+    .search-inline-detail .detail-info { order: 1; }
+    .search-inline-detail .detail-notes { order: 2; }
+    .search-inline-detail .detail-photos { order: 3; }
+    .search-inline-detail .detail-info,
+    .search-inline-detail .detail-notes,
+    .search-inline-detail .detail-photos {
+      width: 100%;
+    }
+    @media (min-width: 1024px) {
+      .search-workspace {
+        grid-template-columns: minmax(380px, 0.82fr) minmax(0, 1.18fr);
+      }
+    }
+    @supports not (aspect-ratio: 1 / 1) {
+      #detail-map {
+        height: min(calc(100vw - 4rem), 640px);
+      }
+    }
+    .all-stickers-table-wrap {
+      width: 100%;
+      overflow-x: auto;
+      overflow-y: visible;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior-x: contain;
+      touch-action: pan-x pan-y;
+      overflow-anchor: none;
+      background: #fff;
+    }
+    .all-stickers-table-wrap table {
+      min-width: 760px;
+    }
+    @media (max-width: 640px) {
+      .all-stickers-table-wrap table {
+        min-width: 720px;
+      }
+    }
+  
+/* ===== Auckland Harbourmaster unified command-centre theme ===== */
+:root{--hm-bg:#06111f;--hm-surface:#0d2238;--hm-surface2:#102a43;--hm-text:#eaf5ff;--hm-muted:#8fa8bd;--hm-line:rgba(149,190,219,.18);--hm-accent:#29d3c2;--hm-blue:#3ea6ff;--hm-shadow:0 24px 60px rgba(0,7,16,.38)}
+html,body{background:#06111f!important;color:var(--hm-text)!important}body{background-image:radial-gradient(circle at 78% -10%,rgba(31,132,183,.22),transparent 38rem),radial-gradient(circle at 0 40%,rgba(21,198,179,.08),transparent 34rem)!important}body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.20;background-image:linear-gradient(rgba(255,255,255,.018) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.018) 1px,transparent 1px);background-size:34px 34px}#root>.min-h-screen{background:transparent!important}
+header.sticky{top:12px!important;max-width:calc(100% - 48px);margin:12px auto 0;border:1px solid var(--hm-line)!important;border-radius:20px;background:linear-gradient(135deg,rgba(13,34,56,.97),rgba(8,25,43,.93))!important;box-shadow:var(--hm-shadow);backdrop-filter:blur(18px)}header.sticky>div{max-width:1800px!important;padding:18px 22px!important}header.sticky>div>div:first-child>div:first-child{position:relative;padding-left:52px;color:#f4fbff!important;font-size:clamp(22px,2.2vw,32px)!important;font-weight:760;letter-spacing:-.035em}header.sticky>div>div:first-child>div:first-child:before{content:"HM";position:absolute;left:0;top:50%;display:grid;place-items:center;width:38px;height:38px;transform:translateY(-50%);border:1px solid rgba(41,211,194,.5);border-radius:9px;color:#61f4e5;background:rgba(41,211,194,.09);font-size:11px;letter-spacing:0}header.sticky>div>div:first-child>div:first-child:after{content:"AUCKLAND HARBOURMASTER";display:block;margin-top:4px;color:#8fb4ca;font-size:9px;font-weight:800;letter-spacing:.15em}
+main{position:relative}main.max-w-3xl{max-width:1100px!important}main.max-w-7xl{max-width:1800px!important}.bg-white{background:linear-gradient(145deg,rgba(14,38,61,.97),rgba(8,25,43,.97))!important}.bg-gray-50{background:rgba(5,20,35,.45)!important}.bg-gray-100{background:#102d46!important}.hover\:bg-gray-200:hover,.hover\:bg-gray-100:hover,.hover\:bg-gray-50:hover{background:#143953!important}.border-gray-200,.border-gray-100,.border-gray-300{border-color:var(--hm-line)!important}.shadow-sm,.shadow-lg{box-shadow:var(--hm-shadow)!important}.text-gray-900,.text-gray-800,.text-gray-700{color:#eef7ff!important}.text-gray-600,.text-gray-500{color:#8fa8bd!important}.text-blue-700,.text-blue-600{color:#67e6da!important}.bg-blue-50{background:rgba(41,211,194,.09)!important}.border-blue-100,.border-blue-300{border-color:rgba(41,211,194,.32)!important}.bg-pink-50{background:rgba(236,72,153,.09)!important}.border-pink-200{border-color:rgba(244,114,182,.3)!important}.text-pink-700,.text-pink-600{color:#f9a8d4!important}
+button.bg-gray-900,button.bg-black{background:linear-gradient(135deg,#178c88,#0d6a71)!important}button.bg-pink-600{background:linear-gradient(135deg,#d94087,#a51f64)!important}button.bg-green-600{background:linear-gradient(135deg,#17865f,#0d684c)!important}button{transition:.18s}button:hover{filter:brightness(1.08)}input,textarea,select{border-color:#294c65!important;background:#071b2d!important;color:#eef7ff!important}input::placeholder,textarea::placeholder{color:#66879d!important}.rounded-3xl{border-radius:20px!important}.rounded-2xl{border-radius:13px!important}.rounded-xl{border-radius:9px!important}
+.all-stickers-table-wrap{background:#071b2d!important}.all-stickers-table-wrap table{color:#eaf5ff}.all-stickers-table-wrap thead{background:#102a43!important;color:#9fbccf!important}.all-stickers-table-wrap tbody{background:#071b2d!important}.all-stickers-table-wrap tr{border-color:var(--hm-line)!important}.all-stickers-table-wrap tbody tr:hover{background:rgba(41,211,194,.09)!important}#detail-map,#search-map{border:1px solid var(--hm-line)!important;border-radius:14px!important;box-shadow:var(--hm-shadow)}
+/* High-contrast status badges */
+.all-stickers-table-wrap span.bg-pink-100,.bg-pink-100.text-pink-700{background:#d94087!important;color:#fff!important;border:1px solid #ff8fc3!important;box-shadow:0 0 0 2px rgba(217,64,135,.12);font-weight:800!important}.all-stickers-table-wrap span.bg-green-100,.bg-green-100.text-green-700{background:#16835f!important;color:#fff!important;border:1px solid #55d6a7!important;box-shadow:0 0 0 2px rgba(22,131,95,.12);font-weight:800!important}
+.fixed.bottom-4>div{border-color:var(--hm-line)!important}.bg-red-50{background:#3b171b!important}.text-red-700{color:#ffaaa4!important}.bg-green-50{background:#0f3329!important}.text-green-700{color:#7df0c5!important}
+@media(max-width:640px){header.sticky{top:7px;max-width:calc(100% - 14px);margin-top:7px;border-radius:15px}header.sticky>div{padding:13px!important}header.sticky>div>div:first-child>div:first-child{padding-left:44px;font-size:18px!important}header.sticky>div>div:first-child>div:first-child:before{width:34px;height:34px}main{padding-left:9px!important;padding-right:9px!important}.rounded-3xl{border-radius:15px!important}}
+
+</style>
+<style id="dashboardIntegrationStyle">
+.dashboard-back{position:fixed;z-index:120000;right:14px;bottom:14px;display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:0 14px;border:1px solid rgba(125,211,252,.55);border-radius:999px;background:rgba(7,24,40,.94);color:#e8f6ff;text-decoration:none;font:800 12px/1 Segoe UI,Arial,sans-serif;box-shadow:0 10px 28px rgba(0,0,0,.35)}
+.dashboard-back:hover,.dashboard-back:focus-visible{border-color:#67e8f9;background:#0c2a43;outline:none}
+@media(max-width:700px){.dashboard-back{right:8px;bottom:8px;min-height:38px;padding:0 11px;font-size:11px}}
+</style></head>
+<body><a href="../" class="dashboard-back" title="Return to Auckland Harbour Operations Monitoring Page">← Dashboard</a>
+  <div id="root"></div>
+
+  <script type="text/babel" data-presets="react">
+    const { useEffect, useMemo, useRef, useState } = React;
+    const { createClient } = window.supabase;
+
+    // If you are using the same Supabase project as the map app, these can stay as-is.
+    // Replace only if you decide to move to a different project later.
+    const SUPABASE_URL = 'https://wgwlnutnstrfuiiunlcu.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_iC7kbinoy61_5eQCnrV25Q_OioA7Y1x';
+    const STORAGE_BUCKET = 'pink-sticker-photos';
+    const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    const STORAGE_KEY_STICKERED_BY = 'pink_sticker_last_stickered_by';
+    const STORAGE_KEY_RESOLVED_BY = 'pink_sticker_last_resolved_by';
+
+    const Icons = {
+      Home: (p) => (
+        <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M3 9.5 12 3l9 6.5" />
+          <path d="M5 10v10h14V10" />
+        </svg>
+      ),
+      Search: (p) => (
+        <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="11" cy="11" r="8" />
+          <path d="m21 21-4.35-4.35" />
+        </svg>
+      ),
+      Camera: (p) => (
+        <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+          <circle cx="12" cy="13" r="4" />
+        </svg>
+      ),
+      Pin: (p) => (
+        <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+          <circle cx="12" cy="10" r="3" />
+        </svg>
+      ),
+      Clock: (p) => (
+        <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="10" />
+          <path d="M12 6v6l4 2" />
+        </svg>
+      ),
+      Check: (p) => (
+        <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+      ),
+      X: (p) => (
+        <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18" />
+          <line x1="6" y1="6" x2="18" y2="18" />
+        </svg>
+      ),
+      Refresh: (p) => (
+        <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M21 2v6h-6" />
+          <path d="M3 12a9 9 0 0 1 15.55-6.36L21 8" />
+          <path d="M3 22v-6h6" />
+          <path d="M21 12a9 9 0 0 1-15.55 6.36L3 16" />
+        </svg>
+      ),
+      Note: (p) => (
+        <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M12 20h9" />
+          <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z" />
+        </svg>
+      ),
+    };
+
+    function blankForm() {
+      return {
+        stickerNo: '',
+        vesselName: '',
+        mooringNumber: '',
+        reason: '',
+        stickeredBy: '',
+        initialNote: '',
+        stickerPhotos: [],
+        vesselPhotos: [],
+        location: null,
+      };
+    }
+
+    function toDateText(value) {
+      if (!value) return '-';
+      const d = new Date(value);
+      return d.toLocaleString('en-NZ', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+    }
+
+
+      function decimalToDegreeMinute(value, axis) {
+        if (value == null || Number.isNaN(Number(value))) return '-';
+        const numeric = Number(value);
+        const direction = axis === 'lat'
+          ? (numeric >= 0 ? 'N' : 'S')
+          : (numeric >= 0 ? 'E' : 'W');
+        const absolute = Math.abs(numeric);
+        const degrees = Math.floor(absolute);
+        const minutes = (absolute - degrees) * 60;
+        return `${degrees}° ${minutes.toFixed(4)}' ${direction}`;
+      }
+
+      function parseDecimalCoordinate(value, axis) {
+        const input = String(value ?? '').trim().toUpperCase();
+        if (!input) return null;
+        const directionMatch = input.match(/[NSEW]$/);
+        const direction = directionMatch ? directionMatch[0] : '';
+        const numeric = Number(input.replace(/[NSEW]/g, '').trim());
+        if (!Number.isFinite(numeric)) return null;
+        let result = numeric;
+        if (direction === 'S' || direction === 'W') result = -Math.abs(result);
+        if (direction === 'N' || direction === 'E') result = Math.abs(result);
+        const limit = axis === 'lat' ? 90 : 180;
+        return Math.abs(result) <= limit ? result : null;
+      }
+
+      function parseDegreeMinuteCoordinate(degreesValue, minutesValue, directionValue, axis) {
+        const degrees = Number(String(degreesValue ?? '').trim());
+        const minutes = Number(String(minutesValue ?? '').trim());
+        const direction = String(directionValue ?? '').trim().toUpperCase();
+        if (!Number.isFinite(degrees) || !Number.isFinite(minutes) || !direction) return null;
+        if (minutes < 0 || minutes >= 60) return null;
+        const limit = axis === 'lat' ? 90 : 180;
+        if (Math.abs(degrees) > limit) return null;
+        let result = Math.abs(degrees) + (minutes / 60);
+        if (direction === 'S' || direction === 'W') result = -result;
+        return Math.abs(result) <= limit ? result : null;
+      }
+
+      function buildLocationEditorState(location) {
+        const lat = location?.latitude ?? '';
+        const lng = location?.longitude ?? '';
+        const latAbs = lat === '' ? '' : Math.abs(Number(lat));
+        const lngAbs = lng === '' ? '' : Math.abs(Number(lng));
+        const latDeg = lat === '' ? '' : Math.floor(latAbs);
+        const lngDeg = lng === '' ? '' : Math.floor(lngAbs);
+        return {
+          mode: 'dm',
+          latDecimal: lat === '' ? '' : Number(lat).toFixed(6),
+          lngDecimal: lng === '' ? '' : Number(lng).toFixed(6),
+          latDeg: lat === '' ? '' : String(latDeg),
+          latMin: lat === '' ? '' : ((latAbs - latDeg) * 60).toFixed(4),
+          latDir: lat === '' ? 'S' : (Number(lat) >= 0 ? 'N' : 'S'),
+          lngDeg: lng === '' ? '' : String(lngDeg),
+          lngMin: lng === '' ? '' : ((lngAbs - lngDeg) * 60).toFixed(4),
+          lngDir: lng === '' ? 'E' : (Number(lng) >= 0 ? 'E' : 'W'),
+        };
+      }
+      function hasValidCoordinates(item) {
+        if (!item) return false;
+        if (item.latitude === null || item.latitude === undefined || item.latitude === '') return false;
+        if (item.longitude === null || item.longitude === undefined || item.longitude === '') return false;
+        const latitude = Number(item.latitude);
+        const longitude = Number(item.longitude);
+        if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return false;
+        if (latitude < -90 || latitude > 90) return false;
+        if (longitude < -180 || longitude > 180) return false;
+        // Ignore blank legacy records that can become 0,0 after Number(null) conversion.
+        if (latitude === 0 && longitude === 0) return false;
+        return true;
+      }
+      function isActiveSticker(item) {
+        return String(item?.status || '').trim().toLowerCase() === 'active';
+      }
+
+      function shouldShowMapPin(item) {
+        return isActiveSticker(item) && hasValidCoordinates(item);
+      }
+      function escapeHtml(value) {
+        return String(value ?? '').replace(/[&<>"']/g, (ch) => ({
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          '"': '&quot;',
+          "'": '&#39;',
+        }[ch]));
+      }
+
+    function validatePinkStickerForm(form) {
+      if (!form.stickerNo?.trim()) return 'Sticker No. is required.';
+      if (!form.vesselName?.trim()) return 'Vessel name is required.';
+      if (!form.reason?.trim()) return 'Reason is required.';
+      if (!form.stickeredBy?.trim()) return 'Stickered by is required.';
+      if (!form.stickerPhotos || form.stickerPhotos.length < 1) return 'At least 1 sticker photo is required.';
+      if (!form.vesselPhotos || form.vesselPhotos.length < 1) return 'At least 1 vessel photo is required.';
+      return null;
+    }
+
+    async function getCurrentLocation() {
+      return new Promise((resolve, reject) => {
+        if (!navigator.geolocation) {
+          reject(new Error('Geolocation is not supported in this browser.'));
+          return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+          (pos) => resolve({
+            latitude: pos.coords.latitude,
+            longitude: pos.coords.longitude,
+            accuracy: pos.coords.accuracy,
+          }),
+          (err) => reject(err),
+          {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0,
+          }
+        );
+      });
+    }
+
+    function normalizeFiles(fileList) {
+      return Array.from(fileList || []).map((file) => ({
+        file,
+        previewUrl: URL.createObjectURL(file),
+      }));
+    }
+
+    function buildPhotoPath(stickerNo, photoType, index, originalName) {
+      const safeStickerNo = String(stickerNo || 'unknown').trim().replace(/[^a-zA-Z0-9-_]/g, '_');
+      const ext = (originalName?.split('.').pop() || 'jpg').toLowerCase();
+      return `${safeStickerNo}/${photoType}-${index}-${Date.now()}.${ext}`;
+    }
+
+    async function createPinkStickerRow(form) {
+      const { data, error } = await sb
+        .from('pink_sticker_records')
+        .insert({
+          sticker_no: form.stickerNo.trim(),
+          vessel_name: form.vesselName.trim(),
+          mooring_number: form.mooringNumber.trim() || null,
+          reason: form.reason.trim(),
+          stickered_by: form.stickeredBy.trim(),
+          latitude: form.location?.latitude ?? null,
+          longitude: form.location?.longitude ?? null,
+          location_accuracy_m: form.location?.accuracy ?? null,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    }
+
+    async function uploadPinkStickerPhoto(fileWrapper, stickerNo, photoType, index) {
+      const path = buildPhotoPath(stickerNo, photoType, index, fileWrapper.file.name);
+      const { error } = await sb.storage.from(STORAGE_BUCKET).upload(path, fileWrapper.file, {
+        cacheControl: '3600',
+        upsert: false,
+        contentType: fileWrapper.file.type || 'image/jpeg',
+      });
+      if (error) throw error;
+      return {
+        storage_path: path,
+        photo_type: photoType,
+      };
+    }
+
+    async function insertPinkStickerPhotoRows(stickerId, photos) {
+      if (!photos.length) return;
+      const rows = photos.map((p) => ({
+        pink_sticker_id: stickerId,
+        photo_type: p.photo_type,
+        storage_path: p.storage_path,
+        public_url: null,
+      }));
+      const { error } = await sb.from('pink_sticker_photos').insert(rows);
+      if (error) throw error;
+    }
+
+    async function insertInitialNote(stickerId, noteText, createdBy) {
+      if (!noteText?.trim()) return;
+      const { error } = await sb.from('pink_sticker_notes').insert({
+        pink_sticker_id: stickerId,
+        note_text: noteText.trim(),
+        created_by: createdBy.trim(),
+      });
+      if (error) throw error;
+    }
+
+    async function fetchStickerByNumber(stickerNo) {
+      const cleaned = stickerNo.trim();
+      if (!cleaned) return null;
+      const { data, error } = await sb
+        .from('pink_sticker_records')
+        .select('*')
+        .eq('sticker_no', cleaned)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    }
+
+    async function fetchStickersByVesselName(vesselName) {
+      const cleaned = vesselName.trim();
+      if (!cleaned) return [];
+      const { data, error } = await sb
+        .from('pink_sticker_records')
+        .select('*')
+        .ilike('vessel_name', `%${cleaned}%`)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    }
+
+    async function fetchStickersByMooringNumber(mooringNumber) {
+      const cleaned = mooringNumber.trim();
+      if (!cleaned) return [];
+      const { data, error } = await sb
+        .from('pink_sticker_records')
+        .select('*')
+        .ilike('mooring_number', `%${cleaned}%`)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    }
+
+    async function fetchSmartSearchResults(searchText) {
+      const cleaned = searchText.trim();
+      if (!cleaned) return [];
+      const [exactSticker, vesselMatches, mooringMatches] = await Promise.all([
+        fetchStickerByNumber(cleaned),
+        fetchStickersByVesselName(cleaned),
+        fetchStickersByMooringNumber(cleaned),
+      ]);
+      const combined = [];
+      const seenIds = new Set();
+      [exactSticker, ...(vesselMatches || []), ...(mooringMatches || [])].forEach((item) => {
+        if (item && !seenIds.has(item.id)) {
+          seenIds.add(item.id);
+          combined.push(item);
+        }
+      });
+      return combined;
+    }
+
+    async function fetchAllStickers() {
+      const { data, error } = await sb
+        .from('pink_sticker_records')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    }
+
+    async function fetchStickerDetails(stickerId) {
+      const [{ data: photos, error: photoError }, { data: notes, error: noteError }] = await Promise.all([
+        sb.from('pink_sticker_photos').select('*').eq('pink_sticker_id', stickerId).order('created_at', { ascending: true }),
+        sb.from('pink_sticker_notes').select('*').eq('pink_sticker_id', stickerId).order('created_at', { ascending: false }),
+      ]);
+      if (photoError) throw photoError;
+      if (noteError) throw noteError;
+      const photoRows = photos || [];
+      const paths = photoRows.map((photo) => photo.storage_path).filter(Boolean);
+      const signedByPath = {};
+      if (paths.length) {
+        const { data: signedRows, error: signedError } = await sb.storage
+          .from(STORAGE_BUCKET)
+          .createSignedUrls(paths, 3600);
+        if (signedError) throw signedError;
+        (signedRows || []).forEach((item) => {
+          if (item.path && item.signedUrl) signedByPath[item.path] = item.signedUrl;
+        });
+      }
+      const photosWithSignedUrls = photoRows.map((photo) => ({
+        ...photo,
+        signed_url: signedByPath[photo.storage_path] || '',
+      }));
+      return { photos: photosWithSignedUrls, notes: notes || [] };
+    }
+
+    async function addNote(stickerId, noteText, createdBy) {
+      const { error } = await sb.from('pink_sticker_notes').insert({
+        pink_sticker_id: stickerId,
+        note_text: noteText.trim(),
+        created_by: createdBy.trim(),
+      });
+      if (error) throw error;
+    }
+
+    async function markResolved(stickerId, resolvedBy) {
+      const { error } = await sb
+        .from('pink_sticker_records')
+        .update({
+          status: 'resolved',
+          resolved_at: new Date().toISOString(),
+          resolved_by: resolvedBy.trim(),
+        })
+        .eq('id', stickerId);
+      if (error) throw error;
+    }
+
+    function App() {
+      const [screen, setScreen] = useState('home');
+      const [form, setForm] = useState(blankForm);
+      const [isSaving, setIsSaving] = useState(false);
+      const [isFetchingLocation, setIsFetchingLocation] = useState(false);
+      const [isEditingLocation, setIsEditingLocation] = useState(false);
+      const [locationEditor, setLocationEditor] = useState(buildLocationEditorState(null));
+      const [isSearching, setIsSearching] = useState(false);
+      const [errorMessage, setErrorMessage] = useState('');
+      const [successMessage, setSuccessMessage] = useState('');
+      const [searchType, setSearchType] = useState('sticker');
+      const [searchStickerNo, setSearchStickerNo] = useState('');
+      const [searchResults, setSearchResults] = useState([]);
+      const [allStickers, setAllStickers] = useState([]);
+      const [isLoadingAllStickers, setIsLoadingAllStickers] = useState(false);
+      const [selectedSticker, setSelectedSticker] = useState(null);
+      const [selectedPhotos, setSelectedPhotos] = useState([]);
+      const [selectedNotes, setSelectedNotes] = useState([]);
+      const [noteInput, setNoteInput] = useState('');
+      const [noteAuthor, setNoteAuthor] = useState('');
+      const [resolvedBy, setResolvedBy] = useState('');
+      const [isResolveModalOpen, setIsResolveModalOpen] = useState(false);
+      const [additionalStickerPhotos, setAdditionalStickerPhotos] = useState([]);
+      const [additionalVesselPhotos, setAdditionalVesselPhotos] = useState([]);
+      const [isUploadingAdditionalPhotos, setIsUploadingAdditionalPhotos] = useState(false);
+      const mapRef = useRef(null);
+      const mapInstanceRef = useRef(null);
+      const mapMarkerRef = useRef(null);
+      const searchMapRef = useRef(null);
+      const searchMapInstanceRef = useRef(null);
+      const searchMarkersLayerRef = useRef(null);
+
+      useEffect(() => {
+        if (screen === 'new' && !form.location && !isFetchingLocation) {
+          handleFetchLocation();
+        }
+      }, [screen]);
+
+      useEffect(() => {
+        if (screen === 'search' && allStickers.length === 0 && !isLoadingAllStickers) {
+          loadAllStickers();
+        }
+      }, [screen, allStickers.length, isLoadingAllStickers]);
+
+      useEffect(() => {
+        return () => {
+          // cleanup object URLs
+          [...form.stickerPhotos, ...form.vesselPhotos].forEach((item) => {
+            if (item.previewUrl) URL.revokeObjectURL(item.previewUrl);
+          });
+          [...additionalStickerPhotos, ...additionalVesselPhotos].forEach((item) => {
+            if (item.previewUrl) URL.revokeObjectURL(item.previewUrl);
+          });
+        };
+      }, []);
+
+      function cleanupDetailMap() {
+        if (mapInstanceRef.current) {
+          mapInstanceRef.current.remove();
+          mapInstanceRef.current = null;
+        }
+        mapMarkerRef.current = null;
+      }
+
+      useEffect(() => {
+        if (screen !== 'detail' || !selectedSticker || !hasValidCoordinates(selectedSticker)) {
+          cleanupDetailMap();
+          return;
+        }
+        if (!mapRef.current || !window.L) return;
+
+        const latitude = Number(selectedSticker.latitude);
+        const longitude = Number(selectedSticker.longitude);
+        if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+          cleanupDetailMap();
+          return;
+        }
+
+        const latlng = [latitude, longitude];
+        cleanupDetailMap();
+
+        const map = L.map(mapRef.current, {
+          zoomControl: true,
+          attributionControl: true,
+          preferCanvas: true,
+        }).setView(latlng, 14);
+
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 19,
+          crossOrigin: true,
+          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a> contributors',
+        }).addTo(map);
+
+        const seamarkLayer = L.tileLayer('https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png', {
+          maxZoom: 18,
+          opacity: 0.9,
+          crossOrigin: true,
+          attribution: 'Seamarks &copy; OpenSeaMap',
+        });
+
+        seamarkLayer.on('tileerror', () => {
+          if (map.hasLayer(seamarkLayer)) map.removeLayer(seamarkLayer);
+        });
+        seamarkLayer.addTo(map);
+
+        mapMarkerRef.current = L.marker(latlng).addTo(map);
+        mapInstanceRef.current = map;
+
+        const refreshMapSize = () => map.invalidateSize({ pan: false });
+        requestAnimationFrame(refreshMapSize);
+        [150, 400, 900].forEach((delay) => setTimeout(refreshMapSize, delay));
+
+        return cleanupDetailMap;
+      }, [screen, selectedSticker?.id, selectedSticker?.latitude, selectedSticker?.longitude]);
+
+
+      function cleanupSearchMap() {
+        if (searchMapInstanceRef.current) {
+          searchMapInstanceRef.current.remove();
+          searchMapInstanceRef.current = null;
+        }
+        searchMarkersLayerRef.current = null;
+      }
+
+      useEffect(() => {
+        if (screen !== 'search') {
+          cleanupSearchMap();
+          return;
+        }
+        if (!searchMapRef.current || !window.L) return;
+
+        const stickersWithLocation = (allStickers || []).filter(shouldShowMapPin);
+
+        cleanupSearchMap();
+
+        const defaultCenter = [-36.8485, 174.7633];
+        const map = L.map(searchMapRef.current, {
+          zoomControl: true,
+          attributionControl: true,
+          preferCanvas: true,
+        }).setView(defaultCenter, 11);
+
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 19,
+          crossOrigin: true,
+          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a> contributors',
+        }).addTo(map);
+
+        const seamarkLayer = L.tileLayer('https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png', {
+          maxZoom: 18,
+          opacity: 0.9,
+          crossOrigin: true,
+          attribution: 'Seamarks &copy; OpenSeaMap',
+        });
+        seamarkLayer.on('tileerror', () => {
+          if (map.hasLayer(seamarkLayer)) map.removeLayer(seamarkLayer);
+        });
+        seamarkLayer.addTo(map);
+
+        const markers = L.layerGroup().addTo(map);
+        searchMarkersLayerRef.current = markers;
+
+        const bounds = [];
+        stickersWithLocation.forEach((item) => {
+          if (!shouldShowMapPin(item)) return;
+          const latitude = Number(item.latitude);
+          const longitude = Number(item.longitude);
+          const latlng = [latitude, longitude];
+          bounds.push(latlng);
+          const stickerLabel = item.sticker_no ? `Pink Sticker ${item.sticker_no}` : 'Pink Sticker';
+          const vesselName = item.vessel_name?.trim() || '-';
+          const mooringNumber = item.mooring_number?.trim() || '';
+          const markerTitle = `${stickerLabel} - Vessel: ${vesselName}`;
+          const subtitle = [vesselName !== '-' ? vesselName : '', mooringNumber].filter(Boolean).join(' - ');
+          const safeStickerLabel = escapeHtml(stickerLabel);
+          const safeVesselName = escapeHtml(vesselName);
+          const safeSubtitle = escapeHtml(subtitle || 'No vessel/mooring details');
+          const safeStatus = escapeHtml(item.status === 'resolved' ? 'Resolved' : 'Active');
+          const marker = L.marker(latlng, { title: markerTitle }).addTo(markers);
+          marker.bindTooltip(`<strong>${safeStickerLabel}</strong><br>Vessel: ${safeVesselName}`, {
+            direction: 'top',
+            offset: [0, -12],
+            opacity: 0.95,
+            sticky: true,
+          });
+          marker.bindPopup(`<strong>${safeStickerLabel}</strong><br>${safeSubtitle}<br><span>${safeStatus}</span>`);
+          marker.on('click', () => openStickerDetail(item));
+        });
+
+        if (bounds.length) {
+          map.fitBounds(bounds, { padding: [28, 28], maxZoom: 15 });
+        }
+
+        searchMapInstanceRef.current = map;
+        const refreshMapSize = () => map.invalidateSize({ pan: false });
+        requestAnimationFrame(refreshMapSize);
+        [150, 400, 900].forEach((delay) => setTimeout(refreshMapSize, delay));
+
+        return cleanupSearchMap;
+      }, [screen, allStickers]);
+
+      function resetMessages() {
+        setErrorMessage('');
+        setSuccessMessage('');
+      }
+
+      async function loadAllStickers() {
+        setIsLoadingAllStickers(true);
+        try {
+          const rows = await fetchAllStickers();
+          setAllStickers(rows);
+        } catch (err) {
+          console.error(err);
+          setErrorMessage(err?.message || 'Failed to load pink sticker list.');
+        } finally {
+          setIsLoadingAllStickers(false);
+        }
+      }
+
+      async function handleFetchLocation() {
+        resetMessages();
+        setIsFetchingLocation(true);
+        try {
+          const location = await getCurrentLocation();
+          setForm((prev) => ({ ...prev, location }));
+          setLocationEditor(buildLocationEditorState(location));
+          setIsEditingLocation(false);
+        } catch (err) {
+          console.error(err);
+          setErrorMessage('Unable to get current location. Please try again.');
+        } finally {
+          setIsFetchingLocation(false);
+        }
+      }
+
+      function updateFormField(field, value) {
+        setForm((prev) => ({ ...prev, [field]: value }));
+      }
+
+
+      function startLocationEdit() {
+        resetMessages();
+        setLocationEditor(buildLocationEditorState(form.location));
+        setIsEditingLocation(true);
+      }
+
+      function cancelLocationEdit() {
+        setLocationEditor(buildLocationEditorState(form.location));
+        setIsEditingLocation(false);
+      }
+
+      function updateLocationEditorField(field, value) {
+        setLocationEditor((prev) => ({ ...prev, [field]: value }));
+      }
+
+      function saveEditedLocation() {
+        resetMessages();
+        let latitude = null;
+        let longitude = null;
+        if (locationEditor.mode === 'decimal') {
+          latitude = parseDecimalCoordinate(locationEditor.latDecimal, 'lat');
+          longitude = parseDecimalCoordinate(locationEditor.lngDecimal, 'lng');
+        } else {
+          latitude = parseDegreeMinuteCoordinate(locationEditor.latDeg, locationEditor.latMin, locationEditor.latDir, 'lat');
+          longitude = parseDegreeMinuteCoordinate(locationEditor.lngDeg, locationEditor.lngMin, locationEditor.lngDir, 'lng');
+        }
+        if (latitude == null || longitude == null) {
+          setErrorMessage('Please enter a valid latitude and longitude.');
+          return;
+        }
+        const location = { latitude, longitude, accuracy: form.location?.accuracy ?? 0 };
+        setForm((prev) => ({ ...prev, location }));
+        setLocationEditor(buildLocationEditorState(location));
+        setIsEditingLocation(false);
+      }
+      function handleSelectStickerPhotos(e) {
+        const nextFiles = normalizeFiles(e.target.files);
+        setForm((prev) => ({ ...prev, stickerPhotos: [...(prev.stickerPhotos || []), ...nextFiles] }));
+        e.target.value = '';
+      }
+
+      function handleSelectVesselPhotos(e) {
+        const nextFiles = normalizeFiles(e.target.files);
+        setForm((prev) => ({ ...prev, vesselPhotos: [...(prev.vesselPhotos || []), ...nextFiles] }));
+        e.target.value = '';
+      }
+
+      function handleRemovePhoto(photoGroup, indexToRemove) {
+        setForm((prev) => {
+          const currentItems = prev[photoGroup] || [];
+          const itemToRemove = currentItems[indexToRemove];
+          if (itemToRemove?.previewUrl) URL.revokeObjectURL(itemToRemove.previewUrl);
+          return {
+            ...prev,
+            [photoGroup]: currentItems.filter((_, idx) => idx !== indexToRemove),
+          };
+        });
+      }
+
+      function handleSelectAdditionalStickerPhotos(e) {
+        const nextFiles = normalizeFiles(e.target.files);
+        setAdditionalStickerPhotos((prev) => [...prev, ...nextFiles]);
+        e.target.value = '';
+      }
+
+      function handleSelectAdditionalVesselPhotos(e) {
+        const nextFiles = normalizeFiles(e.target.files);
+        setAdditionalVesselPhotos((prev) => [...prev, ...nextFiles]);
+        e.target.value = '';
+      }
+
+      function handleRemoveAdditionalPhoto(photoGroup, indexToRemove) {
+        const setter = photoGroup === 'sticker' ? setAdditionalStickerPhotos : setAdditionalVesselPhotos;
+        setter((prev) => {
+          const itemToRemove = prev[indexToRemove];
+          if (itemToRemove?.previewUrl) URL.revokeObjectURL(itemToRemove.previewUrl);
+          return prev.filter((_, idx) => idx !== indexToRemove);
+        });
+      }
+
+      function clearAdditionalPhotos() {
+        [...additionalStickerPhotos, ...additionalVesselPhotos].forEach((item) => {
+          if (item.previewUrl) URL.revokeObjectURL(item.previewUrl);
+        });
+        setAdditionalStickerPhotos([]);
+        setAdditionalVesselPhotos([]);
+      }
+
+      async function handleUploadAdditionalPhotos() {
+        resetMessages();
+        if (!selectedSticker) return;
+        if (!additionalStickerPhotos.length && !additionalVesselPhotos.length) {
+          setErrorMessage('Please select at least 1 photo to add.');
+          return;
+        }
+        setIsUploadingAdditionalPhotos(true);
+        try {
+          const uploadedPhotos = [];
+          const existingStickerCount = selectedPhotos.filter((p) => p.photo_type === 'sticker').length;
+          const existingVesselCount = selectedPhotos.filter((p) => p.photo_type === 'vessel' || p.photo_type === 'legacy').length;
+          for (let i = 0; i < additionalStickerPhotos.length; i++) {
+            const uploaded = await uploadPinkStickerPhoto(additionalStickerPhotos[i], selectedSticker.sticker_no, 'sticker', existingStickerCount + i + 1);
+            uploadedPhotos.push(uploaded);
+          }
+          for (let i = 0; i < additionalVesselPhotos.length; i++) {
+            const uploaded = await uploadPinkStickerPhoto(additionalVesselPhotos[i], selectedSticker.sticker_no, 'vessel', existingVesselCount + i + 1);
+            uploadedPhotos.push(uploaded);
+          }
+          await insertPinkStickerPhotoRows(selectedSticker.id, uploadedPhotos);
+          clearAdditionalPhotos();
+          await handleRefreshDetails(selectedSticker.id, selectedSticker.sticker_no);
+          setSuccessMessage('Photo(s) added successfully.');
+        } catch (err) {
+          console.error(err);
+          setErrorMessage(err?.message || 'Failed to add photo(s).');
+        } finally {
+          setIsUploadingAdditionalPhotos(false);
+        }
+      }
+
+      async function handleSubmit() {
+        resetMessages();
+        const validationError = validatePinkStickerForm(form);
+        if (validationError) {
+          setErrorMessage(validationError);
+          return;
+        }
+
+        if (!form.location) {
+          setErrorMessage('Current location is required. Please retry location fetch.');
+          return;
+        }
+
+        setIsSaving(true);
+        try {
+          
+
+          const sticker = await createPinkStickerRow(form);
+          const uploadedPhotos = [];
+
+          for (let i = 0; i < form.stickerPhotos.length; i++) {
+            const uploaded = await uploadPinkStickerPhoto(form.stickerPhotos[i], sticker.sticker_no, 'sticker', i + 1);
+            uploadedPhotos.push(uploaded);
+          }
+
+          for (let i = 0; i < form.vesselPhotos.length; i++) {
+            const uploaded = await uploadPinkStickerPhoto(form.vesselPhotos[i], sticker.sticker_no, 'vessel', i + 1);
+            uploadedPhotos.push(uploaded);
+          }
+
+          await insertPinkStickerPhotoRows(sticker.id, uploadedPhotos);
+          await insertInitialNote(sticker.id, form.initialNote, form.stickeredBy);
+
+          setSuccessMessage(`Pink sticker ${sticker.sticker_no} saved successfully.`);
+          setForm(blankForm());
+          setScreen('home');
+        } catch (err) {
+          console.error(err);
+          const msg = err?.message || 'Failed to save pink sticker.';
+          if (String(msg).toLowerCase().includes('duplicate')) {
+            setErrorMessage('Sticker No. already exists. Please use a unique number.');
+          } else {
+            setErrorMessage(msg);
+          }
+        } finally {
+          setIsSaving(false);
+        }
+      }
+
+      function focusSearchMapOnSticker(sticker) {
+        const latitude = Number(sticker?.latitude);
+        const longitude = Number(sticker?.longitude);
+        if (!searchMapInstanceRef.current || !Number.isFinite(latitude) || !Number.isFinite(longitude)) return;
+        searchMapInstanceRef.current.flyTo([latitude, longitude], 17, { duration: 0.7 });
+      }
+
+      async function openStickerDetail(sticker) {
+        // Keep the Search workspace visible and move its map to the selected pin.
+        setSelectedSticker(sticker);
+        focusSearchMapOnSticker(sticker);
+        const details = await fetchStickerDetails(sticker.id);
+        setSelectedSticker(sticker);
+        setSelectedPhotos(details.photos);
+        setSelectedNotes(details.notes);
+        setResolvedBy('');
+        setIsResolveModalOpen(false);
+        setNoteInput('');
+        setNoteAuthor('');
+        setAdditionalStickerPhotos([]);
+        setAdditionalVesselPhotos([]);
+        setScreen('search');
+        requestAnimationFrame(() => focusSearchMapOnSticker(sticker));
+      }
+
+      async function handleSearch() {
+        resetMessages();
+        const cleanedSearch = searchStickerNo.trim();
+        if (!cleanedSearch) {
+          setErrorMessage('Please enter a Sticker No., Vessel Name, or Mooring Number.');
+          return;
+        }
+        setIsSearching(true);
+        try {
+          setSearchResults([]);
+          const results = await fetchSmartSearchResults(cleanedSearch);
+          if (!results.length) {
+            setSelectedSticker(null);
+            setSelectedPhotos([]);
+            setSelectedNotes([]);
+            setErrorMessage('No stickers found for that search.');
+            return;
+          }
+          const exactStickerMatch = results.find((item) => String(item.sticker_no || '').trim().toLowerCase() === cleanedSearch.toLowerCase());
+          if (exactStickerMatch) {
+            await openStickerDetail(exactStickerMatch);
+            return;
+          }
+          if (results.length === 1) {
+            await openStickerDetail(results[0]);
+            return;
+          }
+          setSearchResults(results);
+        } catch (err) {
+          console.error(err);
+          setErrorMessage(err?.message || 'Failed to search sticker.');
+        } finally {
+          setIsSearching(false);
+        }
+      }
+
+      async function handleRefreshDetails(stickerId, stickerNo) {
+        const sticker = await fetchStickerByNumber(stickerNo);
+        const details = await fetchStickerDetails(stickerId);
+        setSelectedSticker(sticker);
+        setSelectedPhotos(details.photos);
+        setSelectedNotes(details.notes);
+      }
+
+      async function handleAddNote() {
+        resetMessages();
+        if (!selectedSticker) return;
+        if (!noteInput.trim()) {
+          setErrorMessage('Please enter a note.');
+          return;
+        }
+        if (!noteAuthor.trim()) {
+          setErrorMessage('Please enter the note author name.');
+          return;
+        }
+
+        try {
+          
+          await addNote(selectedSticker.id, noteInput, noteAuthor);
+          setNoteInput('');
+          await handleRefreshDetails(selectedSticker.id, selectedSticker.sticker_no);
+          setSuccessMessage('Note added successfully.');
+        } catch (err) {
+          console.error(err);
+          setErrorMessage(err?.message || 'Failed to add note.');
+        }
+      }
+
+      async function handleResolve() {
+        resetMessages();
+        if (!selectedSticker) return;
+        if (!resolvedBy.trim()) {
+          setErrorMessage('Please enter who resolved this sticker.');
+          return;
+        }
+
+        try {
+          
+          await markResolved(selectedSticker.id, resolvedBy);
+          await handleRefreshDetails(selectedSticker.id, selectedSticker.sticker_no);
+          setIsResolveModalOpen(false);
+          setResolvedBy('');
+          setSuccessMessage('Sticker marked as resolved.');
+        } catch (err) {
+          console.error(err);
+          setErrorMessage(err?.message || 'Failed to mark as resolved.');
+        }
+      }
+
+      function renderMessageBar() {
+        if (!errorMessage && !successMessage) return null;
+        return (
+          <div className="fixed bottom-4 left-4 right-4 z-50 pointer-events-none">
+            {errorMessage && (
+              <div className="pointer-events-auto bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-2xl shadow-lg mb-2">
+                {errorMessage}
+              </div>
+            )}
+            {successMessage && (
+              <div className="pointer-events-auto bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-2xl shadow-lg">
+                {successMessage}
+              </div>
+            )}
+          </div>
+        );
+      }
+
+      function renderHeader() {
+        return (
+          <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-sm border-b border-gray-200">
+            <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
+              <div>
+                <div className="text-lg font-bold text-gray-900">Pink Sticker Registry</div>
+                <div className="text-xs text-gray-500"></div>
+              </div>
+              <div className="flex items-center gap-2">
+                {screen === 'detail' && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      resetMessages();
+                      setScreen('search');
+                    }}
+                    className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-sm font-semibold"
+                  >
+                    ← Back
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    resetMessages();
+                    setSearchStickerNo('');
+                    setSearchResults([]);
+                    setScreen('home');
+                  }}
+                  className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-sm font-semibold"
+                >
+                  <Icons.Home className="w-4 h-4" /> Home
+                </button>
+              </div>
+            </div>
+          </header>
+        );
+      }
+
+      function PhotoPickerCard({ title, description, items, onChange, photoGroup }) {
+        return (
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 space-y-3">
+            <div>
+              <div className="text-base font-semibold text-gray-900">{title}</div>
+              <div className="text-sm text-gray-500">{description}</div>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="block rounded-2xl border-2 border-dashed border-blue-300 bg-blue-50 hover:bg-blue-100 transition p-4 cursor-pointer text-center">
+                <div className="flex flex-col items-center gap-2 text-blue-700">
+                  <Icons.Camera className="w-6 h-6" />
+                  <div className="font-semibold">Take photo</div>
+                  <div className="text-xs text-blue-600">Camera - multiple allowed</div>
+                </div>
+                <input
+                  className="camera-input hidden"
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  multiple
+                  onChange={onChange}
+                />
+              </label>
+              <label className="block rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50 hover:bg-gray-100 transition p-4 cursor-pointer text-center">
+                <div className="flex flex-col items-center gap-2 text-gray-700">
+                  <Icons.Camera className="w-6 h-6" />
+                  <div className="font-semibold">Upload from album</div>
+                  <div className="text-xs text-gray-500">Images only - multiple allowed</div>
+                </div>
+                <input
+                  className="camera-input hidden"
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={onChange}
+                />
+              </label>
+            </div>
+            {items?.length > 0 && (
+              <div className="flex gap-3 overflow-x-auto thumb-scroll pb-1">
+                {items.map((item, idx) => (
+                  <div key={idx} className="relative shrink-0">
+                    <img
+                      src={item.previewUrl}
+                      alt={`${title} ${idx + 1}`}
+                      className="h-24 w-24 rounded-xl object-cover border border-gray-200"
+                    />
+                    <div className="absolute left-1 bottom-1 rounded-full bg-black/70 px-2 py-0.5 text-[10px] font-semibold text-white">
+                      {idx + 1}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleRemovePhoto(photoGroup, idx)}
+                      className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-600 text-white shadow-md"
+                      aria-label={`Remove ${title} ${idx + 1}`}
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      }
+
+      function renderHome() {
+        return (
+          <div className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2">
+              <button
+                type="button"
+                onClick={() => {
+                  resetMessages();
+                  setForm(blankForm());
+                  setScreen('new');
+                }}
+                className="bg-white rounded-3xl border border-gray-200 shadow-sm p-6 text-left hover:shadow-md transition"
+              >
+                <div className="flex items-center gap-3 mb-3 text-blue-700">
+                  <Icons.Camera className="w-6 h-6" />
+                  <span className="font-semibold text-lg">New Pink Sticker</span>
+                </div>
+                <p className="text-sm text-gray-600">
+                  
+                </p>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  resetMessages();
+                  setSearchType('sticker');
+                  setSearchStickerNo('');
+                  setSearchResults([]);
+                  setScreen('search');
+                }}
+                className="bg-white rounded-3xl border border-gray-200 shadow-sm p-6 text-left hover:shadow-md transition"
+              >
+                <div className="flex items-center gap-3 mb-3 text-gray-700">
+                  <Icons.Search className="w-6 h-6" />
+                  <span className="font-semibold text-lg">Search Pink Sticker</span>
+                </div>
+                <p className="text-sm text-gray-600">
+                  
+                </p>
+              </button>
+            </div>
+          </div>
+        );
+      }
+
+      function renderNew() {
+        return (
+          <div className="space-y-4">
+            <div className="bg-white rounded-3xl border border-gray-200 shadow-sm p-6">
+              <h2 className="text-xl font-bold mb-1">New Pink Sticker</h2>
+              <p className="text-sm text-gray-500">Minimum 1 sticker photo and 1 vessel photo are required. You can add multiple photos with no set limit.</p>
+            </div>
+
+            <PhotoPickerCard
+              title="Sticker Photo"
+              description="Take clear photos showing the pink sticker attached to the vessel. Multiple photos can be added."
+              items={form.stickerPhotos}
+              onChange={handleSelectStickerPhotos}
+              photoGroup="stickerPhotos"
+            />
+
+            <PhotoPickerCard
+              title="Vessel Photo"
+              description="Take clear full-vessel photos. Multiple photos can be added."
+              items={form.vesselPhotos}
+              onChange={handleSelectVesselPhotos}
+              photoGroup="vesselPhotos"
+            />
+
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 space-y-4">
+              <div className="grid gap-4 md:grid-cols-3">
+                <div>
+                  <label className="block text-sm font-semibold mb-1">Sticker No.</label>
+                  <input value={form.stickerNo} onChange={(e) => updateFormField('stickerNo', e.target.value)} className="w-full h-11 rounded-xl border border-gray-300 px-3 outline-none focus:ring-2 focus:ring-pink-500" placeholder="" />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold mb-1">Vessel Name</label>
+                  <input value={form.vesselName} onChange={(e) => updateFormField('vesselName', e.target.value)} className="w-full h-11 rounded-xl border border-gray-300 px-3 outline-none focus:ring-2 focus:ring-pink-500" placeholder="Enter vessel name" />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold mb-1">Mooring Number</label>
+                  <input value={form.mooringNumber} onChange={(e) => updateFormField('mooringNumber', e.target.value)} className="w-full h-11 rounded-xl border border-gray-300 px-3 outline-none focus:ring-2 focus:ring-pink-500" placeholder="Enter mooring number" />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-1">Reason</label>
+                <textarea value={form.reason} onChange={(e) => updateFormField('reason', e.target.value)} className="w-full min-h-24 rounded-xl border border-gray-300 px-3 py-2 outline-none focus:ring-2 focus:ring-pink-500" placeholder="Why was the pink sticker applied?" />
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <label className="block text-sm font-semibold mb-1">Stickered by</label>
+                  <input value={form.stickeredBy} onChange={(e) => updateFormField('stickeredBy', e.target.value)} className="w-full h-11 rounded-xl border border-gray-300 px-3 outline-none focus:ring-2 focus:ring-pink-500" placeholder="Enter skipper name" />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold mb-1">Initial Note (optional)</label>
+                  <input value={form.initialNote} onChange={(e) => updateFormField('initialNote', e.target.value)} className="w-full h-11 rounded-xl border border-gray-300 px-3 outline-none focus:ring-2 focus:ring-pink-500" placeholder="Optional opening note" />
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div>
+                  <div className="text-base font-semibold">Current Location</div>
+                  <div className="text-sm text-gray-500">
+                    {form.location ? 'Location captured successfully.' : isFetchingLocation ? 'Fetching current location...' : 'Location not available yet.'}
+                  </div>
+                </div>
+                <div className="flex flex-wrap items-center gap-2 shrink-0">
+                  <button type="button" onClick={startLocationEdit} className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 text-sm font-semibold">Edit</button>
+                  <button type="button" onClick={handleFetchLocation} className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-sm font-semibold"><Icons.Refresh className="w-4 h-4" /> Retry</button>
+                </div>
+              </div>
+              {form.location && (
+                <div className="grid gap-2 text-sm text-gray-700">
+                  <div>Lat: {decimalToDegreeMinute(form.location.latitude, 'lat')}</div>
+                  <div>Lng: {decimalToDegreeMinute(form.location.longitude, 'lng')}</div>
+                  <div>Accuracy: {Math.round(form.location.accuracy || 0)}m</div>
+                </div>
+              )}
+              {isEditingLocation && (
+                <div className="rounded-2xl border border-blue-100 bg-blue-50/60 p-3 space-y-3 overflow-hidden">
+                  <div className="flex flex-wrap gap-2 text-sm font-semibold">
+                    <button type="button" onClick={() => updateLocationEditorField('mode', 'dm')} className={`px-3 py-2 rounded-xl ${locationEditor.mode === 'dm' ? 'bg-blue-600 text-white' : 'bg-white text-blue-700 border border-blue-100'}`}>Degree - minute.decimal</button>
+                    <button type="button" onClick={() => updateLocationEditorField('mode', 'decimal')} className={`px-3 py-2 rounded-xl ${locationEditor.mode === 'decimal' ? 'bg-blue-600 text-white' : 'bg-white text-blue-700 border border-blue-100'}`}>Degree.decimal</button>
+                  </div>
+                  {locationEditor.mode === 'dm' ? (
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-600 mb-1">Latitude</label>
+                        <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_72px] gap-2">
+                          <input type="number" value={locationEditor.latDeg} onChange={(e) => updateLocationEditorField('latDeg', e.target.value)} className="w-full min-w-0 h-10 rounded-xl border border-gray-300 px-3" placeholder="Deg" />
+                          <input type="number" step="0.0001" value={locationEditor.latMin} onChange={(e) => updateLocationEditorField('latMin', e.target.value)} className="w-full min-w-0 h-10 rounded-xl border border-gray-300 px-3" placeholder="Min" />
+                          <select value={locationEditor.latDir} onChange={(e) => updateLocationEditorField('latDir', e.target.value)} className="w-full min-w-0 h-10 rounded-xl border border-gray-300 px-2 bg-white"><option>N</option><option>S</option></select>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-600 mb-1">Longitude</label>
+                        <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_72px] gap-2">
+                          <input type="number" value={locationEditor.lngDeg} onChange={(e) => updateLocationEditorField('lngDeg', e.target.value)} className="w-full min-w-0 h-10 rounded-xl border border-gray-300 px-3" placeholder="Deg" />
+                          <input type="number" step="0.0001" value={locationEditor.lngMin} onChange={(e) => updateLocationEditorField('lngMin', e.target.value)} className="w-full min-w-0 h-10 rounded-xl border border-gray-300 px-3" placeholder="Min" />
+                          <select value={locationEditor.lngDir} onChange={(e) => updateLocationEditorField('lngDir', e.target.value)} className="w-full min-w-0 h-10 rounded-xl border border-gray-300 px-2 bg-white"><option>E</option><option>W</option></select>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div><label className="block text-xs font-semibold text-gray-600 mb-1">Latitude</label><input type="number" step="0.000001" value={locationEditor.latDecimal} onChange={(e) => updateLocationEditorField('latDecimal', e.target.value)} className="w-full min-w-0 h-10 rounded-xl border border-gray-300 px-3" placeholder="-36.847014" /></div>
+                      <div><label className="block text-xs font-semibold text-gray-600 mb-1">Longitude</label><input type="number" step="0.000001" value={locationEditor.lngDecimal} onChange={(e) => updateLocationEditorField('lngDecimal', e.target.value)} className="w-full min-w-0 h-10 rounded-xl border border-gray-300 px-3" placeholder="174.788619" /></div>
+                    </div>
+                  )}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <button type="button" onClick={saveEditedLocation} className="w-full h-10 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700">Save location</button>
+                    <button type="button" onClick={cancelLocationEdit} className="w-full h-10 rounded-xl bg-white border border-gray-200 text-gray-700 font-semibold hover:bg-gray-50">Cancel</button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={isSaving}
+              className="w-full h-12 rounded-2xl bg-pink-600 text-white font-bold shadow-lg hover:bg-pink-700 disabled:bg-gray-300"
+            >
+              {isSaving ? 'Saving...' : 'Save Pink Sticker'}
+            </button>
+          </div>
+        );
+      }
+
+      function renderAllStickerList() {
+        return (
+          <div className="bg-white rounded-3xl border border-gray-200 shadow-sm p-6 space-y-3">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h3 className="text-lg font-bold">All Pink Stickers</h3>
+                <p className="text-xs text-gray-500">Latest entries are shown first.</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="text-sm text-gray-500">
+                  {isLoadingAllStickers ? 'Loading...' : `${allStickers.length} total`}
+                </div>
+                <button
+                  type="button"
+                  onClick={loadAllStickers}
+                  className="inline-flex items-center gap-1 px-3 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-xs font-semibold"
+                >
+                  <Icons.Refresh className="w-3 h-3" /> Refresh
+                </button>
+              </div>
+            </div>
+            <div className="all-stickers-table-wrap rounded-2xl border border-gray-200 thumb-scroll">
+              <table className="divide-y divide-gray-200 text-sm">
+                <thead className="sticky top-0 z-10 bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
+                  <tr>
+                    <th className="px-3 py-2 text-left font-semibold">Sticker No.</th>
+                    <th className="px-3 py-2 text-left font-semibold">Vessel Name</th>
+                    <th className="px-3 py-2 text-left font-semibold">Mooring No.</th>
+                    <th className="px-3 py-2 text-left font-semibold">Status</th>
+                    <th className="px-3 py-2 text-left font-semibold">Created at</th>
+                    <th className="px-3 py-2 text-left font-semibold">Stickered by</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 bg-white">
+                  {isLoadingAllStickers ? (
+                    <tr>
+                      <td className="px-3 py-4 text-gray-500" colSpan="6">Loading pink stickers...</td>
+                    </tr>
+                  ) : allStickers.length ? allStickers.map((item) => (
+                    <tr
+                      key={item.id}
+                      onClick={() => openStickerDetail(item)}
+                      className={`cursor-pointer hover:bg-pink-50 ${selectedSticker?.id === item.id ? 'bg-pink-50 ring-1 ring-inset ring-pink-200' : ''}`}
+                    >
+                      <td className="px-3 py-3 font-bold text-gray-900 whitespace-nowrap">{item.sticker_no || '-'}</td>
+                      <td className="px-3 py-3 text-gray-900 min-w-[160px]">{item.vessel_name || '-'}</td>
+                      <td className="px-3 py-3 text-gray-700 whitespace-nowrap">{item.mooring_number || '-'}</td>
+                      <td className="px-3 py-3 whitespace-nowrap">
+                        <span className={`inline-flex px-2 py-1 rounded-full text-xs font-semibold ${item.status === 'resolved' ? 'bg-green-100 text-green-700' : 'bg-pink-100 text-pink-700'}`}>
+                          {item.status === 'resolved' ? 'Resolved' : 'Active'}
+                        </span>
+                      </td>
+                      <td className="px-3 py-3 text-gray-700 whitespace-nowrap">{toDateText(item.created_at)}</td>
+                      <td className="px-3 py-3 text-gray-700 min-w-[120px]">{item.stickered_by || '-'}</td>
+                    </tr>
+                  )) : (
+                    <tr>
+                      <td className="px-3 py-4 text-gray-500" colSpan="6">No pink stickers found.</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        );
+      }
+
+      function renderSearch() {
+        return (
+          <div className="space-y-4">
+            <div className="bg-white rounded-3xl border border-gray-200 shadow-sm p-6 space-y-2">
+              <h2 className="text-xl font-bold">Search Pink Sticker</h2>
+              <p className="text-sm text-gray-500">Enter a Sticker No., Vessel Name, or Mooring Number. The app will search all fields automatically.</p>
+              <div className="grid gap-3 sm:grid-cols-[1fr_auto] pt-2">
+                <input
+                  type="text"
+                  value={searchStickerNo}
+                  onChange={(e) => setSearchStickerNo(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleSearch();
+                  }}
+                  placeholder="Enter sticker no., vessel name, or mooring number"
+                  className="flex-1 h-11 rounded-xl border border-gray-300 px-3 outline-none focus:ring-2 focus:ring-pink-500"
+                />
+                <button
+                  type="button"
+                  onClick={handleSearch}
+                  disabled={isSearching}
+                  className="h-11 px-4 rounded-xl bg-gray-900 text-white font-semibold hover:bg-black disabled:bg-gray-300"
+                >
+                  {isSearching ? 'Searching...' : 'Search'}
+                </button>
+              </div>            </div>
+
+            {searchResults.length > 0 && (
+              <div className="bg-white rounded-3xl border border-gray-200 shadow-sm p-6 space-y-3">
+                <div className="flex items-center justify-between gap-3">
+                  <h3 className="text-lg font-bold">Search Results</h3>
+                  <div className="text-sm text-gray-500">
+                    {searchResults.length} result{searchResults.length > 1 ? 's' : ''}
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  {searchResults.map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => openStickerDetail(item)}
+                      className="w-full text-left rounded-2xl border border-gray-200 p-4 hover:bg-gray-50 transition"
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                        <div>
+                          <div className="text-xs uppercase tracking-wide text-gray-500">Pink Sticker</div>
+                          <div className="font-bold text-gray-900">{item.sticker_no}</div>
+                        </div>
+                        <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold ${item.status === 'resolved' ? 'bg-green-100 text-green-700' : 'bg-pink-100 text-pink-700'}`}>
+                          {item.status === 'resolved' ? 'Resolved' : 'Active'}
+                        </div>
+                      </div>
+                      <div className="mt-3 grid gap-2 sm:grid-cols-2 text-sm">
+                        <div>
+                          <div className="text-gray-500">Vessel Name</div>
+                          <div className="font-semibold text-gray-900">{item.vessel_name || '-'}</div>
+                        </div>
+                        <div>
+                          <div className="text-gray-500">Stickered by</div>
+                          <div className="font-semibold text-gray-900">{item.stickered_by || '-'}</div>
+                        </div>
+                        <div>
+                          <div className="text-gray-500">Created at</div>
+                          <div className="font-semibold text-gray-900">{toDateText(item.created_at)}</div>
+                        </div>
+                        <div>
+                          <div className="text-gray-500">Reason</div>
+                          <div className="font-semibold text-gray-900">{item.reason || '-'}</div>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="search-workspace grid gap-4 lg:grid-cols-[minmax(320px,0.9fr)_minmax(0,1.1fr)] items-start">
+              <div className="bg-white rounded-3xl border border-gray-200 shadow-sm p-6 space-y-4 lg:sticky lg:top-20">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <h3 className="text-lg font-bold">Location Map</h3>
+                    <p className="text-xs text-gray-500">Pins show active pink stickers with saved coordinates.</p>
+                  </div>
+                  <div className="text-sm text-gray-500">
+                    {(allStickers || []).filter(shouldShowMapPin).length} active pins
+                  </div>
+                </div>
+                <div id="search-map" ref={searchMapRef}></div>
+              </div>
+              <div className="min-w-0">
+                {selectedSticker ? (
+                  <div className="search-inline-detail space-y-3">
+                    <div className="flex items-center justify-between gap-3 rounded-2xl border border-gray-200 bg-white px-4 py-3 shadow-sm">
+                      <div className="min-w-0">
+                        <div className="text-xs font-semibold uppercase tracking-wide text-gray-500">Selected sticker</div>
+                        <div className="truncate font-bold text-gray-900">#{selectedSticker.sticker_no || '-'} · {selectedSticker.vessel_name || 'Unknown vessel'}</div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          resetMessages();
+                          setSelectedSticker(null);
+                          setSelectedPhotos([]);
+                          setSelectedNotes([]);
+                          setIsResolveModalOpen(false);
+                        }}
+                        className="shrink-0 rounded-xl bg-gray-100 px-3 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-200"
+                      >
+                        ← All stickers
+                      </button>
+                    </div>
+                    {renderDetail()}
+                  </div>
+                ) : renderAllStickerList()}
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      function renderDetail() {
+        if (!selectedSticker) {
+          return (
+            <div className="bg-white rounded-3xl border border-gray-200 shadow-sm p-6 text-sm text-gray-500">
+              No sticker selected.
+            </div>
+          );
+        }
+
+        const stickerPhotos = selectedPhotos.filter((p) => p.photo_type === 'sticker');
+        const vesselPhotos = selectedPhotos.filter(
+  (p) => p.photo_type === 'vessel' || p.photo_type === 'legacy'
+);
+
+        return (
+          <div className="detail-layout space-y-4 lg:space-y-0">
+            <div className="detail-info bg-white rounded-3xl border border-gray-200 shadow-sm p-6 space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div>
+                  <div className="text-xs uppercase tracking-wide text-gray-500">Pink Sticker</div>
+                  <div className="text-2xl font-bold">{selectedSticker.sticker_no}</div>
+                </div>
+                <div className="flex items-center gap-2 self-start sm:self-auto">
+                  {selectedSticker.status !== 'resolved' && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        resetMessages();
+                        setResolvedBy('');
+                        setIsResolveModalOpen(true);
+                      }}
+                      className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-green-600 text-white text-sm font-semibold hover:bg-green-700"
+                    >
+                      <Icons.Check className="w-4 h-4" /> Resolve
+                    </button>
+                  )}
+                  <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-semibold ${selectedSticker.status === 'resolved' ? 'bg-green-100 text-green-700' : 'bg-pink-100 text-pink-700'}`}>
+                    {selectedSticker.status === 'resolved' ? <Icons.Check className="w-4 h-4" /> : <Icons.Pin className="w-4 h-4" />}
+                    {selectedSticker.status === 'resolved' ? 'Resolved' : 'Active'}
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2 text-sm">
+                <div>
+                  <div className="text-gray-500">Vessel Name</div>
+                  <div className="font-semibold text-gray-900">{selectedSticker.vessel_name}</div>
+                </div>
+                <div>
+                  <div className="text-gray-500">Stickered by</div>
+                  <div className="font-semibold text-gray-900">{selectedSticker.stickered_by}</div>
+                </div>
+                <div>
+                  <div className="text-gray-500">Mooring Number</div>
+                  <div className="font-semibold text-gray-900">{selectedSticker.mooring_number || '-'}</div>
+                </div>
+                <div>
+                  <div className="text-gray-500">Coordinates</div>
+                  <div className="font-semibold text-gray-900">
+                    {selectedSticker.latitude != null && selectedSticker.longitude != null
+                      ? `${decimalToDegreeMinute(selectedSticker.latitude, 'lat')}, ${decimalToDegreeMinute(selectedSticker.longitude, 'lng')}`
+                      : '-'}
+                  </div>
+                </div>
+                <div className="md:col-span-2">
+                  <div className="text-gray-500">Reason</div>
+                  <div className="font-semibold text-gray-900">{selectedSticker.reason}</div>
+                </div>
+                <div>
+                  <div className="text-gray-500">Created at</div>
+                  <div className="font-semibold text-gray-900">{toDateText(selectedSticker.created_at)}</div>
+                </div>
+                <div>
+                  <div className="text-gray-500">Resolved at</div>
+                  <div className="font-semibold text-gray-900">{toDateText(selectedSticker.resolved_at)}</div>
+                </div>
+                <div>
+                  <div className="text-gray-500">Resolved by</div>
+                  <div className="font-semibold text-gray-900">{selectedSticker.resolved_by || '-'}</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="detail-photos bg-white rounded-3xl border border-gray-200 shadow-sm p-6 space-y-4">
+              <h3 className="text-lg font-bold">Photos</h3>
+              <div>
+                <div className="text-sm font-semibold mb-2">Sticker Photos</div>
+                {stickerPhotos.length ? (
+                  <div className="flex gap-3 overflow-x-auto thumb-scroll pb-1">
+                    {stickerPhotos.map((photo) => (
+                      <a key={photo.id} href={photo.signed_url} target="_blank" rel="noreferrer">
+                        <img src={photo.signed_url} alt="Sticker" className="h-28 w-28 rounded-xl object-cover border border-gray-200 shrink-0" />
+                      </a>
+                    ))}
+                  </div>
+                ) : <div className="text-sm text-gray-500">No sticker photos found.</div>}
+              </div>
+              <div>
+                <div className="text-sm font-semibold mb-2">Vessel Photos</div>
+                {vesselPhotos.length ? (
+                  <div className="flex gap-3 overflow-x-auto thumb-scroll pb-1">
+                    {vesselPhotos.map((photo) => (
+                      <a key={photo.id} href={photo.signed_url} target="_blank" rel="noreferrer">
+                        <img src={photo.signed_url} alt="Vessel" className="h-28 w-28 rounded-xl object-cover border border-gray-200 shrink-0" />
+                      </a>
+                    ))}
+                  </div>
+                ) : <div className="text-sm text-gray-500">No vessel photos found.</div>}
+              </div>
+              <div className="border-t border-gray-100 pt-4 space-y-3">
+                <div>
+                  <div className="text-sm font-semibold text-gray-900">Add more photos</div>
+                  <div className="text-xs text-gray-500">Add extra sticker or vessel photos to this existing pink sticker record.</div>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <label className="block rounded-2xl border-2 border-dashed border-pink-200 bg-pink-50 hover:bg-pink-100 transition p-4 cursor-pointer text-center">
+                    <div className="flex flex-col items-center gap-2 text-pink-700">
+                      <Icons.Camera className="w-6 h-6" />
+                      <div className="font-semibold">Add sticker photo</div>
+                      <div className="text-xs text-pink-600">Camera or album - multiple allowed</div>
+                    </div>
+                    <input className="camera-input hidden" type="file" accept="image/*" multiple onChange={handleSelectAdditionalStickerPhotos} />
+                  </label>
+                  <label className="block rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50 hover:bg-gray-100 transition p-4 cursor-pointer text-center">
+                    <div className="flex flex-col items-center gap-2 text-gray-700">
+                      <Icons.Camera className="w-6 h-6" />
+                      <div className="font-semibold">Add vessel photo</div>
+                      <div className="text-xs text-gray-500">Camera or album - multiple allowed</div>
+                    </div>
+                    <input className="camera-input hidden" type="file" accept="image/*" multiple onChange={handleSelectAdditionalVesselPhotos} />
+                  </label>
+                </div>
+                {(additionalStickerPhotos.length > 0 || additionalVesselPhotos.length > 0) && (
+                  <div className="space-y-3 rounded-2xl border border-gray-100 bg-gray-50 p-3">
+                    {additionalStickerPhotos.length > 0 && (
+                      <div>
+                        <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">New sticker photos</div>
+                        <div className="flex gap-3 overflow-x-auto thumb-scroll pb-1">
+                          {additionalStickerPhotos.map((item, idx) => (
+                            <div key={idx} className="relative shrink-0">
+                              <img src={item.previewUrl} alt={`New sticker photo ${idx + 1}`} className="h-24 w-24 rounded-xl object-cover border border-gray-200" />
+                              <button type="button" onClick={() => handleRemoveAdditionalPhoto('sticker', idx)} className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-600 text-white shadow-md" aria-label={`Remove new sticker photo ${idx + 1}`}>×</button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {additionalVesselPhotos.length > 0 && (
+                      <div>
+                        <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">New vessel photos</div>
+                        <div className="flex gap-3 overflow-x-auto thumb-scroll pb-1">
+                          {additionalVesselPhotos.map((item, idx) => (
+                            <div key={idx} className="relative shrink-0">
+                              <img src={item.previewUrl} alt={`New vessel photo ${idx + 1}`} className="h-24 w-24 rounded-xl object-cover border border-gray-200" />
+                              <button type="button" onClick={() => handleRemoveAdditionalPhoto('vessel', idx)} className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-600 text-white shadow-md" aria-label={`Remove new vessel photo ${idx + 1}`}>×</button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      <button type="button" onClick={handleUploadAdditionalPhotos} disabled={isUploadingAdditionalPhotos} className="h-11 rounded-2xl bg-pink-600 text-white font-semibold hover:bg-pink-700 disabled:bg-gray-300">
+                        {isUploadingAdditionalPhotos ? 'Uploading...' : 'Save Added Photos'}
+                      </button>
+                      <button type="button" onClick={clearAdditionalPhotos} disabled={isUploadingAdditionalPhotos} className="h-11 rounded-2xl bg-white border border-gray-200 text-gray-700 font-semibold hover:bg-gray-50 disabled:bg-gray-100">
+                        Cancel selected photos
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="detail-location bg-white rounded-3xl border border-gray-200 shadow-sm p-6 space-y-4">
+              <h3 className="text-lg font-bold">Location</h3>
+              {hasValidCoordinates(selectedSticker) ? (
+                <div id="detail-map" ref={mapRef}></div>
+              ) : (
+                <div className="text-sm text-gray-500">No location available.</div>
+              )}
+            </div>
+
+            <div className="detail-notes bg-white rounded-3xl border border-gray-200 shadow-sm p-6 space-y-4">
+              <div className="flex items-center gap-2">
+                <Icons.Note className="w-5 h-5 text-gray-700" />
+                <h3 className="text-lg font-bold">Notes</h3>
+              </div>
+
+              <div className="space-y-3">
+                {selectedNotes.length ? selectedNotes.map((note) => (
+                  <div key={note.id} className="rounded-2xl border border-gray-200 p-3 bg-gray-50">
+                    <div className="text-xs text-gray-500 mb-1 flex items-center gap-1">
+                      <Icons.Clock className="w-3 h-3" />
+                      {toDateText(note.created_at)} · {note.created_by}
+                    </div>
+                    <div className="text-sm text-gray-800">{note.note_text}</div>
+                  </div>
+                )) : (
+                  <div className="text-sm text-gray-500">No notes yet.</div>
+                )}
+              </div>
+
+              <div className="grid gap-3 md:grid-cols-[1fr_auto]">
+                <input
+                  type="text"
+                  value={noteInput}
+                  onChange={(e) => setNoteInput(e.target.value)}
+                  placeholder="Add a note"
+                  className="h-11 rounded-xl border border-gray-300 px-3 outline-none focus:ring-2 focus:ring-pink-500"
+                />
+                <input
+                  type="text"
+                  value={noteAuthor}
+                  onChange={(e) => setNoteAuthor(e.target.value)}
+                  placeholder="Note author"
+                  className="h-11 rounded-xl border border-gray-300 px-3 outline-none focus:ring-2 focus:ring-pink-500"
+                />
+              </div>
+
+              <button
+                type="button"
+                onClick={handleAddNote}
+                className="w-full h-11 rounded-2xl bg-gray-900 text-white font-semibold hover:bg-black"
+              >
+                Add Note
+              </button>
+            </div>
+
+            {isResolveModalOpen && selectedSticker.status !== 'resolved' && (
+              <div
+                className="resolve-modal-backdrop fixed inset-0 z-[100] flex items-center justify-center p-4"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="resolve-dialog-title"
+                onMouseDown={(e) => {
+                  if (e.target === e.currentTarget) {
+                    setResolvedBy('');
+                    setIsResolveModalOpen(false);
+                  }
+                }}
+              >
+                <div className="w-full max-w-md rounded-3xl border border-gray-200 bg-white p-6 shadow-lg">
+                  <div className="mb-5 flex items-start justify-between gap-4">
+                    <div>
+                      <h3 id="resolve-dialog-title" className="text-xl font-bold text-gray-900">Resolve Sticker</h3>
+                      <p className="mt-1 text-sm text-gray-500">Who resolved this pink sticker?</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setResolvedBy('');
+                        setIsResolveModalOpen(false);
+                      }}
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-gray-100 text-gray-700 hover:bg-gray-200"
+                      aria-label="Close resolve dialog"
+                    >
+                      <Icons.X className="h-4 w-4" />
+                    </button>
+                  </div>
+                  <label className="mb-1 block text-sm font-semibold text-gray-900">Resolved by</label>
+                  <input
+                    type="text"
+                    value={resolvedBy}
+                    onChange={(e) => setResolvedBy(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleResolve();
+                      if (e.key === 'Escape') {
+                        setResolvedBy('');
+                        setIsResolveModalOpen(false);
+                      }
+                    }}
+                    autoFocus
+                    placeholder="Enter name"
+                    className="w-full h-11 rounded-xl border border-gray-300 px-3 outline-none focus:ring-2 focus:ring-green-500"
+                  />
+                  <div className="mt-5 grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setResolvedBy('');
+                        setIsResolveModalOpen(false);
+                      }}
+                      className="h-11 rounded-2xl border border-gray-200 bg-white text-gray-700 font-semibold hover:bg-gray-50"
+                    >
+                      Close
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleResolve}
+                      className="h-11 rounded-2xl bg-green-600 text-white font-semibold hover:bg-green-700"
+                    >
+                      Save
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      }
+
+      const content = useMemo(() => {
+        if (screen === 'new') return renderNew();
+        if (screen === 'search') return renderSearch();
+        if (screen === 'detail') return renderDetail();
+        return renderHome();
+      }, [screen, form, isSaving, isFetchingLocation, searchType, searchStickerNo, searchResults, allStickers, isLoadingAllStickers, isSearching, selectedSticker, selectedPhotos, selectedNotes, noteInput, noteAuthor, resolvedBy, isResolveModalOpen, additionalStickerPhotos, additionalVesselPhotos, isUploadingAdditionalPhotos, isEditingLocation, locationEditor]);
+
+      return (
+        <div className="min-h-screen bg-gray-50">
+          {renderHeader()}
+          <main className={(screen === 'search' || screen === 'detail') ? "max-w-7xl mx-auto px-4 py-5 pb-24" : "max-w-3xl mx-auto px-4 py-5 pb-24"}>
+            {content}
+          </main>
+          {renderMessageBar()}
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
