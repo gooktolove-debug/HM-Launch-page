@@ -1,13 +1,12 @@
-ACCIDENT + TIER 2 TEST INTEGRATION
+DO + NAVAID INTEGRATION
 
-Copy these items into the root of the existing HM-Launch-page repository:
+Copy to HM-Launch-page repository root:
 - index.html
-- accident/  (contains index.html)
-- tier2/     (contains index.html)
+- do/index.html
+- navaid/index.html
 
-Main-page links:
-- Marine Accident Analysis -> ./accident/
-- Tier 2 Planning -> ./tier2/
+Links:
+- DO Log -> ./do/
+- Nav Aid -> ./navaid/
 
-Both pages retain their existing application code and data connections. A Dashboard button was added to return to ../.
-The main app.js does not need to change for this folder-path integration.
+Existing login/user gates, Supabase connections and operational functionality are retained. Dashboard buttons return to ../. Root app.js does not change.

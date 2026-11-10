@@ -1,0 +1,811 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"><title>HM NavAid</title><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><style>
+:root{--bg:#f8fafc;--card:#fff;--text:#0f172a;--muted:#64748b;--line:#e2e8f0;--primary:#0f172a;--red:#dc2626;--orange:#f97316;--green:#16a34a;--yellow:#facc15;--darkred:#7f1d1d;--shadow:0 8px 22px rgba(15,23,42,.06);--radius:20px}*{box-sizing:border-box}html,body{margin:0;width:100%;max-width:100%;overflow-x:hidden;font-family:ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text)}button{border:1px solid #cbd5e1;background:#fff;color:var(--text);border-radius:14px;padding:10px 13px;font-size:13px;font-weight:750;cursor:pointer;white-space:nowrap}button.primary,button.active{background:var(--primary);color:#fff;border-color:var(--primary)}button.small{font-size:12px;padding:7px 10px;border-radius:999px}button.danger{background:#fff1f2;color:#b91c1c;border-color:#fecaca}.container{max-width:1540px;margin:0 auto;padding:24px;width:100%}.header{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:18px}h1{margin:0;font-size:32px}.actions,.chips,.badges,.legend,.detail-actions,.modal-actions{display:flex;gap:8px;flex-wrap:wrap}.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);min-width:0}.cards{display:grid;grid-template-columns:1.15fr repeat(3,1fr);gap:14px;margin-bottom:14px}.stat{padding:18px}.stat-top{display:flex;justify-content:space-between;gap:12px}.label{font-size:13px;color:var(--muted);font-weight:700}.value{font-size:32px;font-weight:900;margin-top:4px}.stat-class{margin-top:8px;font-size:13px;color:var(--muted);font-weight:750}.stat-class b{color:var(--text)}.outage{margin-top:10px;font-size:14px}.outage b{color:var(--red)}.cat{display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:15px;font-size:20px;font-weight:900;background:#eff6ff;color:#1d4ed8;flex:0 0 auto}.cat-a{background:#22c55e;color:#052e16}.cat-b{background:#f97316;color:#431407}.cat-c{background:#facc15;color:#422006}.panel{display:none;margin-bottom:18px;padding:18px}.panel.open{display:block}.panel-head{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:12px}.panel-title{font-weight:900}.box-desc,.note{font-size:13px;color:var(--muted);margin-top:6px;line-height:1.35}.section-label{font-size:12px;color:var(--muted);font-weight:900;margin:12px 0 8px}.search-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:10px}.field{width:100%;min-width:0;border:1px solid #cbd5e1;border-radius:14px;padding:11px 12px;font-size:14px;background:#fff}textarea.field{min-height:78px;resize:vertical}.filter-red{background:#fee2e2!important;border-color:#fca5a5!important;color:#991b1b!important}.filter-red.active{background:#dc2626!important;border-color:#dc2626!important;color:#fff!important}.filter-orange{background:#ffedd5!important;border-color:#fdba74!important;color:#9a3412!important}.filter-orange.active{background:#f97316!important;border-color:#f97316!important;color:#fff!important}.owner-at{background:#fef08a!important;border-color:#facc15!important;color:#422006!important}.owner-at.active{background:#facc15!important;border-color:#eab308!important;color:#111827!important}.owner-poal{background:#bae6fd!important;border-color:#38bdf8!important;color:#075985!important}.owner-poal.active{background:#38bdf8!important;border-color:#0284c7!important;color:#082f49!important}.owner-mnz{background:#d9f99d!important;border-color:#84cc16!important;color:#365314!important}.owner-mnz.active{background:#84cc16!important;border-color:#65a30d!important;color:#1a2e05!important}.main{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(380px,.85fr);gap:18px;align-items:start}.box-head{padding:18px 18px 0}.box-title{font-size:21px;font-weight:900;margin:0}.box-body{padding:16px 18px 18px}#map{height:720px;width:100%;border-radius:18px;border:1px solid var(--line);overflow:hidden}.map-shell{position:relative}.map-fullscreen-btn{position:absolute;right:12px;top:12px;z-index:1000;background:rgba(255,255,255,.96);border-color:#cbd5e1;box-shadow:0 8px 24px rgba(15,23,42,.18);border-radius:999px;padding:9px 12px;font-size:12px}.map-fullscreen-active{position:fixed!important;inset:0!important;z-index:9000!important;background:#fff!important;border-radius:0!important;border:0!important;box-shadow:none!important;display:flex!important;flex-direction:column!important}.map-fullscreen-active .box-head{padding:12px 14px 0!important}.map-fullscreen-active .box-body{display:flex!important;flex-direction:column!important;flex:1!important;min-height:0!important}.map-fullscreen-active .map-shell{flex:1!important;min-height:0!important}.map-fullscreen-active #map{height:100%!important;min-height:0!important;border-radius:0!important}.map-fullscreen-active .legend,.map-fullscreen-active .table-wrap{display:none!important}.map-fullscreen-active .map-fullscreen-btn{right:14px;top:14px;background:#0f172a;color:#fff;border-color:#0f172a}body.map-fullscreen-body{overflow:hidden!important}.map-detail-back{display:none!important}.fullscreen-detail-active{position:fixed!important;inset:0!important;z-index:9100!important;border-radius:0!important;border:0!important;box-shadow:none!important;overflow:auto!important;background:#fff!important}.fullscreen-detail-active .map-detail-back{display:inline-flex!important;background:#0f172a!important;color:#fff!important;border-color:#0f172a!important}.fullscreen-detail-active .box-head{position:sticky;top:0;z-index:2;background:#fff;border-bottom:1px solid var(--line);padding:12px 14px!important}.fullscreen-detail-active .box-body{padding:14px!important}@media(max-width:900px){.fullscreen-detail-active .detail-grid{grid-template-columns:1fr!important}}.legend{margin-top:12px}.legend-item{display:flex;align-items:center;gap:7px;padding:8px 10px;border:1px solid var(--line);border-radius:999px;font-size:12px;color:var(--muted);background:#fff}.dot{width:11px;height:11px;border-radius:999px;display:inline-block}.table-wrap{width:100%;overflow:auto;border:1px solid var(--line);border-radius:18px;background:#fff;margin-top:14px;max-height:320px;-webkit-overflow-scrolling:touch}.mobile-table-card{display:none}table{width:100%;border-collapse:collapse;min-width:760px}thead{background:#f8fafc;color:var(--muted);position:sticky;top:0}th,td{padding:11px 12px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap;font-size:13px}tbody tr{cursor:pointer}tbody tr:hover,tbody tr.active{background:#e0f2fe}.detail-card{position:sticky;top:24px;overflow:hidden}.detail-head-row{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}.btn-ri{background:#fef3c7!important;border-color:#facc15!important;color:#713f12!important}.btn-edit-top{background:#7f1d1d!important;border-color:#450a0a!important;color:#fff!important;box-shadow:0 4px 12px rgba(127,29,29,.18)}.badge{display:inline-flex;padding:7px 10px;border-radius:999px;border:1px solid var(--line);background:#f8fafc;font-size:12px;font-weight:850}.badge.red{background:#fee2e2;border-color:#fecaca;color:#b91c1c}.badge.orange{background:#ffedd5;border-color:#fed7aa;color:#9a3412}.badge.blue{background:#eff6ff;border-color:#bfdbfe;color:#1d4ed8}.detail-title{font-size:20px;font-weight:950;margin:12px 0 5px;overflow-wrap:anywhere}.detail-sub{font-size:13px;color:var(--muted)}.detail-meta-row{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap}.detail-id-no{font-size:20px;font-weight:950;color:var(--text);white-space:nowrap;line-height:1.2}.id-number-cell{font-variant-numeric:tabular-nums;font-weight:850;color:#6fe5dc}.detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.detail-item{border:1px solid var(--line);border-radius:15px;background:#fff;padding:12px;min-width:0}.detail-key{font-size:11px;color:var(--muted);font-weight:750}.detail-val{margin-top:6px;font-size:13px;font-weight:750;word-break:break-word;white-space:pre-wrap}.muted{border:1px solid var(--line);border-radius:16px;padding:14px;background:#f8fafc;color:var(--muted);font-size:14px}.modal{position:fixed;inset:0;background:rgba(15,23,42,.55);display:none;align-items:center;justify-content:center;padding:20px;z-index:9500}.mobile-text{display:none}.modal.open{display:flex}.modal-card{width:min(1100px,100%);max-height:88vh;overflow:hidden;background:#fff;border-radius:24px;border:1px solid var(--line);box-shadow:0 24px 70px rgba(15,23,42,.24);display:flex;flex-direction:column}.chart-modal-card{width:min(1280px,100%);height:92vh;max-height:92vh}.chart-frame{width:100%;height:100%;min-height:620px;border:0;background:#e2e8f0}.chart-note{font-size:12px;color:var(--muted);line-height:1.4;margin-top:4px}.chart-fallback{font-size:12px;margin-top:4px}.chart-fallback a{color:#1d4ed8;font-weight:800;text-decoration:none}.modal-head{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:12px;align-items:center}.modal-title{font-size:18px;font-weight:900;overflow-wrap:anywhere}.modal-body{padding:18px;overflow:auto}.photo-top{border:1px solid var(--line);border-radius:18px;background:#f8fafc;padding:14px;margin-bottom:14px}.photo-upload-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.photo-upload-actions label{display:inline-flex;align-items:center}.take-photo-btn{background:#eff6ff!important;border-color:#bfdbfe!important;color:#1d4ed8!important}.photo-row{display:flex;gap:10px;overflow-x:auto;padding-top:10px}.photo-card{position:relative;flex:0 0 auto;width:145px;height:105px;border-radius:14px;overflow:hidden;border:1px solid #cbd5e1;background:#fff}.photo-card img{width:100%;height:100%;object-fit:cover}.photo-date{position:absolute;left:6px;bottom:6px;background:rgba(15,23,42,.8);color:#fff;font-size:10px;border-radius:8px;padding:2px 6px}.ri-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.ri-section{border:1px solid var(--line);border-radius:18px;padding:14px;background:#fff}.ri-title{font-weight:900;margin-bottom:10px}.ri-add{display:grid;grid-template-columns:1fr 92px auto;gap:8px;align-items:start}.ri-add textarea{min-height:72px;resize:vertical}.history{margin-top:12px;display:flex;flex-direction:column;gap:8px}.hist-item{border:1px solid var(--line);border-radius:14px;padding:10px;background:#f8fafc}.hist-meta{font-size:11px;color:var(--muted);font-weight:800;margin-bottom:5px}.hist-note{white-space:pre-wrap;font-size:13px;line-height:1.45;overflow-wrap:anywhere}.edit-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.edit-field label{display:block;font-size:11px;color:var(--muted);font-weight:850;margin:0 0 5px 2px}.code-box{border:1px solid var(--line);background:#f8fafc;border-radius:18px;padding:14px;margin-bottom:14px}.error-text{color:#b91c1c;font-size:13px;font-weight:800;margin-top:8px;display:none}@media(max-width:900px){.chart-modal-card{height:94vh;max-height:94vh}.chart-frame{min-height:520px}.container{padding:12px;max-width:100vw;display:flex;flex-direction:column}.header{display:block;order:1}h1{font-size:28px}.actions{margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:8px}.actions button{width:100%;padding:10px 8px}.cards{grid-template-columns:1fr 1fr;gap:10px;order:3}.stat{padding:14px}.value{font-size:26px}.main{display:flex;flex-direction:column;gap:14px;width:100%;max-width:100%;overflow:hidden;order:2}.main>.card{width:100%;max-width:100%;overflow:hidden}.main>.card:first-child{order:1}.detail-card{position:static;order:2}.panel{order:4}.mobile-table-card{display:block;order:5}.mobile-table-card .table-wrap{margin-top:0}.box-head{padding:16px 14px 0}.box-body{padding:14px}#map{height:430px;min-height:430px;border-radius:14px}.detail-grid,.edit-grid{grid-template-columns:1fr}.search-row{grid-template-columns:1fr 1fr}table{min-width:680px}.modal{padding:0;background:#fff}.modal-card{max-height:100vh;height:100vh;border-radius:0;border:0}.modal-head{flex-direction:row-reverse;justify-content:flex-end;align-items:center;position:sticky;top:0;z-index:10;background:#fff;padding:12px 14px}.modal-head > div{flex:1}.desktop-text{display:none}.mobile-text{display:inline}.modal-head button.danger{background:#0f172a!important;color:#fff!important;border-color:#0f172a!important;margin-right:12px;white-space:nowrap}.ri-grid{grid-template-columns:1fr}.ri-section.inspection-section{order:1}.ri-section.repair-section{order:2}.ri-add{grid-template-columns:1fr}}@media(max-width:520px){.chart-frame{min-height:480px}.container{padding:8px}.cards{grid-template-columns:1fr}.actions{grid-template-columns:1fr 1fr}.search-row{grid-template-columns:1fr}#map{height:390px;min-height:390px}.legend{gap:6px}.legend-item{font-size:11px;padding:7px 9px}.table-wrap{max-height:260px}table{min-width:620px}.badge{font-size:11px;padding:6px 9px}.detail-actions button{flex:1 1 auto}.detail-head-row{align-items:center}.btn-edit-top{padding:8px 12px}}
+
+.photo-card{box-shadow:0 4px 14px rgba(15,23,42,.08)}
+.photo-card::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(15,23,42,.05),rgba(15,23,42,.45));opacity:.18;pointer-events:none}
+.photo-actions{position:absolute;right:6px;top:6px;z-index:3;opacity:0;transition:opacity .15s ease}
+.photo-card:hover .photo-actions{opacity:1}
+.photo-delete{background:rgba(185,28,28,.95)!important;color:#fff!important;border-color:rgba(185,28,28,.95)!important;border-radius:999px!important;padding:4px 8px!important;font-size:11px!important;line-height:1.2!important;box-shadow:0 4px 12px rgba(15,23,42,.25)}
+.photo-delete:before{content:"✕ ";font-weight:900}.photo-date{z-index:2}
+.hist-item{position:relative}.hist-row{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.hist-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;opacity:.82}.hist-item:hover .hist-actions{opacity:1}.hist-actions button{font-size:11px;padding:5px 9px;border-radius:999px}.hist-edit{background:#eff6ff!important;border-color:#bfdbfe!important;color:#1d4ed8!important}.hist-delete{background:#fff1f2!important;border-color:#fecaca!important;color:#b91c1c!important}.hist-save{background:#0f172a!important;border-color:#0f172a!important;color:#fff!important}.hist-cancel{background:#fff!important;border-color:#cbd5e1!important;color:#334155!important}.hist-edit-box{display:grid;gap:8px}.hist-edit-form{display:grid;grid-template-columns:1fr 110px;gap:8px}.hist-edit-form textarea{min-height:82px}.hist-edit-actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}.ri-title-row{display:flex;align-items:center;justify-content:space-between;gap:10px}.mini-muted{font-size:11px;color:#64748b;font-weight:700}
+.ri-quick-actions{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 2px}.ri-quick-btn{background:#eff6ff!important;border-color:#bfdbfe!important;color:#1d4ed8!important;border-radius:999px!important;padding:7px 12px!important;font-size:12px!important;font-weight:850!important}.ri-quick-btn:before{content:"+ ";font-weight:950}.ri-quick-btn:disabled{opacity:.55;cursor:default}
+@media(max-width:520px){.hist-row{flex-direction:column}.hist-actions{justify-content:flex-start}.hist-edit-form{grid-template-columns:1fr}.photo-actions{opacity:1}}
+
+/* HM_MOBILE_PIN_TOUCH_START */
+.leaflet-container{touch-action:pan-x pan-y}.leaflet-interactive{cursor:pointer}@media(pointer:coarse){.leaflet-interactive{stroke-width:3px}.legend-item{font-size:12px}.detail-actions button,.actions button{min-height:42px}}
+/* HM_MOBILE_PIN_TOUCH_END */
+
+/* HM_IMAGE_VIEWER_START */
+.photo-card img{cursor:zoom-in}.image-viewer{position:fixed;inset:0;background:rgba(15,23,42,.92);display:none;align-items:center;justify-content:center;z-index:9999;user-select:none;touch-action:none}.image-viewer.open{display:flex}.viewer-stage{position:absolute;inset:76px 18px 22px;display:flex;align-items:center;justify-content:center;overflow:hidden;touch-action:none}.viewer-img{max-width:92vw;max-height:82vh;transform-origin:center center;will-change:transform;cursor:grab;border-radius:14px;box-shadow:0 24px 70px rgba(0,0,0,.45);background:#fff}.viewer-img.dragging{cursor:grabbing}.viewer-toolbar{position:absolute;top:16px;left:50%;transform:translateX(-50%);display:flex;gap:8px;align-items:center;background:rgba(255,255,255,.96);border:1px solid rgba(226,232,240,.8);border-radius:999px;padding:8px;box-shadow:0 12px 30px rgba(0,0,0,.22);z-index:2}.viewer-toolbar button{border-radius:999px;padding:8px 12px;font-size:13px}.viewer-title{position:absolute;left:18px;top:22px;right:18px;text-align:left;color:#fff;font-size:13px;font-weight:800;pointer-events:none;opacity:.92}.viewer-hint{position:absolute;left:18px;bottom:14px;right:18px;text-align:center;color:#cbd5e1;font-size:12px;pointer-events:none}.viewer-close{background:#fff1f2!important;color:#b91c1c!important;border-color:#fecaca!important}.viewer-zoom-label{min-width:54px;text-align:center;font-size:12px;font-weight:900;color:#334155;padding:0 4px}@media(max-width:600px){.viewer-toolbar{top:10px;gap:5px;padding:6px}.viewer-toolbar button{padding:7px 9px;font-size:12px}.viewer-stage{inset:64px 8px 22px}.viewer-img{max-width:96vw;max-height:82vh}.viewer-title{display:none}.viewer-hint{font-size:11px}}
+/* HM_IMAGE_VIEWER_END */
+.coord-ddm-row{display:grid;grid-template-columns:minmax(0,.75fr) minmax(0,1.25fr);gap:8px;align-items:center}.coord-input-wrap{position:relative}.coord-input-wrap .field{padding-right:34px}.coord-unit{position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:13px;font-weight:850;pointer-events:none}.coord-hemi{display:inline-flex;align-items:center;justify-content:center;min-width:34px;height:38px;border-radius:12px;background:#f1f5f9;border:1px solid #cbd5e1;color:#0f172a;font-size:13px;font-weight:950}.coord-ddm-help{display:flex;align-items:center;gap:7px;margin-top:5px;font-size:12px;color:var(--muted)}@media(max-width:520px){.coord-ddm-row{grid-template-columns:minmax(0,.72fr) minmax(0,1.28fr)}}.coord-decimal{margin-top:3px;font-size:11px;font-weight:650;color:var(--muted)}#addNewBtn{background:#fee2e2;border-color:#fecaca;color:#991b1b}#addNewBtn:hover{background:#fecaca}#locationBtn{background:#f1f5f9;border-color:#cbd5e1;color:#475569}#locationBtn:hover{background:#e2e8f0}#forwardPlanningBtn.active{background:#f97316;color:#fff;border-color:#f97316}.fp-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.fp-row .field{max-width:240px}.fp-summary{margin-top:10px;font-size:13px;color:var(--muted);font-weight:700}
+#editCloseBtn{background:#374151!important;color:#fff!important;border-color:#374151!important}
+.btn-inactive-navaid{background:#374151!important;color:#fff!important;border-color:#4b5563!important}.btn-inactive-navaid:hover{background:#1f2937!important;border-color:#6b7280!important}.btn-inactive-navaid.is-active{background:#0f766e!important;border-color:#2dd4bf!important}.filter-inactive{background:#374151!important;color:#fff!important;border-color:#6b7280!important}.filter-inactive.active{background:#111827!important;border-color:#94a3b8!important;box-shadow:0 0 0 2px rgba(148,163,184,.18)}
+#editCloseBtn:hover{background:#1f2937!important;border-color:#1f2937!important}
+.modal-head-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end}.btn-delete-navaid{background:#fff1f2!important;color:#b91c1c!important;border-color:#fecaca!important}.btn-pin-map{background:#eff6ff!important;border-color:#bfdbfe!important;color:#1d4ed8!important}.pin-pick-banner{position:fixed;left:50%;top:16px;transform:translateX(-50%);z-index:9800;background:#0f172a;color:#fff;border:1px solid #334155;border-radius:999px;padding:10px 14px;box-shadow:0 12px 30px rgba(15,23,42,.24);display:none;gap:10px;align-items:center;font-size:13px;font-weight:850}.pin-pick-banner.open{display:flex}.pin-pick-banner button{background:#fff;color:#0f172a;border-color:#fff;border-radius:999px;padding:6px 10px;font-size:12px}.coord-pin-row{margin-top:7px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}.coord-pin-row .btn-pin-map{padding:7px 10px;border-radius:12px;font-size:12px}.coord-pin-row .box-desc{margin-top:0!important}
+@media(max-width:900px){.modal-head-actions{flex-direction:row-reverse;margin-right:12px}.modal-head-actions button{margin-right:0!important}.pin-pick-banner{left:8px;right:8px;top:8px;transform:none;border-radius:16px;justify-content:space-between}}
+
+/* HM_DETAIL_NOTES_START */
+.detail-notes{border:1px solid var(--line);border-radius:18px;background:#fff;margin:12px 0 14px;overflow:hidden}
+.detail-notes-head{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:12px 14px;border-bottom:1px solid var(--line);background:#f8fafc}
+.detail-notes-title{font-size:14px;font-weight:950;color:#0f172a}.detail-notes-count{font-size:12px;color:var(--muted);font-weight:800}
+.detail-notes-add{display:grid;grid-template-columns:1fr 84px;gap:8px;padding:12px 14px;border-bottom:1px solid var(--line)}
+.detail-notes-add textarea{min-height:74px;max-height:74px;resize:none}.detail-notes-add button{white-space:normal;line-height:1.1;border-radius:16px;background:#0f172a;color:#fff;border-color:#0f172a}
+.detail-notes-quick{display:flex;gap:8px;flex-wrap:wrap;padding:0 14px 12px;border-bottom:1px solid var(--line)}
+.detail-note-quick-btn{background:#eff6ff!important;border-color:#bfdbfe!important;color:#1d4ed8!important;border-radius:999px!important;padding:7px 12px!important;font-size:12px!important;font-weight:800}
+.detail-note-quick-btn:before{content:"+ ";font-weight:950}
+.detail-note-quick-btn:disabled{opacity:.55;cursor:default}
+.detail-notes-list{height:160px;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:8px;-webkit-overflow-scrolling:touch}
+.detail-note-item{border:1px solid var(--line);border-radius:14px;background:#f8fafc;padding:10px;position:relative}.detail-note-row{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.detail-note-main{min-width:0;flex:1}.detail-note-meta{font-size:11px;color:var(--muted);font-weight:850;margin-bottom:5px}.detail-note-text{font-size:13px;line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere}.detail-note-delete{width:26px!important;height:26px!important;min-width:26px!important;padding:0!important;border-radius:999px!important;background:#dc2626!important;border-color:#b91c1c!important;color:#fff!important;font-size:16px!important;font-weight:950!important;line-height:1!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;box-shadow:0 4px 10px rgba(185,28,28,.22)}.detail-note-delete:hover{background:#b91c1c!important;border-color:#991b1b!important}.note-delete-code-overlay{position:fixed;inset:0;background:rgba(15,23,42,.55);display:none;align-items:center;justify-content:center;padding:20px;z-index:9700}.note-delete-code-overlay.open{display:flex}.note-delete-card{width:min(420px,100%);background:#fff;border:1px solid var(--line);border-radius:22px;box-shadow:0 24px 70px rgba(15,23,42,.24);padding:18px}.note-delete-card-title{font-size:17px;font-weight:950;margin-bottom:6px}.note-delete-card-desc{font-size:13px;color:var(--muted);line-height:1.4;margin-bottom:14px}.note-delete-card-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.note-delete-card-actions .primary{background:#dc2626!important;border-color:#b91c1c!important}.note-delete-error{display:none;margin-top:8px;color:#b91c1c;font-size:13px;font-weight:800}
+.all-notes-toolbar{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:10px;flex-wrap:wrap}.all-notes-summary{font-size:13px;color:var(--muted);font-weight:750}.all-notes-table-wrap{border:1px solid var(--line);border-radius:18px;overflow:auto;max-height:62vh;background:#fff}.all-notes-table{min-width:780px}.all-notes-table td.note-cell{white-space:normal;min-width:280px;max-width:560px;line-height:1.4}.all-notes-table td.name-cell{white-space:normal;min-width:190px;max-width:300px;font-weight:800}.btn-go-note{background:#eff6ff!important;border-color:#bfdbfe!important;color:#1d4ed8!important;border-radius:999px!important;padding:7px 10px!important;font-size:12px!important}
+@media(max-width:900px){.detail-notes-add{grid-template-columns:1fr 76px}.detail-notes-list{height:150px}.all-notes-table-wrap{max-height:calc(100vh - 150px)}}
+/* HM_DETAIL_NOTES_END */
+
+/* ===== HM LAUNCH PAGE VISUAL SYSTEM ===== */
+:root{
+  --bg:#06111f;--bg2:#091a2d;--surface:#0d2238;--surface2:#102a43;
+  --text:#eaf5ff;--muted:#8fa8bd;--line:rgba(149,190,219,.16);
+  --primary:#0f6b8f;--accent:#29d3c2;--accent2:#3ea6ff;
+  --shadow:0 24px 60px rgba(0,7,16,.32);--radius:20px
+}
+html{background:#06111f}
+body{min-height:100vh;background:radial-gradient(circle at 78% -10%,rgba(31,132,183,.22),transparent 38rem),radial-gradient(circle at 0 40%,rgba(21,198,179,.08),transparent 34rem),#06111f;color:var(--text);font-family:Inter,"Segoe UI",Arial,sans-serif}
+body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.20;background-image:linear-gradient(rgba(255,255,255,.018) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.018) 1px,transparent 1px);background-size:34px 34px}
+.container{position:relative;max-width:1800px;padding:24px 30px 40px}
+.header{align-items:center;margin:0 0 20px;padding:18px 22px;border:1px solid var(--line);border-radius:20px;background:linear-gradient(135deg,rgba(13,34,56,.95),rgba(8,25,43,.9));box-shadow:var(--shadow);backdrop-filter:blur(18px)}
+.brand-block{min-width:260px}.eyebrow{display:flex;align-items:center;gap:10px;color:#8fb4ca;font-size:11px;font-weight:850;letter-spacing:.16em}.brand-mark{display:grid;place-items:center;width:30px;height:30px;border:1px solid rgba(41,211,194,.5);border-radius:8px;color:#61f4e5;background:rgba(41,211,194,.09);letter-spacing:0}.brand-block h1{margin:7px 0 3px;font-size:clamp(27px,3vw,42px);font-weight:760;letter-spacing:-.045em}.brand-block h1 span{color:#6fe5dc}.brand-block p{margin:0;color:var(--muted);font-size:13px}
+.actions{justify-content:flex-end;max-width:920px}.actions button{min-height:38px;border-color:rgba(95,166,205,.20);border-radius:10px;background:#102d46;color:#c7dfec;font-size:12px;box-shadow:none}.actions button:hover{transform:translateY(-1px);border-color:rgba(41,211,194,.48);background:#143953;color:#76eee3}.actions #addNewBtn{background:linear-gradient(135deg,#178c88,#0d6a71)!important;border-color:#29d3c2!important;color:#fff!important}.actions #forwardPlanningBtn.active,.actions #marineOverlayBtn.active{background:linear-gradient(135deg,#178c88,#0d6a71)!important;border-color:#29d3c2!important}
+.card,.panel{border:1px solid var(--line);background:linear-gradient(145deg,rgba(14,38,61,.97),rgba(8,25,43,.97));box-shadow:var(--shadow)}
+.cards{gap:12px}.stat{position:relative;overflow:hidden;padding:17px 18px}.stat:before{content:"";position:absolute;inset:0 0 auto;height:2px;background:linear-gradient(90deg,var(--accent),var(--accent2),transparent)}.label,.stat-class,.box-desc,.note,.detail-sub,.detail-key,.mini-muted,.all-notes-summary{color:var(--muted)}.value,.box-title,.panel-title,.detail-title,.detail-val,.ri-title,.modal-title,.detail-notes-title{color:var(--text)}
+.cat{border:1px solid rgba(62,166,255,.24);background:rgba(62,166,255,.10);color:#72bdff}.cat-a{border-color:rgba(53,230,138,.28);background:rgba(53,230,138,.12);color:#78efaa}.cat-b{border-color:rgba(255,174,83,.32);background:rgba(255,174,83,.12);color:#ffc078}.cat-c{border-color:rgba(250,204,21,.30);background:rgba(250,204,21,.11);color:#fde66c}
+.stat button,.chips button,.detail-actions button,.modal-actions button,.map-fullscreen-btn{border-color:rgba(95,166,205,.22);background:#102d46;color:#c7dfec}.stat button:hover,.chips button:hover,.detail-actions button:hover{border-color:rgba(41,211,194,.45);color:#79eee3}.stat button.active,.chips button.active{background:linear-gradient(135deg,#178c88,#0d6a71);border-color:#29d3c2;color:#fff}
+.panel{padding:18px}.panel-head{border-color:var(--line)}.field{border-color:rgba(149,190,219,.24);background:#0b2136;color:#eaf5ff}.field::placeholder{color:#7895a8}.field:focus{outline:3px solid rgba(41,211,194,.12);border-color:#29d3c2}.section-label{color:#78a0b8}
+.main{grid-template-columns:minmax(0,1.62fr) minmax(370px,.82fr);gap:20px}.box-head{padding:17px 18px 0}.box-body{padding:15px 18px 18px}.box-title{font-size:18px}.detail-card{top:18px}
+#map{border-color:var(--line);background:#0b1e31}.leaflet-control-zoom a,.leaflet-control-layers{background:#102d46!important;color:#eaf5ff!important;border-color:rgba(149,190,219,.22)!important}.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:#102d46;color:#eaf5ff}
+.legend-item,.detail-item,.detail-notes,.ri-section,.photo-top,.hist-item,.muted,.code-box{border-color:var(--line);background:rgba(11,33,54,.80);color:#d8eaf5}.detail-notes-head,thead{border-color:var(--line);background:#0c2940;color:#8fa8bd}.detail-notes-add,.detail-notes-quick{border-color:var(--line)}.badge{border-color:var(--line);background:#102d46;color:#c7dfec}.badge.blue{background:rgba(62,166,255,.12);border-color:rgba(62,166,255,.28);color:#83c8ff}
+.table-wrap,.all-notes-table-wrap{border-color:var(--line);background:#0b2136}th,td{border-color:var(--line);color:#d8eaf5}tbody tr:hover,tbody tr.active{background:rgba(41,211,194,.10)}
+.modal{background:rgba(2,10,18,.72);backdrop-filter:blur(6px)}.modal-card,.note-delete-card{border-color:rgba(149,190,219,.22);background:#0b2136;color:var(--text);box-shadow:0 28px 80px rgba(0,0,0,.48)}.modal-head{border-color:var(--line);background:#0d263d}.modal-body{background:#0b2136}.modal-head button.danger,#editCloseBtn{background:#102d46!important;border-color:rgba(149,190,219,.22)!important;color:#eef7ff!important}
+.photo-card{border-color:var(--line);background:#102d46}.hist-meta,.detail-note-meta{color:#8fa8bd}.hist-note,.detail-note-text{color:#d8eaf5}.detail-note-item{border-color:var(--line);background:#102d46}
+.map-fullscreen-active,.fullscreen-detail-active{background:#071524!important}.map-fullscreen-active .box-head,.fullscreen-detail-active .box-head{background:#0d2238!important;border-color:var(--line)!important}
+@media(max-width:1100px){.header{align-items:flex-start}.actions{justify-content:flex-start;max-width:none}.main{grid-template-columns:minmax(0,1.35fr) minmax(330px,.8fr)}}
+@media(max-width:900px){
+  .container{padding:12px;display:flex}.header{padding:16px;border-radius:16px}.brand-block h1{font-size:29px}.brand-block p{display:none}.actions{display:flex;overflow-x:auto;flex-wrap:nowrap;margin:14px -2px 0;padding:0 2px 6px;scrollbar-width:thin}.actions button{width:auto;flex:0 0 auto;min-height:44px;padding:10px 13px}.cards{order:3;grid-template-columns:repeat(2,minmax(0,1fr))}.main{order:2}.panel{order:4}.mobile-table-card{order:5}.detail-card{position:static}.modal{background:#071524}.modal-card{border-radius:0}.modal-head{flex-direction:row;justify-content:space-between}.modal-head button.danger{margin-right:0}.detail-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:560px){
+  .container{padding:8px}.header{padding:14px;border-radius:14px}.eyebrow{font-size:9px}.brand-mark{width:28px;height:28px}.brand-block h1{font-size:24px}.actions{gap:7px}.actions button{font-size:11px;padding:9px 11px}.cards{grid-template-columns:1fr 1fr;gap:8px}.stat{padding:13px}.value{font-size:25px}.stat-class,.outage{font-size:11px}.cat{width:36px;height:36px;border-radius:11px}.main{gap:10px}.box-head{padding:14px 13px 0}.box-body{padding:12px 13px 14px}#map{height:410px;min-height:410px}.detail-grid{grid-template-columns:1fr}.legend{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}.legend-item{justify-content:center;padding:7px 5px;white-space:nowrap}.panel{padding:13px}.search-row{grid-template-columns:1fr}.modal-head{padding:12px 14px}.modal-title{font-size:16px}
+}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
+
+
+/* ===== MAP DISTANCE MEASUREMENT ===== */
+.leaflet-control.measure-control{display:flex;flex-direction:column;gap:5px;border:0!important;background:transparent!important;box-shadow:none!important}
+.measure-control button{width:38px;height:38px;padding:0;display:grid;place-items:center;border:1px solid rgba(149,190,219,.34);border-radius:10px;background:#0d263d;color:#eaf5ff;font-size:18px;font-weight:900;box-shadow:0 8px 20px rgba(0,7,16,.28);cursor:pointer}
+.measure-control button:hover,.measure-control button.active{border-color:#29d3c2;background:#126c70;color:#fff}
+.measure-control button:focus-visible{outline:3px solid rgba(41,211,194,.3);outline-offset:2px}
+.measure-readout{display:none;min-width:142px;max-width:220px;padding:9px 11px;border:1px solid rgba(149,190,219,.28);border-radius:10px;background:rgba(7,24,40,.94);color:#eaf5ff;font:750 12px/1.35 Inter,"Segoe UI",Arial,sans-serif;box-shadow:0 10px 24px rgba(0,7,16,.34)}
+.measure-readout.open{display:block}.measure-readout strong{display:block;color:#6fe5dc;font-size:15px}.measure-readout span{display:block;margin-top:2px;color:#9fb8c9;font-size:10px;font-weight:650}
+.measure-distance-label{background:#071d2d!important;border:1px solid #29d3c2!important;border-radius:999px!important;color:#fff!important;box-shadow:0 5px 16px rgba(0,0,0,.22)!important;font:850 11px/1 Inter,"Segoe UI",Arial,sans-serif!important;padding:5px 8px!important;white-space:nowrap!important}
+.measure-distance-label:before{display:none!important}
+.measure-start-label{background:#0d6a71!important;border-color:#6fe5dc!important}
+.measure-crosshair,.measure-crosshair .leaflet-interactive{cursor:crosshair!important}
+.measure-banner{position:absolute;left:50%;top:12px;z-index:820;transform:translateX(-50%);display:none;align-items:center;gap:9px;max-width:calc(100% - 130px);padding:8px 11px;border:1px solid rgba(41,211,194,.38);border-radius:999px;background:rgba(7,24,40,.94);color:#eaf5ff;box-shadow:0 10px 26px rgba(0,0,0,.3);font-size:11px;font-weight:750;pointer-events:auto}
+.measure-banner.open{display:flex}.measure-banner button{min-height:28px;padding:5px 9px;border-color:rgba(149,190,219,.28);border-radius:999px;background:#102d46;color:#eaf5ff;font-size:10px}.measure-banner .finish{border-color:#29d3c2;background:#0d6a71}.measure-banner .clear{border-color:#fca5a5;background:#7f1d1d}
+.measure-vertex{filter:drop-shadow(0 2px 4px rgba(0,0,0,.35))}
+@media(max-width:600px){.measure-control button{width:42px;height:42px;font-size:19px}.measure-readout{min-width:124px;max-width:165px;font-size:11px}.measure-banner{left:8px;right:8px;top:8px;transform:none;max-width:none;border-radius:14px;justify-content:center;flex-wrap:wrap}.measure-banner>span{flex:1 1 100%;text-align:center}}
+
+
+/* ===== Requested popup control refinements ===== */
+.photo-upload-actions{gap:9px!important}
+.photo-upload-actions label.small,
+.photo-upload-actions label.take-photo-btn{
+  display:inline-flex!important;align-items:center!important;justify-content:center!important;
+  min-height:38px!important;padding:9px 15px!important;border-radius:12px!important;
+  border:1px solid #168bbb!important;background:#168bbb!important;color:#fff!important;
+  font-size:12px!important;font-weight:850!important;line-height:1!important;
+  box-shadow:0 7px 18px rgba(15,128,173,.22)!important;transition:.16s ease!important
+}
+.photo-upload-actions label.small:hover,
+.photo-upload-actions label.take-photo-btn:hover{background:#1a9bca!important;border-color:#35b9e4!important;transform:translateY(-1px)}
+.photo-upload-actions label.small:focus-within,
+.photo-upload-actions label.take-photo-btn:focus-within{outline:3px solid rgba(41,211,194,.25)!important;outline-offset:2px!important}
+#forwardPlanningClearBtn{
+  min-height:40px!important;padding:9px 16px!important;border:1px solid #ef4444!important;
+  border-radius:12px!important;background:#b42318!important;color:#fff!important;
+  font-weight:900!important;box-shadow:0 7px 18px rgba(180,35,24,.24)!important
+}
+#forwardPlanningClearBtn:hover{background:#d92d20!important;border-color:#ff7b72!important;transform:translateY(-1px)}
+#allNotesRefreshBtn{display:none!important}
+@media(max-width:600px){
+  .photo-upload-actions{display:grid!important;grid-template-columns:1fr 1fr!important;width:100%!important}
+  .photo-upload-actions label.small,.photo-upload-actions label.take-photo-btn{width:100%!important;min-height:44px!important}
+  #forwardPlanningClearBtn{min-height:44px!important}
+}
+
+
+/* Main board card readability and right-aligned detail controls */
+@media(min-width:561px){
+  .cards .stat{padding:18px 18px 56px!important;min-height:148px}
+  .cards .label{font-size:13px!important;line-height:1.25;font-weight:850!important;color:#aac3d4!important}
+  .cards .value{font-size:34px!important;line-height:1.05;margin-top:7px!important;letter-spacing:-.03em;color:#fff!important}
+  .cards .stat-class{font-size:14px!important;line-height:1.35;margin-top:10px!important;color:#b7cedd!important}
+  .cards .stat-class b{font-size:15px!important;color:#fff!important}
+  .cards .outage{font-size:14px!important;line-height:1.35;margin-top:7px!important;color:#d2e2ec!important}
+  .cards .outage b{font-size:15px!important;font-weight:900!important}
+  .cards .stat>button[data-scope]{position:absolute!important;right:16px!important;bottom:14px!important;left:auto!important;margin:0!important;min-height:32px!important;padding:7px 12px!important;font-size:12px!important}
+}
+@media(max-width:560px){
+  .cards .label{font-size:11px!important;color:#aac3d4!important}
+  .cards .value{font-size:28px!important;color:#fff!important}
+  .cards .stat-class,.cards .outage{font-size:12px!important;line-height:1.35}
+  .cards .stat-class b,.cards .outage b{font-size:13px!important}
+  .cards .stat{padding-bottom:52px!important;position:relative}
+  .cards .stat>button[data-scope]{position:absolute!important;right:12px!important;bottom:11px!important;margin:0!important}
+}
+
+
+/* Mobile header actions: show all controls without horizontal scrolling */
+@media(max-width:900px){
+  .header .actions{
+    display:grid!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:8px!important;
+    width:100%!important;
+    max-width:none!important;
+    margin:14px 0 0!important;
+    padding:0!important;
+    overflow:visible!important;
+    flex-wrap:wrap!important;
+    scrollbar-width:none!important;
+  }
+  .header .actions::-webkit-scrollbar{display:none!important}
+  .header .actions button{
+    width:100%!important;
+    min-width:0!important;
+    min-height:42px!important;
+    padding:9px 7px!important;
+    font-size:11px!important;
+    line-height:1.2!important;
+    white-space:normal!important;
+    text-align:center!important;
+    overflow-wrap:anywhere!important;
+  }
+}
+@media(max-width:380px){
+  .header .actions{gap:6px!important}
+  .header .actions button{padding:8px 5px!important;font-size:10px!important}
+}
+
+
+/* ===== NAVAID USER LOGIN / SESSION ===== */
+.user-gate{position:fixed;inset:0;z-index:12000;display:flex;align-items:center;justify-content:center;padding:22px;background:radial-gradient(circle at 50% -10%,rgba(62,166,255,.25),transparent 38rem),radial-gradient(circle at 0 55%,rgba(41,211,194,.10),transparent 34rem),#06111f}
+.user-gate.hidden{display:none}.user-gate-card{width:min(570px,100%);text-align:center;padding:34px 28px;border:1px solid rgba(149,190,219,.20);border-radius:26px;background:linear-gradient(145deg,rgba(14,38,61,.98),rgba(8,25,43,.98));box-shadow:0 28px 80px rgba(0,0,0,.48)}
+.user-gate-logo{width:78px;height:78px;margin:0 auto 18px;display:grid;place-items:center;border-radius:22px;background:linear-gradient(135deg,#178c88,#0f6b8f);border:1px solid #29d3c2;color:#fff;box-shadow:0 14px 36px rgba(15,128,173,.35)}
+.user-gate-logo svg{width:49px;height:49px;display:block}.user-gate-card h2{margin:0 0 7px;font-size:27px;color:#fff}.user-gate-card p{margin:0 0 23px;color:#8fa8bd;font-size:14px;font-weight:650}.user-gate-users{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}.user-gate-users button{min-height:64px;font-size:18px;font-weight:950;border-radius:15px;background:#0b2136;color:#eaf5ff;border-color:rgba(149,190,219,.25)}.user-gate-users button:hover{background:linear-gradient(135deg,#178c88,#0d6a71);border-color:#29d3c2;color:#fff;transform:translateY(-2px)}
+.user-gate-secondary{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.user-gate-secondary button{min-height:48px;border-radius:14px;font-weight:900}.user-gate-secondary .do-user{background:rgba(62,166,255,.12);border-color:rgba(62,166,255,.35);color:#83c8ff}.user-gate-secondary .visitor-user{background:rgba(149,190,219,.06);border-style:dashed;color:#9fb8c9}
+.user-session{display:flex;align-items:center;gap:8px;margin-left:auto;padding:6px 7px 6px 12px;border:1px solid rgba(41,211,194,.28);border-radius:999px;background:rgba(41,211,194,.08);color:#9fb8c9;font-size:12px;font-weight:750}.user-session b{color:#6fe5dc}.user-session.visitor{border-color:rgba(149,190,219,.22);background:rgba(149,190,219,.06)}.user-session.visitor b{color:#b7cedd}.user-avatar{display:grid;place-items:center;width:27px;height:27px;border-radius:50%;background:linear-gradient(135deg,#178c88,#0f6b8f);color:#fff;font-size:10px;font-weight:950}.user-session.visitor .user-avatar{background:#475569}.user-switch{padding:5px 9px!important;border-radius:999px!important;font-size:10px!important;min-height:0!important}
+.logged-initial-note{margin-top:7px;color:#6fe5dc;font-size:11px;font-weight:800}.field.auto-initial{background:rgba(41,211,194,.08)!important;border-color:rgba(41,211,194,.32)!important;color:#6fe5dc!important;font-weight:900}
+@media(max-width:900px){.user-session{width:100%;justify-content:flex-start;margin:10px 0 0}.user-switch{margin-left:auto!important}.user-gate-users{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:480px){.user-gate-card{padding:28px 18px}.user-gate-users{grid-template-columns:repeat(2,1fr)}.user-gate-secondary{grid-template-columns:1fr}.user-gate-users button{min-height:54px}}
+
+/* ===== RI LAYOUT CLEANUP AND VISIBLE USER SWITCH ===== */
+.logged-initial-note{display:none!important}
+.ri-add{grid-template-columns:minmax(0,1fr) 92px auto!important;gap:8px!important;align-items:start!important}
+.ri-add textarea.field{width:100%!important;min-height:72px!important;height:72px!important;max-height:none!important;resize:vertical!important}
+.ri-add input.field{width:92px!important;min-width:92px!important;height:44px!important}
+.ri-add > button{height:44px!important;min-height:44px!important;align-self:start!important}
+.user-switch{background:#168bbb!important;border:1px solid #35b9e4!important;color:#fff!important;font-weight:900!important;box-shadow:0 5px 14px rgba(22,139,187,.32)!important;padding:6px 11px!important}
+.user-switch:hover,.user-switch:focus-visible{background:#1aa4d6!important;border-color:#6fe5dc!important;color:#fff!important;outline:2px solid rgba(111,229,220,.28)!important;outline-offset:2px!important}
+@media(max-width:900px){.ri-add{grid-template-columns:minmax(0,1fr) 92px auto!important}.ri-add input.field{width:92px!important;min-width:92px!important}}
+@media(max-width:560px){.ri-add{grid-template-columns:minmax(0,1fr) 76px!important}.ri-add input.field{width:76px!important;min-width:76px!important}.ri-add > button{grid-column:1 / -1!important;width:110px!important}.ri-add textarea.field{height:74px!important}}
+
+/* ===== COORDINATE FINDER ===== */
+#finderBtn{background:#fef3c7;border-color:#facc15;color:#713f12}
+#finderBtn:hover{background:#fde68a;border-color:#eab308;color:#422006}
+.finder-card{width:min(560px,100%)}
+.finder-format-row{display:grid;grid-template-columns:180px 1fr;gap:12px;align-items:end;margin-bottom:16px}
+.finder-coordinate-grid{display:grid;grid-template-columns:1fr;gap:12px}
+.finder-coordinate-block{padding:13px;border:1px solid var(--line);border-radius:16px;background:rgba(11,33,54,.80)}
+.finder-coordinate-title{margin-bottom:8px;color:var(--text);font-size:13px;font-weight:900}
+.finder-ddm-inputs{display:grid;grid-template-columns:minmax(90px,.8fr) minmax(130px,1.2fr) 72px;gap:8px}
+.finder-decimal-inputs{display:grid;grid-template-columns:minmax(0,1fr) 72px;gap:8px}
+.finder-help{margin-top:7px;color:var(--muted);font-size:11px;line-height:1.4}
+.finder-error{display:none;margin-top:12px;color:#fca5a5;font-size:13px;font-weight:800}
+.finder-pin-icon{background:transparent!important;border:0!important}
+.finder-pin-shape{position:relative;width:28px;height:28px;transform:rotate(45deg);border:3px solid #fff;border-radius:50% 50% 50% 0;background:#facc15;box-shadow:0 5px 14px rgba(0,0,0,.42)}
+.finder-pin-shape:after{content:"";position:absolute;left:7px;top:7px;width:8px;height:8px;border-radius:50%;background:#713f12}
+@media(max-width:560px){.finder-format-row{grid-template-columns:1fr}.finder-ddm-inputs{grid-template-columns:minmax(70px,.8fr) minmax(110px,1.2fr) 64px}.finder-decimal-inputs{grid-template-columns:minmax(0,1fr) 64px}}
+
+/* Keep Finder immediately to the left of Current Location */
+.location-action-group{display:inline-flex;gap:8px;align-items:center;flex:0 0 auto;white-space:nowrap}
+.location-action-group button{flex:0 0 auto}
+@media(max-width:900px){.header .actions .location-action-group{display:grid!important;grid-template-columns:1fr 1fr!important;grid-column:1 / -1!important;gap:8px!important;width:100%!important}.header .actions .location-action-group button{width:100%!important}}
+</style><style id="dashboardIntegrationStyle">.dashboard-back{position:fixed;z-index:120000;right:14px;bottom:14px;display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:0 14px;border:1px solid rgba(125,211,252,.55);border-radius:999px;background:rgba(7,24,40,.94);color:#e8f6ff;text-decoration:none;font:800 12px/1 Segoe UI,Arial,sans-serif;box-shadow:0 10px 28px rgba(0,0,0,.35)}.dashboard-back:hover,.dashboard-back:focus-visible{border-color:#67e8f9;background:#0c2a43;outline:none}@media(max-width:700px){.dashboard-back{right:8px;bottom:8px;min-height:38px;padding:0 11px;font-size:11px}}</style></head><body><a href="../" class="dashboard-back" title="Return to Auckland Harbour Operations Monitoring Page">← Dashboard</a><div class="user-gate" id="userGate">
+  <div class="user-gate-card">
+    <div class="user-gate-logo" aria-label="Lighthouse">
+      <svg viewBox="0 0 64 64" role="img" aria-hidden="true"><path fill="currentColor" d="M27 7h10l3 12H24L27 7Zm-5 17h20l2 8-4 3 6 22H18l6-22-4-3 2-8Zm7 3v7h6v-7h-6Zm-2 13-3 12h16l-3-12H27ZM13 18l9 3-1 4-9-3 1-4Zm38 0 1 4-9 3-1-4 9-3ZM6 30h14v4H6v-4Zm38 0h14v4H44v-4Z"/></svg>
+    </div>
+    <h2>Who is entering?</h2>
+    <p>Select your initials. The selected user will be attached automatically to new NavAid records.</p>
+    <div class="user-gate-users">
+      <button type="button" data-navaid-user="CY">CY</button><button type="button" data-navaid-user="BW">BW</button><button type="button" data-navaid-user="SH">SH</button><button type="button" data-navaid-user="KW">KW</button><button type="button" data-navaid-user="Crew">Crew</button>
+    </div>
+    <div class="user-gate-secondary">
+      <button class="do-user" type="button" data-navaid-user="DO">DO</button><button class="visitor-user" type="button" data-navaid-user="Visitor">Visitor</button>
+    </div>
+  </div>
+</div><div class="container"><div class="header"><div class="brand-block"><div class="eyebrow"><span class="brand-mark">HM</span><span>AUCKLAND HARBOURMASTER</span></div><h1>NavAid <span>Monitoring Board</span></h1><p>Navigation asset status, inspection planning and field records</p></div><div class="actions"><button id="resetBtn" type="button">Reset Filters</button><button class="filter-red" id="headerOutageBtn" type="button">Outage</button><button class="filter-inactive" id="inactiveOnlyBtn" type="button">Inactive</button><button id="allNotesBtn" type="button">All Note</button><button id="forwardPlanningBtn" type="button">Forward planning</button><button id="marineChartBtn" type="button">Marine Chart</button><button id="marineOverlayBtn" type="button" title="Toggle nautical chart style overlay on this map">Chart Overlay</button><button id="addNewBtn" type="button">Add New</button><span class="location-action-group"><button id="finderBtn" type="button">Finder</button><button id="locationBtn" type="button">Current Location</button></span></div><div class="user-session" id="userSession"><span class="user-avatar" id="userAvatar">-</span><span>Logged in as <b id="userName">-</b></span><button class="user-switch" id="switchNavaidUserBtn" type="button">Switch</button></div></div><div class="cards" id="statCards"></div><div class="card panel" id="detailsPanel"><div class="panel-head"><div><div class="panel-title" id="detailsTitle">All Navaids</div><div class="box-desc" id="detailsDesc"></div></div><div class="chips"><button class="small filter-red" id="outageOnlyBtn" type="button">Outage only</button><button class="small filter-orange" id="overdueOnlyBtn" type="button">Due inspection only</button></div></div><div class="section-label">Owner / Class Filter</div><div class="chips" id="ownerChips"></div><div class="search-row"><input class="field" id="nameSearch" placeholder="Search Name"><input class="field" id="ownerSearch" placeholder="Search Owner"><input class="field" id="typeSearch" placeholder="Search Type / Sub type"><select class="field" id="classFilter"><option value="">All Classes</option></select></div><div class="note">Due inspection = Last edited + Maintenance period(months) is older than today. Outage, Repair, Inspection, edits and photos are saved to Supabase for the HM NavAid team app.</div></div><div class="main"><div class="card"><div class="box-head"><h2 class="box-title">NavAid Map</h2><div class="box-desc" id="mapDesc"></div></div><div class="box-body"><div class="map-shell"><div id="map"></div><div class="measure-banner" id="measureBanner"><span>Tap/click the map to add measurement points.</span><button class="finish" id="measureFinishBtn" type="button">Finish</button><button id="measureUndoBtn" type="button">Undo</button><button class="clear" id="measureClearBtn" type="button">Clear</button></div><button id="mapFullscreenBtn" class="map-fullscreen-btn" type="button">⛶ Fullscreen</button></div><div class="legend"><div class="legend-item"><span class="dot" style="background:#dc2626"></span> Outage</div><div class="legend-item"><span class="dot" style="background:#f97316"></span> Due inspection</div><div class="legend-item"><span class="dot" style="background:#16a34a"></span> Normal</div><div class="legend-item"><span class="dot" style="background:#374151"></span> Inactive</div></div><div class="table-wrap"><table><thead><tr id="tableHead"></tr></thead><tbody id="tableBody"></tbody></table></div></div></div><div class="card detail-card"><div class="box-head"><div class="detail-head-row"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><button class="small map-detail-back" id="mapDetailBackBtn" type="button">← Back to Map</button><h2 class="box-title">Detail Information</h2></div><button class="small btn-edit-top" id="editDetailsBtn" type="button">Edit</button></div></div><div class="box-body"><div id="detailEmpty" class="muted">Select a pin or table row to view details.</div><div id="detailContent" style="display:none"><div class="badges" id="detailBadges"></div><div class="detail-title" id="detailTitle">-</div><div class="detail-meta-row"><div class="detail-sub" id="detailSubtitle"></div><div class="detail-id-no" id="detailIdNo">ID No. ----</div></div><div class="detail-actions"><button class="small danger" id="detailOutageBtn" type="button">Mark as Outage</button><button class="small btn-ri" id="repairInspectionBtn" type="button">Repair / Inspection</button></div><div class="detail-notes" id="detailNotesSection"><div class="detail-notes-head"><div class="detail-notes-title">Notes</div><div class="detail-notes-count" id="detailNotesCount">0 entries</div></div><div class="detail-notes-add"><textarea class="field" id="detailNoteText" placeholder="Add a note for this NavAid..."></textarea><button id="detailNoteAddBtn" type="button">Add<br>Note</button></div><div class="detail-notes-quick" id="detailNotesQuick"><button class="detail-note-quick-btn" type="button" data-quick-note="Light Witnessed">Light Witnessed</button></div><div class="detail-notes-list" id="detailNotesList"><div class="muted">Select a pin to view notes.</div></div></div><div class="detail-grid" id="detailGrid"></div></div></div></div></div></div>
+<div class="modal" id="riModal"><div class="modal-card"><div class="modal-head"><div><div class="modal-title" id="riModalTitle">Repair / Inspection</div><div class="box-desc" id="riModalSub"></div></div><button class="small danger" id="riCloseBtn" type="button"><span class="desktop-text">Close</span><span class="mobile-text">← Back</span></button></div><div class="modal-body"><div class="photo-top"><div class="panel-head" style="border:0;margin:0;padding:0"><div><div class="ri-title">Uploaded Photos</div><div class="box-desc">Newest uploaded photo appears at the far left.</div></div><div class="photo-upload-actions"><label class="small take-photo-btn" style="border:1px solid #cbd5e1;border-radius:999px;padding:7px 10px;cursor:pointer;background:#fff">Take Photo<input id="photoCameraInput" type="file" accept="image/*" capture="environment" style="display:none"></label><label class="small" style="border:1px solid #cbd5e1;border-radius:999px;padding:7px 10px;cursor:pointer;background:#fff">Upload Photo<input id="photoInput" type="file" accept="image/*" multiple style="display:none"></label></div></div><div class="photo-row" id="photoRow"><div class="muted">No photos uploaded yet.</div></div></div><div class="ri-grid"><div class="ri-section repair-section"><div class="ri-title">Repair</div><div class="ri-add"><textarea class="field" id="repairNote" placeholder="Note..."></textarea><input class="field" id="repairInitial" placeholder="Initial"><button class="primary" id="repairAdd" type="button">Add</button></div><div class="history" id="repairHistory"></div></div><div class="ri-section inspection-section"><div class="ri-title">Inspection</div><div class="ri-add"><textarea class="field" id="inspectionNote" placeholder="Note..."></textarea><input class="field" id="inspectionInitial" placeholder="Initial"><button class="primary" id="inspectionAdd" type="button">Add</button></div><div class="ri-quick-actions"><button class="ri-quick-btn" id="liftedCleanedQuickBtn" type="button">Lifted &amp; cleaned</button></div><div class="history" id="inspectionHistory"></div></div></div></div></div></div>
+<div class="modal" id="editModal"><div class="modal-card"><div class="modal-head"><div><div class="modal-title" id="editModalTitle">Edit Details</div><div class="box-desc">Access code is required. Last edited, Status, and Inspection Due Date are not editable.</div></div><div class="modal-head-actions"><button class="small btn-inactive-navaid" id="editInactiveBtn" type="button" style="display:none">Inactive</button><button class="small btn-delete-navaid" id="editDeleteBtn" type="button" style="display:none">Delete</button><button class="small danger" id="editCloseBtn" type="button"><span class="desktop-text">Close</span><span class="mobile-text">← Back</span></button></div></div><div class="modal-body"><div class="code-box" id="editCodeBox"><div class="section-label" style="margin-top:0">Access code</div><div class="modal-actions"><input class="field" id="editCodeInput" type="password" placeholder="Enter access code" style="max-width:260px"><button class="primary" id="editUnlockBtn" type="button">Unlock</button></div><div class="error-text" id="editCodeError">Incorrect access code.</div></div><div id="editFormSection" style="display:none"><div class="edit-grid" id="editFields"></div><div class="modal-actions" style="margin-top:14px"><button class="primary" id="editSaveBtn" type="button">Save Changes</button><button id="editCancelBtn" type="button">Cancel</button></div></div></div></div></div>
+
+
+<div class="modal" id="allNotesModal"><div class="modal-card"><div class="modal-head"><div><div class="modal-title">All Notes</div><div class="box-desc">All NavAid notes are shown newest first. Each note is one row.</div></div><button class="small danger" id="allNotesCloseBtn" type="button"><span class="desktop-text">Close</span><span class="mobile-text">← Back</span></button></div><div class="modal-body"><div class="all-notes-toolbar"><div class="all-notes-summary" id="allNotesSummary">Loading notes...</div></div><div class="all-notes-table-wrap"><table class="all-notes-table"><thead><tr><th>Name</th><th>Note</th><th>Timestamp</th><th></th></tr></thead><tbody id="allNotesBody"><tr><td colspan="4" style="text-align:center;color:#64748b;padding:30px">Loading notes...</td></tr></tbody></table></div></div></div></div>
+
+<div class="modal" id="finderModal"><div class="modal-card finder-card"><div class="modal-head"><div><div class="modal-title">NavAid Finder</div><div class="box-desc">Find a NavAid by permanent ID number, or centre the map on a GPS coordinate.</div></div><button class="small danger" id="finderCloseBtn" type="button"><span class="desktop-text">Close</span><span class="mobile-text">← Back</span></button></div><div class="modal-body">
+  <div class="finder-coordinate-block" style="margin-bottom:18px"><div class="finder-coordinate-title">Find by ID Number</div><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><input class="field" id="finderIdNumber" type="text" inputmode="numeric" autocomplete="off" placeholder="e.g. 0716 or ID No. 0716" style="flex:1;min-width:210px"><button class="primary" id="finderIdBtn" type="button">Find ID</button></div><div class="finder-help" style="margin-top:7px">Enter the permanent ID with or without leading zeros.</div></div>
+  <div style="border-top:1px solid var(--line);margin:0 0 18px"></div>
+  <div class="finder-format-row"><div><div class="section-label" style="margin-top:0">Coordinate format</div><select class="field" id="finderFormat"><option value="ddm" selected>Degrees + Decimal Minutes</option><option value="decimal">Decimal Degrees</option></select></div><div class="finder-help">Latitude defaults to South (S) and longitude defaults to East (E). Hemisphere can be changed if required.</div></div>
+  <div class="finder-coordinate-grid" id="finderDdmFields">
+    <div class="finder-coordinate-block"><div class="finder-coordinate-title">Latitude</div><div class="finder-ddm-inputs"><input class="field" id="finderLatDeg" type="number" inputmode="numeric" min="0" max="90" step="1" placeholder="Degrees"><input class="field" id="finderLatMin" type="number" inputmode="decimal" min="0" max="59.999999" step="0.00001" placeholder="Decimal minutes"><select class="field" id="finderLatHemi"><option value="S" selected>S</option><option value="N">N</option></select></div></div>
+    <div class="finder-coordinate-block"><div class="finder-coordinate-title">Longitude</div><div class="finder-ddm-inputs"><input class="field" id="finderLonDeg" type="number" inputmode="numeric" min="0" max="180" step="1" placeholder="Degrees"><input class="field" id="finderLonMin" type="number" inputmode="decimal" min="0" max="59.999999" step="0.00001" placeholder="Decimal minutes"><select class="field" id="finderLonHemi"><option value="E" selected>E</option><option value="W">W</option></select></div></div>
+  </div>
+  <div class="finder-coordinate-grid" id="finderDecimalFields" style="display:none">
+    <div class="finder-coordinate-block"><div class="finder-coordinate-title">Latitude</div><div class="finder-decimal-inputs"><input class="field" id="finderLatDecimal" type="number" inputmode="decimal" min="0" max="90" step="0.000001" placeholder="Decimal degrees"><select class="field" id="finderLatDecimalHemi"><option value="S" selected>S</option><option value="N">N</option></select></div></div>
+    <div class="finder-coordinate-block"><div class="finder-coordinate-title">Longitude</div><div class="finder-decimal-inputs"><input class="field" id="finderLonDecimal" type="number" inputmode="decimal" min="0" max="180" step="0.000001" placeholder="Decimal degrees"><select class="field" id="finderLonDecimalHemi"><option value="E" selected>E</option><option value="W">W</option></select></div></div>
+  </div>
+  <div class="finder-error" id="finderError"></div>
+  <div class="modal-actions" style="margin-top:16px"><button class="primary" id="finderFindBtn" type="button">Find</button><button id="finderCancelBtn" type="button">Cancel</button></div>
+</div></div></div>
+<div class="modal" id="forwardPlanningModal"><div class="modal-card" style="width:min(520px,100%)"><div class="modal-head"><div><div class="modal-title">Forward planning</div><div class="box-desc">Select a future date to show pins that will be due for inspection on or before that date.</div></div><button class="small danger" id="forwardPlanningCloseBtn" type="button"><span class="desktop-text">Close</span><span class="mobile-text">← Back</span></button></div><div class="modal-body"><div class="section-label" style="margin-top:0">Planning date</div><div class="fp-row"><input class="field" id="forwardPlanningDate" type="date"><button class="primary" id="forwardPlanningApplyBtn" type="button">Show Due Pins</button><button id="forwardPlanningClearBtn" type="button">Clear</button></div><div class="fp-summary" id="forwardPlanningSummary">No planning date selected.</div><div class="note">Forward planning uses the same rule as Due inspection: Last edited + Maintenance period(months). Outage pins are excluded unless they are also due by the selected date.</div></div></div></div>
+<div class="modal" id="marineChartModal"><div class="modal-card chart-modal-card"><div class="modal-head"><div><div class="modal-title">Marine Chart Viewer</div><div class="chart-note">Public chart view from wetmaps.co.nz. Use for contextual reference only — not for navigation.</div><div class="chart-fallback"><a id="marineChartOpenLink" href="https://wetmaps.co.nz/#10/-36.7444/174.9518" target="_blank" rel="noopener">Open marine chart in new tab</a></div></div><button class="small danger" id="marineChartCloseBtn" type="button"><span class="desktop-text">Close</span><span class="mobile-text">← Back</span></button></div><div class="modal-body" style="padding:0;flex:1;overflow:hidden"><iframe id="marineChartFrame" class="chart-frame" title="Wetmaps Marine Chart" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe></div></div></div>
+<div class="pin-pick-banner" id="pinPickBanner"><span>Pin on map mode: tap/click the map to set Lat/Long.</span><button type="button" id="pinPickCancelBtn">Cancel</button></div>
+<div class="note-delete-code-overlay" id="noteDeleteCodeOverlay">
+  <div class="note-delete-card">
+    <div class="note-delete-card-title">Delete Note</div>
+    <div class="note-delete-card-desc">Enter access code to delete this note. Once unlocked, access remains granted while this browser page is open.</div>
+    <input class="field" id="noteDeleteCodeInput" type="password" placeholder="Enter access code">
+    <div class="note-delete-error" id="noteDeleteCodeError">Incorrect access code.</div>
+    <div class="note-delete-card-actions">
+      <button class="primary" id="noteDeleteConfirmBtn" type="button">Delete</button>
+      <button id="noteDeleteCancelBtn" type="button">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script>
+const EMBEDDED_DATA=[];const HEADERS=["Name", "Owner", "Class", "Category", "Type", "Sub type", "Lat (Decimal Degrees)", "Long (Decimal Degrees)", "Maintenance period", "Last edited", "Light Character", "Note", "Light type", "Reflector", "Transponder", "Top mark", "Top chain length", "Top chain size", "Shackle", "Rope length", "Rope size", "Chain length", "chain size", "Anchor Weight", "Depth"];const CONFIG={SUPABASE_URL:'https://wgwlnutnstrfuiiunlcu.supabase.co',SUPABASE_ANON_KEY:'sb_publishable_iC7kbinoy61_5eQCnrV25Q_OioA7Y1x',SUPABASE_TABLE:'hm_navaids',SUPABASE_LOGS_TABLE:'hm_navaid_logs',SUPABASE_PHOTOS_TABLE:'hm_navaid_photos',SUPABASE_BUCKET:'hm-navaid-images'};const sbClient=supabase.createClient(CONFIG.SUPABASE_URL,CONFIG.SUPABASE_ANON_KEY);
+// Shared server-side access verification for all protected NavAid actions.
+// No real access code is stored in this HTML file.
+const ACCESS_FUNCTION_URL='https://wgwlnutnstrfuiiunlcu.supabase.co/functions/v1/hyper-responder';
+const ACCESS_APP_NAME='navaid';
+const ACCESS_SESSION_KEY='navaidProtectedActionAccess';
+const ACCESS_SESSION_DURATION_MS=8*60*60*1000;
+const ACCESS_MIN_CODE_LENGTH=5;
+function saveProtectedAccessSession(){sessionStorage.setItem(ACCESS_SESSION_KEY,JSON.stringify({granted:true,expiresAt:Date.now()+ACCESS_SESSION_DURATION_MS}))}
+function hasValidProtectedAccessSession(){try{const raw=sessionStorage.getItem(ACCESS_SESSION_KEY);if(!raw)return false;const session=JSON.parse(raw);if(session.granted!==true||typeof session.expiresAt!=='number'||Date.now()>=session.expiresAt){sessionStorage.removeItem(ACCESS_SESSION_KEY);return false}return true}catch(error){sessionStorage.removeItem(ACCESS_SESSION_KEY);return false}}
+async function verifyProtectedAccessCode(code){const normalized=String(code??'').trim();if(normalized.length<ACCESS_MIN_CODE_LENGTH)return{valid:false,message:'Please enter a valid access code.'};const controller=new AbortController();const timeoutId=setTimeout(()=>controller.abort(),10000);try{const response=await fetch(ACCESS_FUNCTION_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({app:ACCESS_APP_NAME,code:normalized}),signal:controller.signal});let result;try{result=await response.json()}catch(error){throw new Error('The server returned an invalid response.')}if(!response.ok||result.valid!==true)return{valid:false,message:result.message||'Incorrect access code.'};saveProtectedAccessSession();return{valid:true,message:'Access granted.'}}finally{clearTimeout(timeoutId)}}const OUTAGE_KEY='hm_navaid_manual_outages_v1',RI_KEY='hm_navaid_repair_inspection_v1',EDIT_KEY='hm_navaid_last_edited_overrides_v1',DETAIL_EDIT_KEY='hm_navaid_detail_edits_v1';let manualOutages=new Set(JSON.parse(localStorage.getItem(OUTAGE_KEY)||'[]'));let riStore=JSON.parse(localStorage.getItem(RI_KEY)||'{}');let editOverrides=JSON.parse(localStorage.getItem(EDIT_KEY)||'{}');let detailEdits=JSON.parse(localStorage.getItem(DETAIL_EDIT_KEY)||'{}');const NOTE_LOG_TYPE='note';let noteStore={};let allNotesCache=[];const state={records:[],filtered:[],scope:'all',owner:'all',classType:'all',outageOnly:false,overdueOnly:false,inactiveOnly:false,selectedId:null,markers:{},layerGroup:null,userLocation:null,finderLocation:null,forwardPlanningDate:null};
+const NAVAID_USERS=['CY','BW','SH','KW','Crew','DO'];const NAVAID_USER_KEY='hm_navaid_current_user';let currentNavaidUser='';
+function isNavaidVisitor(){return currentNavaidUser==='Visitor'}
+function activeNavaidInitial(){return NAVAID_USERS.includes(currentNavaidUser)?currentNavaidUser:''}
+function setNavaidUser(user){if(!NAVAID_USERS.includes(user)&&user!=='Visitor')return;currentNavaidUser=user;localStorage.removeItem(NAVAID_USER_KEY);$('userName').textContent=user;$('userAvatar').textContent=user==='Visitor'?'V':user;$('userSession').classList.toggle('visitor',user==='Visitor');$('userGate').classList.add('hidden');document.body.style.overflow='';applyRiInitialMode()}
+function openNavaidUserGate(){$('userGate').classList.remove('hidden');document.body.style.overflow='hidden'}
+function restoreNavaidUser(){currentNavaidUser='';$('userName').textContent='-';$('userAvatar').textContent='-';$('userSession').classList.remove('visitor');openNavaidUserGate()}
+function applyRiInitialMode(){const auto=activeNavaidInitial();['repairInitial','inspectionInitial'].forEach(id=>{const el=$(id);if(!el)return;el.readOnly=!!auto;el.classList.toggle('auto-initial',!!auto);if(auto)el.value=auto;else if(isNavaidVisitor()&&NAVAID_USERS.includes(clean(el.value)))el.value='';el.placeholder=auto?'Logged user':'Initial'});document.querySelectorAll('.logged-initial-note').forEach(x=>x.remove())}
+let riEditing={id:null,type:null};let editMode="edit";let editAccessGranted=hasValidProtectedAccessSession();let pendingDetailNoteDeleteId=null;let pinPickMode=false;let pinPickSavedValues=null;
+const DB_TO_APP={id_number:'ID Number',name:'Name',owner:'Owner',asset_class:'Class',category:'Category',type:'Type',sub_type:'Sub type',lat:'Lat (Decimal Degrees)',lng:'Long (Decimal Degrees)',maintenance_period_months:'Maintenance period',last_edited:'Last edited',light_character:'Light Character',note:'Note',light_type:'Light type',reflector:'Reflector',transponder:'Transponder',top_mark:'Top mark',top_chain_length:'Top chain length',top_chain_size:'Top chain size',shackle:'Shackle',rope_length:'Rope length',rope_size:'Rope size',chain_length:'Chain length',chain_size:'chain size',anchor_weight:'Anchor Weight',depth:'Depth'};
+const APP_TO_DB=Object.fromEntries(Object.entries(DB_TO_APP).map(([k,v])=>[v,k]));
+function dbToApp(row){const r={__id:row.id,__db_id:row.id,__is_outage:!!row.is_outage,__is_inactive:!!row.is_inactive,__outage_note:row.outage_note||'',__inspection_due_date:row.inspection_due_date||'',__raw:row};Object.entries(DB_TO_APP).forEach(([db,app])=>{r[app]=row[db]??null});return r}
+function parseCoordinateInput(value,kind){
+const raw=String(value??'').trim();if(raw==='')return null;
+const axis=kind==='lat'?'latitude':'longitude';
+const limit=kind==='lat'?90:180;
+let s=raw.replace(/,/g,' ').replace(/[°º]/g,' ').replace(/[′’']/g,' ').replace(/["″]/g,' ').replace(/\s+/g,' ').trim();
+let hemi=(s.match(/[NSEW]/ig)||[]).pop();
+s=s.replace(/[NSEW]/ig,'').trim();
+let nums=s.match(/[+-]?\d+(?:\.\d+)?/g);
+if(!nums||!nums.length)throw new Error(`Invalid ${axis}. Use decimal degrees, or degrees + decimal minutes, e.g. -36.37501667 or 36°22.501' S.`);
+let result;
+if(nums.length===1){result=Number(nums[0])}else{
+let deg=Number(nums[0]),min=Number(nums[1]);
+if(!Number.isFinite(deg)||!Number.isFinite(min)||min<0||min>=60)throw new Error(`Invalid ${axis} minutes. Minutes must be 0 to less than 60.`);
+let sign=deg<0?-1:1;result=Math.abs(deg)+(min/60);result*=sign;
+}
+if(hemi){hemi=hemi.toUpperCase();if(hemi==='S'||hemi==='W')result=-Math.abs(result);if(hemi==='N'||hemi==='E')result=Math.abs(result)}
+if(!Number.isFinite(result)||Math.abs(result)>limit)throw new Error(`Invalid ${axis}. Expected ${kind==='lat'?'between -90 and 90':'between -180 and 180'}.`);
+return Number(result.toFixed(8))
+}
+function appEditsToDb(edits){const out={};Object.entries(edits).forEach(([app,val])=>{
+const db=APP_TO_DB[app];if(!db)return;
+let v=typeof val==='string'?val.trim():val;
+if(v==='')v=null;
+if(db==='lat'||db==='lng')v=parseCoordinateInput(v,db==='lat'?'lat':'lng');
+else if(db==='maintenance_period_months'){
+  if(v===null)v=null;
+  else{const months=Number(v);if(!Number.isFinite(months))throw new Error('Maintenance period must be a number.');v=Math.trunc(months)}
+}
+out[db]=v});return out}
+function addMonthsISODate(date,months){const d=new Date(date);if(isNaN(d))return null;d.setMonth(d.getMonth()+Number(months||0));return d.toISOString().slice(0,10)}
+function jsq(v){return String(v??'').replace(/\\/g,'\\\\').replace(/'/g,"\\'")}
+const $=id=>document.getElementById(id);const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));const clean=v=>String(v??'').trim();function ownerOf(r){return clean(r.Owner)||'Unknown'}function classOf(r){return clean(r.Class)||'Unknown'}function catOf(r){return clean(r.Category)||'Uncategorised'}function latOf(r){const raw=r['Lat (Decimal Degrees)'];if(raw===null||raw===undefined||String(raw).trim()==='')return null;const v=Number(raw);return Number.isFinite(v)?v:null}function lonOf(r){const raw=r['Long (Decimal Degrees)'];if(raw===null||raw===undefined||String(raw).trim()==='')return null;const v=Number(raw);return Number.isFinite(v)?v:null}function hasGps(r){return latOf(r)!==null&&lonOf(r)!==null}function recordKey(r){return r.__id}function assetKey(r){return [clean(r.Name),ownerOf(r),clean(r['Lat (Decimal Degrees)']),clean(r['Long (Decimal Degrees)'])].join('|')}function outageKey(r){return assetKey(r)}function selectedRecord(){return state.filtered.find(x=>x.__id===state.selectedId)||null}function effectiveLastEdited(r){return editOverrides[assetKey(r)]||r['Last edited']}function formatNowNZ(){return new Date().toLocaleString('en-NZ',{day:'2-digit',month:'2-digit',year:'numeric',hour:'numeric',minute:'2-digit',hour12:true}).replace(/\s/g,' ')}function updateLastEdited(r){editOverrides[assetKey(r)]=formatNowNZ();r['Last edited']=editOverrides[assetKey(r)];localStorage.setItem(EDIT_KEY,JSON.stringify(editOverrides))}function displayValue(r,h){return h==='Last edited'?(effectiveLastEdited(r)??'-'):(r[h]??'-')}function applyDetailEdits(r){const edits=detailEdits[recordKey(r)];if(edits)Object.entries(edits).forEach(([k,v])=>{r[k]=v===''?null:v})}function parseDateNZ(v){if(!v)return null;const s=String(v).trim();let m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:,?\s*(\d{1,2}):(\d{2})\s*(am|pm)?)?/i);if(m){let d=+m[1],mo=+m[2]-1,y=+m[3],h=+(m[4]||0),mi=+(m[5]||0),ap=(m[6]||'').toLowerCase();if(ap==='pm'&&h<12)h+=12;if(ap==='am'&&h===12)h=0;let dt=new Date(y,mo,d,h,mi);return isNaN(dt)?null:dt}let dt=new Date(s);return isNaN(dt)?null:dt}function addMonths(d,m){let x=new Date(d);x.setMonth(x.getMonth()+Number(m||0));return x}function dueDate(r){let last=parseDateNZ(effectiveLastEdited(r));let p=Number(r['Maintenance period']);if(!last||!Number.isFinite(p)||p<=0)return null;return addMonths(last,p)}function isOverdue(r){let d=dueDate(r);return !!d&&new Date()>d}function isDueByPlanningDate(r){if(!state.forwardPlanningDate)return false;let d=dueDate(r);if(!d)return false;let target=new Date(state.forwardPlanningDate+'T23:59:59');return d<=target}function planningFilterActive(){return !!state.forwardPlanningDate}function isOutage(r){return !!r.__is_outage||manualOutages.has(outageKey(r))}function isInactive(r){return !!r.__is_inactive}function markerStatusColor(r){if(isInactive(r))return '#374151';if(isOutage(r))return '#dc2626';if(isOverdue(r)||isDueByPlanningDate(r))return '#f97316';return '#16a34a'}function statusText(r){return isInactive(r)?'Inactive':isOutage(r)?'Outage':(isOverdue(r)||isDueByPlanningDate(r))?'Due inspection':'Normal'}
+function saveRI(){}
+function riData(r){const k=recordKey(r);if(!riStore[k])riStore[k]={repair:[],inspection:[],photos:[],loaded:false};return riStore[k]}
+function noteData(r){const k=recordKey(r);if(!noteStore[k])noteStore[k]={items:[],loaded:false,loading:false};return noteStore[k]}
+function formatNoteTimestamp(ts){return new Date(ts).toLocaleString('en-NZ',{day:'2-digit',month:'2-digit',year:'numeric',hour:'numeric',minute:'2-digit',hour12:true}).replace(/\s/g,' ')}
+async function loadNotesForRecord(r,force=false){if(!r?.__db_id)return;const data=noteData(r);if(data.loading||(!force&&data.loaded))return;data.loading=true;try{const {data:rows,error}=await sbClient.from(CONFIG.SUPABASE_LOGS_TABLE).select('*').eq('navaid_id',r.__db_id).eq('log_type',NOTE_LOG_TYPE).order('created_at',{ascending:false});if(error)throw error;data.items=(rows||[]).map(x=>({id:x.id,navaid_id:x.navaid_id,note:x.note,initial:x.initial||'',ts:new Date(x.created_at).getTime()||Date.now(),created_at:x.created_at})).sort((a,b)=>b.ts-a.ts);data.loaded=true}finally{data.loading=false}}
+function renderSelectedNotes(){const r=selectedRecord();const countEl=$('detailNotesCount'),listEl=$('detailNotesList');if(!countEl||!listEl)return;if(!r){countEl.textContent='0 entries';listEl.innerHTML='<div class="muted">Select a pin to view notes.</div>';return}const data=noteData(r);countEl.textContent=(data.items.length||0)+' entr'+(data.items.length===1?'y':'ies');if(data.loading&&!data.loaded){listEl.innerHTML='<div class="muted">Loading notes...</div>';return}listEl.innerHTML=data.items.length?data.items.map(x=>`<div class="detail-note-item"><div class="detail-note-row"><div class="detail-note-main"><div class="detail-note-meta">${esc(x.initial?x.initial+' · ':'')}${esc(formatNoteTimestamp(x.ts))}</div><div class="detail-note-text">${esc(x.note||'-')}</div></div><button class="detail-note-delete" type="button" title="Delete note" aria-label="Delete note" onclick="requestDeleteDetailNote('${jsq(x.id)}')">×</button></div></div>`).join(''):'<div class="muted">No notes yet for this NavAid.</div>'}
+async function refreshSelectedNotes(force=false){const r=selectedRecord();if(!r)return;const selectedBefore=r.__id;renderSelectedNotes();try{await loadNotesForRecord(r,force);if(state.selectedId===selectedBefore)renderSelectedNotes()}catch(error){console.error(error);const listEl=$('detailNotesList');if(listEl)listEl.innerHTML='<div class="muted">Failed to load notes.</div>'}}
+async function addDetailNote(){const r=selectedRecord();if(!r)return;const el=$('detailNoteText');const note=clean(el?.value);if(!note)return;try{const {error}=await sbClient.from(CONFIG.SUPABASE_LOGS_TABLE).insert({navaid_id:r.__db_id,log_type:NOTE_LOG_TYPE,note,initial:activeNavaidInitial()||null});if(error)throw error;if(el)el.value='';await loadNotesForRecord(r,true);renderSelectedNotes()}catch(error){console.error(error);alert('Failed to save note: '+(error.message||error))}}
+async function addQuickNote(text,btn){const r=selectedRecord();if(!r){alert('Please select a NavAid first.');return}const note=clean(text);if(!note)return;if(btn)btn.disabled=true;try{const {error}=await sbClient.from(CONFIG.SUPABASE_LOGS_TABLE).insert({navaid_id:r.__db_id,log_type:NOTE_LOG_TYPE,note,initial:activeNavaidInitial()||null});if(error)throw error;await loadNotesForRecord(r,true);renderSelectedNotes()}catch(error){console.error(error);alert('Failed to save note: '+(error.message||error))}finally{if(btn)btn.disabled=false}}
+
+function openNoteDeleteCodePrompt(noteId){
+  pendingDetailNoteDeleteId=noteId;
+  const overlay=$('noteDeleteCodeOverlay');
+  if(!overlay)return;
+  $('noteDeleteCodeInput').value='';
+  $('noteDeleteCodeError').style.display='none';
+  overlay.classList.add('open');
+  setTimeout(()=>$('noteDeleteCodeInput')?.focus(),50);
+}
+function closeNoteDeleteCodePrompt(){
+  pendingDetailNoteDeleteId=null;
+  const overlay=$('noteDeleteCodeOverlay');
+  if(overlay)overlay.classList.remove('open');
+}
+function requestDeleteDetailNote(noteId){
+  if(!noteId)return;
+  editAccessGranted=editAccessGranted||hasValidProtectedAccessSession();
+  if(editAccessGranted){
+    deleteDetailNote(noteId);
+  }else{
+    openNoteDeleteCodePrompt(noteId);
+  }
+}
+async function confirmNoteDeleteCode(){
+  const noteId=pendingDetailNoteDeleteId;
+  if(!noteId)return;
+  const input=$('noteDeleteCodeInput'),button=$('noteDeleteConfirmBtn'),errorEl=$('noteDeleteCodeError');
+  const code=clean(input?.value);
+  errorEl.style.display='block';errorEl.style.color='var(--muted)';errorEl.textContent='Checking access code...';
+  if(input)input.disabled=true;if(button){button.disabled=true;button.textContent='Checking...'}
+  try{
+    const result=await verifyProtectedAccessCode(code);
+    if(!result.valid){errorEl.style.color='#b91c1c';errorEl.textContent=result.message||'Incorrect access code.';if(input){input.value='';input.focus()}return}
+    editAccessGranted=true;closeNoteDeleteCodePrompt();deleteDetailNote(noteId);
+  }catch(error){console.error('Access verification failed:',error);errorEl.style.color='#b91c1c';errorEl.textContent=error.name==='AbortError'?'The request timed out. Please try again.':'Unable to verify access. Please try again.'}
+  finally{if(input)input.disabled=false;if(button){button.disabled=false;button.textContent='Delete'}}
+}
+async function deleteDetailNote(noteId){
+  const r=selectedRecord();
+  if(!r||!noteId)return;
+  if(!confirm('Delete this note?'))return;
+  try{
+    const {error}=await sbClient.from(CONFIG.SUPABASE_LOGS_TABLE).delete().eq('id',noteId).eq('log_type',NOTE_LOG_TYPE);
+    if(error)throw error;
+    const data=noteData(r);
+    data.items=(data.items||[]).filter(x=>String(x.id)!==String(noteId));
+    renderSelectedNotes();
+    if(allNotesCache?.length){
+      allNotesCache=allNotesCache.filter(x=>String(x.id)!==String(noteId));
+      if($('allNotesModal')?.classList.contains('open'))renderAllNotesModal();
+    }
+  }catch(error){
+    console.error(error);
+    alert('Failed to delete note: '+(error.message||error));
+  }
+}
+async function loadAllNotes(){const {data,error}=await sbClient.from(CONFIG.SUPABASE_LOGS_TABLE).select('*').eq('log_type',NOTE_LOG_TYPE).order('created_at',{ascending:false});if(error)throw error;allNotesCache=(data||[]).map(x=>{const rec=state.records.find(r=>String(r.__db_id)===String(x.navaid_id));return{id:x.id,navaid_id:x.navaid_id,name:rec?.Name||'Unknown NavAid',note:x.note||'-',ts:new Date(x.created_at).getTime()||Date.now(),created_at:x.created_at,record:rec}}).sort((a,b)=>b.ts-a.ts);return allNotesCache}
+function renderAllNotesModal(){const body=$('allNotesBody'),summary=$('allNotesSummary');if(!body||!summary)return;summary.textContent=allNotesCache.length+' note'+(allNotesCache.length===1?'':'s')+' found.';body.innerHTML=allNotesCache.length?allNotesCache.map(x=>`<tr><td class="name-cell">${esc(x.name)}</td><td class="note-cell">${esc(x.note)}</td><td>${esc(formatNoteTimestamp(x.ts))}</td><td><button class="btn-go-note" type="button" onclick="goToNote('${jsq(x.navaid_id)}')">Go To</button></td></tr>`).join(''):'<tr><td colspan="4" style="text-align:center;color:#64748b;padding:30px">No notes found.</td></tr>'}
+async function openAllNotes(){const modal=$('allNotesModal');if(!modal)return;modal.classList.add('open');document.body.style.overflow='hidden';$('allNotesSummary').textContent='Loading notes...';$('allNotesBody').innerHTML='<tr><td colspan="4" style="text-align:center;color:#64748b;padding:30px">Loading notes...</td></tr>';try{await loadAllNotes();renderAllNotesModal()}catch(error){console.error(error);$('allNotesSummary').textContent='Failed to load notes.';$('allNotesBody').innerHTML='<tr><td colspan="4" style="text-align:center;color:#b91c1c;padding:30px">Failed to load notes: '+esc(error.message||error)+'</td></tr>'}}
+function closeAllNotes(){$('allNotesModal').classList.remove('open');document.body.style.overflow=''}
+function clearFiltersForGoTo(){state.scope='all';state.owner='all';state.classType='all';state.outageOnly=false;state.overdueOnly=false;state.inactiveOnly=false;state.forwardPlanningDate=null;updateForwardPlanningButton();['nameSearch','ownerSearch','typeSearch'].forEach(id=>{if($(id))$(id).value=''});if($('classFilter'))$('classFilter').value=''}
+function goToNote(navaidId){const r=state.records.find(x=>String(x.__db_id)===String(navaidId));if(!r){alert('This note belongs to a NavAid that is not currently loaded.');return}closeAllNotes();clearFiltersForGoTo();state.selectedId=r.__id;renderAll(false);if(hasGps(r)){map.setView([latOf(r),lonOf(r)],15);setTimeout(()=>{const m=state.markers[r.__id];if(m){m.openPopup?.()}if(isMapFullscreen())showFullscreenDetail()},150)}setTimeout(()=>document.querySelector('.detail-card')?.scrollIntoView({behavior:'smooth',block:'start'}),80)}
+
+async function signedPhotoUrl(filePath){const {data,error}=await sbClient.storage.from(CONFIG.SUPABASE_BUCKET).createSignedUrl(filePath,60*60);if(error){console.warn('Signed URL error',error);return ''}return data?.signedUrl||''}
+async function loadRIData(r){if(!r?.__db_id)return;const data=riData(r);data.repair=[];data.inspection=[];data.photos=[];const {data:logs,error:logError}=await sbClient.from(CONFIG.SUPABASE_LOGS_TABLE).select('*').eq('navaid_id',r.__db_id).in('log_type',['repair','inspection']).order('created_at',{ascending:false});if(logError)throw logError;(logs||[]).forEach(x=>{const item={id:x.id,note:x.note,initial:x.initial,ts:new Date(x.created_at).getTime()||Date.now(),log_type:x.log_type};if(x.log_type==='inspection')data.inspection.push(item);else if(x.log_type==='repair')data.repair.push(item)});const {data:photos,error:photoError}=await sbClient.from(CONFIG.SUPABASE_PHOTOS_TABLE).select('*').eq('navaid_id',r.__db_id).order('uploaded_at',{ascending:false});if(photoError)throw photoError;for(const p of photos||[]){data.photos.push({id:p.id,name:p.file_name,type:p.mime_type,ts:new Date(p.uploaded_at).getTime()||Date.now(),file_path:p.file_path,data:await signedPhotoUrl(p.file_path)})}data.loaded=true}
+const map=L.map('map',{preferCanvas:true,tapTolerance:25}).setView([-36.84,174.78],10);L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap contributors'}).addTo(map);
+
+/* ===== Distance measurement in metres ===== */
+const measureState={active:false,finished:false,points:[],line:null,segments:[],vertices:[],labels:[],control:null,button:null,readout:null};
+function formatDistance(value){
+  const metres=Math.max(0,Number(value)||0);
+  if(metres<=500)return `${Math.round(metres).toLocaleString('en-NZ')} m`;
+  const nauticalMiles=metres/1852;
+  return `${nauticalMiles.toLocaleString('en-NZ',{minimumFractionDigits:2,maximumFractionDigits:2})} NM`;
+}
+function measuredTotal(){
+  let total=0;
+  for(let i=1;i<measureState.points.length;i++)total+=map.distance(measureState.points[i-1],measureState.points[i]);
+  return total;
+}
+function setMeasureReadout(extra=''){
+  if(!measureState.readout)return;
+  const count=measureState.points.length,total=measuredTotal();
+  measureState.readout.classList.toggle('open',measureState.active||count>0);
+  measureState.readout.innerHTML=`<strong>${formatDistance(total)}</strong><span>${extra||(count?`${count} point${count===1?'':'s'} · cumulative distance`:'Select Measure, then tap the map')}</span>`;
+}
+function setMeasureUi(){
+  document.getElementById('map')?.classList.toggle('measure-crosshair',measureState.active);
+  document.getElementById('measureBanner')?.classList.toggle('open',measureState.active);
+  measureState.button?.classList.toggle('active',measureState.active);
+  measureState.button?.setAttribute('aria-pressed',measureState.active?'true':'false');
+  measureState.button?.setAttribute('title',measureState.active?'Finish distance measurement':'Measure distance in m / NM');
+  setMeasureReadout(measureState.finished?'Measurement finished':'');
+}
+function clearMeasureLayers(){
+  if(measureState.line)map.removeLayer(measureState.line);
+  measureState.segments.forEach(x=>map.removeLayer(x));
+  measureState.vertices.forEach(x=>map.removeLayer(x));
+  measureState.labels.forEach(x=>map.removeLayer(x));
+  measureState.line=null;measureState.segments=[];measureState.vertices=[];measureState.labels=[];
+}
+function rebuildMeasurement(){
+  clearMeasureLayers();
+  const pts=measureState.points;
+  if(!pts.length){setMeasureUi();return}
+  measureState.line=L.polyline(pts,{color:'#29d3c2',weight:4,opacity:.95,dashArray:'9 7',lineCap:'round',interactive:false}).addTo(map);
+  pts.forEach((p,i)=>{
+    const vertex=L.circleMarker(p,{radius:i===0?6:5,color:'#eaf5ff',weight:2,fillColor:i===0?'#29d3c2':'#3ea6ff',fillOpacity:1,interactive:false,className:'measure-vertex'}).addTo(map);
+    measureState.vertices.push(vertex);
+    const cumulative=pts.slice(1,i+1).reduce((sum,cur,j)=>sum+map.distance(pts[j],cur),0);
+    const label=L.tooltip({permanent:true,direction:'top',offset:[0,-8],className:'measure-distance-label '+(i===0?'measure-start-label':'')})
+      .setLatLng(p).setContent(i===0?'Start':formatDistance(cumulative)).addTo(map);
+    measureState.labels.push(label);
+  });
+  setMeasureUi();
+}
+function startMeasurement(){
+  if(pinPickMode){alert('Please finish or cancel Pin on map mode first.');return}
+  if(measureState.active){finishMeasurement();return}
+  if(measureState.finished||measureState.points.length)clearMeasurement(false);
+  measureState.active=true;measureState.finished=false;setMeasureUi();
+}
+function addMeasurePoint(latlng){
+  if(!measureState.active)return;
+  measureState.points.push(L.latLng(latlng));rebuildMeasurement();
+}
+function undoMeasurePoint(){
+  if(!measureState.points.length)return;
+  measureState.points.pop();measureState.finished=false;rebuildMeasurement();
+}
+function finishMeasurement(){
+  if(!measureState.active)return;
+  measureState.active=false;measureState.finished=measureState.points.length>0;setMeasureUi();
+}
+function clearMeasurement(close=true){
+  measureState.points=[];measureState.finished=false;if(close)measureState.active=false;clearMeasureLayers();setMeasureUi();
+}
+const MeasureControl=L.Control.extend({
+  options:{position:'topleft'},
+  onAdd(){
+    const wrap=L.DomUtil.create('div','leaflet-control measure-control');
+    const btn=L.DomUtil.create('button','',wrap);btn.type='button';btn.innerHTML='↔';btn.setAttribute('aria-label','Measure distance in m or nautical miles');btn.setAttribute('aria-pressed','false');btn.title='Measure distance in m / NM';
+    const readout=L.DomUtil.create('div','measure-readout',wrap);
+    L.DomEvent.disableClickPropagation(wrap);L.DomEvent.disableScrollPropagation(wrap);L.DomEvent.on(btn,'click',L.DomEvent.stop).on(btn,'click',startMeasurement);
+    measureState.button=btn;measureState.readout=readout;setMeasureReadout();return wrap;
+  }
+});
+measureState.control=new MeasureControl().addTo(map);
+map.on('click',e=>{if(measureState.active){addMeasurePoint(e.latlng);return}if(pinPickMode)finishPinPick(e.latlng)});
+map.on('dblclick',e=>{if(measureState.active){L.DomEvent.stop(e);finishMeasurement()}});
+$('measureFinishBtn').onclick=finishMeasurement;$('measureUndoBtn').onclick=undoMeasurePoint;$('measureClearBtn').onclick=()=>clearMeasurement(true);
+
+function markerBaseSize(sel){const touchMode=window.matchMedia('(pointer: coarse)').matches||window.innerWidth<700;return touchMode?{radius:sel?16:11,weight:sel?4:2}:{radius:sel?9:6,weight:sel?3:1.5}}
+function pinZoomScale(){const z=map.getZoom()||10;return Math.max(1,Math.min(1.7,1+(z-11)*0.14))}
+function markerSizing(sel){const b=markerBaseSize(sel),s=pinZoomScale();return{radius:b.radius*s,weight:Math.min(b.weight+(s-1)*1.4,b.weight+3)}}
+function refreshMarkerSizes(){Object.entries(state.markers||{}).forEach(([id,m])=>{const sz=markerSizing(id===state.selectedId);if(m.setStyle)m.setStyle({radius:sz.radius,weight:sz.weight})})}
+map.on('zoomend',refreshMarkerSizes);const MARINE_OVERLAY_KEY='hm_navaid_marine_overlay_on';const marineOceanLayer=L.tileLayer('https://services.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}',{maxNativeZoom:13,maxZoom:19,opacity:.72,zIndex:210,attribution:'Tiles &copy; Esri &mdash; GEBCO, NOAA, National Geographic, DeLorme, HERE, Geonames.org, and other contributors'});const marineSeamarkLayer=L.tileLayer('http://tiles.openseamap.org/seamark/{z}/{x}/{y}.png',{maxZoom:18,opacity:.95,zIndex:230,attribution:'Seamark data &copy; OpenSeaMap contributors'});const marineOverlayGroup=L.layerGroup([marineOceanLayer,marineSeamarkLayer]);function isMarineOverlayOn(){return map.hasLayer(marineOverlayGroup)}function updateMarineOverlayButton(){const btn=$('marineOverlayBtn');if(!btn)return;const on=isMarineOverlayOn();btn.classList.toggle('active',on);btn.textContent=on?'Chart Overlay On':'Chart Overlay'}function setMarineOverlay(on){if(on&&!isMarineOverlayOn())marineOverlayGroup.addTo(map);if(!on&&isMarineOverlayOn())map.removeLayer(marineOverlayGroup);localStorage.setItem(MARINE_OVERLAY_KEY,on?'1':'0');updateMarineOverlayButton()}function toggleMarineOverlay(){setMarineOverlay(!isMarineOverlayOn())}if(localStorage.getItem(MARINE_OVERLAY_KEY)==='1')marineOverlayGroup.addTo(map);
+async function loadData(){try{let rows=[],from=0,page=1000;while(true){const {data,error}=await sbClient.from(CONFIG.SUPABASE_TABLE).select('*').order('name',{ascending:true}).range(from,from+page-1);if(error)throw error;if(!data?.length)break;rows=rows.concat(data);if(data.length<page)break;from+=page}state.records=rows.map(dbToApp)}catch(error){console.error(error);alert('Supabase data load failed: '+(error.message||error));state.records=EMBEDDED_DATA.map((r,i)=>({...r,__id:`excel-${i}`}))}state.selectedId=state.records.find(hasGps)?.__id||null;buildClassFilter();renderAll(true);setTimeout(()=>map.invalidateSize(),100)}
+function scoped(){return state.scope==='all'?state.records:state.records.filter(r=>catOf(r)===state.scope)}function applyFilters(){let ns=clean($('nameSearch').value).toLowerCase(),os=clean($('ownerSearch').value).toLowerCase(),ts=clean($('typeSearch').value).toLowerCase(),cls=$('classFilter').value;state.filtered=scoped().filter(r=>{if(state.inactiveOnly&&!isInactive(r))return false;if(state.owner!=='all'&&ownerOf(r)!==state.owner)return false;if(state.classType!=='all'&&classOf(r)!==state.classType)return false;if(state.outageOnly&&!isOutage(r))return false;if(state.overdueOnly&&!isOverdue(r))return false;if(planningFilterActive()&&!isDueByPlanningDate(r))return false;if(cls&&clean(r.Class)!==cls)return false;if(ns&&!clean(r.Name).toLowerCase().includes(ns))return false;if(os&&!ownerOf(r).toLowerCase().includes(os))return false;if(ts&&!(clean(r.Type)+' '+clean(r['Sub type'])).toLowerCase().includes(ts))return false;return hasGps(r)}).sort(recordListSort);if(!state.filtered.some(r=>r.__id===state.selectedId))state.selectedId=state.filtered[0]?.__id||null}function gpsRows(rows){return rows.filter(hasGps)}function countsFor(scope){let rows=scope==='all'?state.records:state.records.filter(r=>catOf(r)===scope);rows=rows.filter(r=>!isInactive(r));let gps=gpsRows(rows);return {total:gps.length,buoy:gps.filter(r=>classOf(r)==='Buoy').length,beacon:gps.filter(r=>classOf(r)==='Beacon').length,outage:gps.filter(isOutage).length,overdue:gps.filter(isOverdue).length}}function ownerRank(o){if(o==='Harbourmaster')return 0;if(o==='POAL')return 1;if(o==='MNZ')return 2;return 3}function ownerSort(a,b){let ra=ownerRank(a),rb=ownerRank(b);return ra!==rb?ra-rb:a.localeCompare(b,undefined,{sensitivity:'base'})}function recordListSort(a,b){const ownerCompare=ownerSort(ownerOf(a),ownerOf(b));if(ownerCompare!==0)return ownerCompare;const nameA=clean(a.Name).trim(),nameB=clean(b.Name).trim(),missingA=!nameA||nameA==='-'||nameA.toLowerCase()==='null',missingB=!nameB||nameB==='-'||nameB.toLowerCase()==='null';if(missingA!==missingB)return missingA?1:-1;if(missingA&&missingB)return 0;return nameA.localeCompare(nameB,undefined,{sensitivity:'base',numeric:true})}function ownerClass(o){if(o==='Harbourmaster')return 'owner-at';if(o==='POAL')return 'owner-poal';if(o==='MNZ')return 'owner-mnz';return ''}function renderStats(){let specs=[['all','All Navaids','📍',''],['Category A','Category A','A','cat-a'],['Category B','Category B','B','cat-b'],['Category C','Category C','C','cat-c']];$('statCards').innerHTML=specs.map(([scope,label,icon,catClass])=>{let c=countsFor(scope),active=state.scope===scope&&$('detailsPanel').classList.contains('open');return `<div class="card stat"><div class="stat-top"><div><div class="label">${esc(label)}</div><div class="value">${c.total}</div><div class="stat-class">Buoy: <b>${c.buoy}</b> · Beacon: <b>${c.beacon}</b></div></div><div class="cat ${catClass}">${esc(icon)}</div></div><div class="outage">Outage: <b>${c.outage}</b> · Due inspection: <b>${c.overdue}</b></div><button class="small ${active?'active':''}" data-scope="${esc(scope)}" type="button">${active?'▼ Hide Details':'▶ Show Details'}</button></div>`}).join('');document.querySelectorAll('[data-scope]').forEach(b=>b.onclick=()=>{let panel=$('detailsPanel'),same=state.scope===b.dataset.scope&&panel.classList.contains('open');if(same)panel.classList.remove('open');else{state.scope=b.dataset.scope;state.owner='all';state.classType='all';state.outageOnly=false;state.overdueOnly=false;state.inactiveOnly=false;panel.classList.add('open')}renderAll(true);setTimeout(()=>map.invalidateSize(),80)})}function renderPanel(){$('detailsTitle').textContent=state.scope==='all'?'All Navaids':state.scope;let c=countsFor(state.scope);$('detailsDesc').textContent=`Total ${c.total} · Buoy ${c.buoy} · Beacon ${c.beacon} · Outage ${c.outage} · Due inspection ${c.overdue}`;$('outageOnlyBtn').classList.toggle('active',state.outageOnly);if($('headerOutageBtn'))$('headerOutageBtn').classList.toggle('active',state.outageOnly);$('overdueOnlyBtn').classList.toggle('active',state.overdueOnly);let rows=gpsRows(scoped()),owners=[...new Set(rows.map(ownerOf))].sort(ownerSort);let classRows=state.owner==='all'?rows:rows.filter(r=>ownerOf(r)===state.owner);let buoyCount=classRows.filter(r=>classOf(r)==='Buoy').length,beaconCount=classRows.filter(r=>classOf(r)==='Beacon').length;$('ownerChips').innerHTML=`<button class="small ${state.owner==='all'?'active':''}" data-owner="all" type="button">All Owners (${rows.length})</button>`+owners.map(o=>`<button class="small ${state.owner===o?'active':''} ${ownerClass(o)}" data-owner="${esc(o)}" type="button">${esc(o)} (${rows.filter(r=>ownerOf(r)===o).length})</button>`).join('')+`<div style="flex-basis:100%;height:2px"></div><button class="small ${state.classType==='all'?'active':''}" data-class-type="all" type="button">All Classes (${classRows.length})</button><button class="small ${state.classType==='Buoy'?'active':''}" data-class-type="Buoy" type="button">Buoy (${buoyCount})</button><button class="small ${state.classType==='Beacon'?'active':''}" data-class-type="Beacon" type="button">Beacon (${beaconCount})</button>`;document.querySelectorAll('[data-owner]').forEach(b=>b.onclick=()=>{state.owner=b.dataset.owner;state.classType='all';renderAll(true)});document.querySelectorAll('[data-class-type]').forEach(b=>b.onclick=()=>{state.classType=b.dataset.classType;renderAll(true)})}function renderMap(reset=false){if(state.layerGroup)map.removeLayer(state.layerGroup);state.markers={};state.layerGroup=L.layerGroup();let bounds=[];state.filtered.forEach(r=>{let ll=[latOf(r),lonOf(r)],sel=r.__id===state.selectedId,d=dueDate(r);const sz=markerSizing(sel);let marker=L.circleMarker(ll,{radius:sz.radius,color:sel?'#0f172a':'#fff',weight:sz.weight,fillColor:markerStatusColor(r),fillOpacity:.92}).bindPopup(`<b>${esc(r.Name||'No name')}</b><br/>Owner: ${esc(ownerOf(r))}<br/>Status: ${statusText(r)}<br/>Due date: ${d?d.toLocaleDateString('en-NZ'):'-'}`);marker.on('click',()=>{state.selectedId=r.__id;renderAll(false);if(isMapFullscreen())showFullscreenDetail();else marker.openPopup()});state.markers[r.__id]=marker;state.layerGroup.addLayer(marker);bounds.push(ll)});state.layerGroup.addTo(map);setTimeout(()=>map.invalidateSize(),0);if(bounds.length&&reset)map.fitBounds(bounds,{padding:[24,24],maxZoom:13});else if(!bounds.length&&reset)map.setView([-36.84,174.78],10)}function fitAllPins(){const rows=state.filtered.length?state.filtered:gpsRows(scoped());const bounds=rows.map(r=>[latOf(r),lonOf(r)]).filter(ll=>ll[0]!==null&&ll[1]!==null);if(bounds.length){map.invalidateSize();map.fitBounds(bounds,{padding:[28,28],maxZoom:13})}}function permanentIdOf(r){const n=Number(r?.['ID Number']);return Number.isInteger(n)&&n>=0?String(n).padStart(4,'0'):'----'}function renderTable(){let show=['Name','Owner','Class','Category','Type','Sub type','Maintenance period','Last edited'];$('tableHead').innerHTML='<th>ID Number</th>'+show.map(h=>`<th>${esc(h)}</th>`).join('')+'<th>Status</th>';$('tableBody').innerHTML=state.filtered.map(r=>`<tr class="${r.__id===state.selectedId?'active':''}" data-id="${esc(r.__id)}"><td class="id-number-cell">${esc(permanentIdOf(r))}</td>${show.map(h=>`<td>${esc(displayValue(r,h))}</td>`).join('')}<td>${statusText(r)}</td></tr>`).join('')||`<tr><td colspan="10" style="text-align:center;color:#64748b;padding:30px">No records match the current filters.</td></tr>`;document.querySelectorAll('tr[data-id]').forEach(tr=>tr.onclick=()=>{state.selectedId=tr.dataset.id;renderAll(false);let r=state.filtered.find(x=>x.__id===state.selectedId);if(r)map.setView([latOf(r),lonOf(r)],15)})}function formatCoordDDM(value,kind){
+const n=Number(value);if(!Number.isFinite(n))return '-';
+const hemi=kind==='lat'?(n<0?'S':'N'):(n<0?'W':'E');
+const abs=Math.abs(n),deg=Math.floor(abs),min=(abs-deg)*60;
+return `${deg}°${min.toFixed(3)}' ${hemi}`
+}
+function detailKeyLabel(h){if(h==='Lat (Decimal Degrees)')return 'Lat';if(h==='Long (Decimal Degrees)')return 'Long';return h}
+function detailValueHtml(r,h){
+if(h==='Lat (Decimal Degrees)'||h==='Long (Decimal Degrees)'){
+const v=h.startsWith('Lat')?latOf(r):lonOf(r);if(v===null)return esc(displayValue(r,h));
+return `${esc(formatCoordDDM(v,h.startsWith('Lat')?'lat':'lng'))}<div class="coord-decimal">${esc(Number(v).toFixed(8))}</div>`
+}
+return esc(displayValue(r,h))
+}
+function outageStartedAt(r){
+if(!r||!r.__raw)return null;
+const value=r.__raw.outage_updated_at;
+if(!value)return null;
+const t=new Date(value).getTime();
+return Number.isFinite(t)?t:null
+}
+function outageDurationText(r){
+const started=outageStartedAt(r);if(!started)return '';
+const totalHours=Math.max(0,Math.floor((Date.now()-started)/3600000));
+const days=Math.floor(totalHours/24),hours=totalHours%24;
+const dayText=days===1?'1 day':`${days} days`;
+const hourText=hours===1?'1 hour':`${hours} hours`;
+return `${dayText} ${hourText}`
+}
+function updateOutageDuration(){
+const el=$('detailOutageDuration');if(!el)return;const r=selectedRecord();
+if(!r||!isOutage(r)){el.textContent='';el.style.display='none';return}
+const text=outageDurationText(r);el.textContent=text?` · ${text}`:'';el.style.display=text?'inline':'none'
+}
+function renderDetail(){let r=selectedRecord();if(!r){$('detailEmpty').style.display='block';$('detailContent').style.display='none';return}let d=dueDate(r),status=statusText(r);$('detailEmpty').style.display='none';$('detailContent').style.display='block';$('detailBadges').innerHTML=`<span class="badge blue">${esc(catOf(r))}</span><span class="badge">${esc(ownerOf(r))}</span><span class="badge ${isInactive(r)?'':isOutage(r)?'red':isOverdue(r)?'orange':''}">${status}${isOutage(r)&&outageDurationText(r)?`<span id="detailOutageDuration"> · ${esc(outageDurationText(r))}</span>`:(isOutage(r)?'<span id="detailOutageDuration"></span>':'')}</span>`;$('detailTitle').textContent=r.Name||'No name recorded';$('detailSubtitle').textContent=`${clean(r.Class)||'-'} · ${clean(r.Type)||'-'} · ${clean(r['Sub type'])||'-'}`;$('detailIdNo').textContent='ID No. '+permanentIdOf(r);$('detailOutageBtn').textContent=isOutage(r)?'Clear Outage':'Mark as Outage';$('detailOutageBtn').classList.toggle('active',isOutage(r));$('detailGrid').innerHTML=HEADERS.map(h=>`<div class="detail-item"><div class="detail-key">${esc(detailKeyLabel(h))}</div><div class="detail-val">${detailValueHtml(r,h)}</div></div>`).join('')+`<div class="detail-item"><div class="detail-key">Status</div><div class="detail-val">${status}</div></div><div class="detail-item"><div class="detail-key">Inspection Due Date</div><div class="detail-val">${d?d.toLocaleDateString('en-NZ'):'-'}</div></div>`;refreshSelectedNotes(false)}function buildClassFilter(){let classes=[...new Set(state.records.map(r=>clean(r.Class)).filter(Boolean))].sort();$('classFilter').innerHTML='<option value="">All Classes</option>'+classes.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('')}function renderAll(reset=false){if($('inactiveOnlyBtn'))$('inactiveOnlyBtn').classList.toggle('active',state.inactiveOnly);applyFilters();renderStats();renderPanel();renderMap(reset);renderTable();renderDetail();$('mapDesc').textContent=`Showing ${state.filtered.length} of ${gpsRows(scoped()).filter(r=>state.inactiveOnly?isInactive(r):true).length} GPS records${planningFilterActive()?' due by '+new Date(state.forwardPlanningDate+'T00:00:00').toLocaleDateString('en-NZ'):''}. Blank GPS records are not displayed.`;applyMobileLayoutOrder()}function resetFilters(){state.scope='all';state.owner='all';state.classType='all';state.outageOnly=false;state.overdueOnly=false;state.inactiveOnly=false;state.forwardPlanningDate=null;updateForwardPlanningButton();['nameSearch','ownerSearch','typeSearch'].forEach(id=>$(id).value='');$('classFilter').value='';$('detailsPanel').classList.remove('open');state.selectedId=gpsRows(state.records)[0]?.__id||null;renderAll(true)}
+async function openRI(){const r=selectedRecord();if(!r)return;applyRiInitialMode();riEditing={id:null,type:null};$('riModalTitle').textContent='Repair / Inspection — '+(r.Name||'No name recorded');$('riModalSub').textContent=ownerOf(r)+' · '+catOf(r);$('riModal').classList.add('open');document.body.style.overflow='hidden';$('photoRow').innerHTML='<div class="muted">Loading photos...</div>';$('repairHistory').innerHTML='<div class="muted">Loading repair records...</div>';$('inspectionHistory').innerHTML='<div class="muted">Loading inspection records...</div>';try{await loadRIData(r);renderRI()}catch(error){console.error(error);alert('Failed to load repair/inspection data: '+(error.message||error));renderRI()}}
+function closeRI(){$('riModal').classList.remove('open');document.body.style.overflow=''}
+function renderRI(){const r=selectedRecord();if(!r)return;const data=riData(r);data.photos.sort((a,b)=>b.ts-a.ts);$('photoRow').innerHTML=data.photos.length?data.photos.map(p=>`<div class="photo-card"><img src="${p.data}" alt="Uploaded photo" title="Click to enlarge" onclick="openViewer('${jsq(p.data)}','${jsq(p.name||'Uploaded photo')}')"><div class="photo-actions"><button class="photo-delete" type="button" title="Delete photo" onclick="deletePhoto('${jsq(p.id)}')">Delete</button></div><div class="photo-date">${new Date(p.ts).toLocaleDateString('en-NZ')}</div></div>`).join(''):'<div class="muted">No photos uploaded yet.</div>';renderHist('repair',data.repair);renderHist('inspection',data.inspection)}
+function histViewItem(x,type){if(riEditing.id===x.id&&riEditing.type===type){return `<div class="hist-item"><div class="hist-edit-box"><div class="mini-muted">Editing ${esc(type)} record</div><div class="hist-edit-form"><textarea class="field" data-log-edit-note="${esc(x.id)}">${esc(x.note||'')}</textarea><input class="field" data-log-edit-initial="${esc(x.id)}" value="${esc(x.initial||'')}" placeholder="Initial"></div><div class="hist-edit-actions"><button class="hist-save" type="button" onclick="saveLogEdit('${jsq(x.id)}','${type}')">Save</button><button class="hist-cancel" type="button" onclick="cancelLogEdit()">Cancel</button></div></div></div>`}return `<div class="hist-item"><div class="hist-row"><div><div class="hist-meta">${esc(x.initial||'-')} · ${new Date(x.ts).toLocaleString('en-NZ')}</div><div class="hist-note">${esc(x.note)}</div></div><div class="hist-actions"><button class="hist-edit" type="button" onclick="editLog('${jsq(x.id)}','${type}')">Edit</button><button class="hist-delete" type="button" onclick="deleteLog('${jsq(x.id)}','${type}')">Delete</button></div></div></div>`}
+function renderHist(type,items){items.sort((a,b)=>b.ts-a.ts);$(type+'History').innerHTML=items.length?items.map(x=>histViewItem(x,type)).join(''):'<div class="muted">No '+type+' records yet.</div>'}
+async function addRI(type){const r=selectedRecord();if(!r)return;const noteEl=$(type+'Note'),initEl=$(type+'Initial');const note=clean(noteEl.value),initial=activeNavaidInitial()||clean(initEl.value);if(!note&&!initial)return;try{const {error}=await sbClient.from(CONFIG.SUPABASE_LOGS_TABLE).insert({navaid_id:r.__db_id,log_type:type,note:note||'-',initial:initial||null});if(error)throw error;const nowIso=new Date().toISOString();const update={last_edited:nowIso};const due=addMonthsISODate(nowIso,r['Maintenance period']);if(due)update.inspection_due_date=due;await sbClient.from(CONFIG.SUPABASE_TABLE).update(update).eq('id',r.__db_id);r['Last edited']=nowIso;r.__inspection_due_date=due||r.__inspection_due_date;noteEl.value='';initEl.value=activeNavaidInitial();await loadRIData(r);renderRI();renderAll(false)}catch(error){console.error(error);alert('Failed to save '+type+' record: '+(error.message||error))}}
+function editLog(id,type){riEditing={id,type};renderRI()}
+function cancelLogEdit(){riEditing={id:null,type:null};renderRI()}
+async function saveLogEdit(id,type){const r=selectedRecord();if(!r)return;const noteEl=document.querySelector(`[data-log-edit-note="${CSS.escape(id)}"]`),initialEl=document.querySelector(`[data-log-edit-initial="${CSS.escape(id)}"]`);const note=clean(noteEl?.value),initial=activeNavaidInitial()||clean(initialEl?.value);if(!note&&!initial){alert('Please enter a note or initial before saving.');return}try{const {error}=await sbClient.from(CONFIG.SUPABASE_LOGS_TABLE).update({note:note||'-',initial:initial||null}).eq('id',id);if(error)throw error;riEditing={id:null,type:null};await loadRIData(r);renderRI()}catch(error){console.error(error);alert('Failed to edit note: '+(error.message||error))}}
+async function deleteLog(id,type){const r=selectedRecord();if(!r)return;if(!confirm('Delete this '+type+' note?'))return;try{const {error}=await sbClient.from(CONFIG.SUPABASE_LOGS_TABLE).delete().eq('id',id);if(error)throw error;riEditing={id:null,type:null};await loadRIData(r);renderRI()}catch(error){console.error(error);alert('Failed to delete note: '+(error.message||error))}}
+async function handlePhotos(files){const r=selectedRecord();if(!r||!files?.length)return;try{for(const file of [...files]){const safeName=file.name.replace(/[^a-zA-Z0-9._-]/g,'_');const filePath=`navaids/${r.__db_id}/${Date.now()}_${safeName}`;const {error:uploadError}=await sbClient.storage.from(CONFIG.SUPABASE_BUCKET).upload(filePath,file,{cacheControl:'3600',upsert:false});if(uploadError)throw uploadError;const {error:metaError}=await sbClient.from(CONFIG.SUPABASE_PHOTOS_TABLE).insert({navaid_id:r.__db_id,bucket:CONFIG.SUPABASE_BUCKET,file_path:filePath,file_name:file.name,mime_type:file.type,file_size:file.size});if(metaError)throw metaError}await loadRIData(r);renderRI()}catch(error){console.error(error);alert('Photo upload failed: '+(error.message||error))}}
+async function deletePhoto(id){const r=selectedRecord();if(!r)return;const data=riData(r);const photo=(data.photos||[]).find(p=>p.id===id);if(!photo)return;if(!confirm('Delete this photo?'))return;try{if(photo.file_path){const {error:storageError}=await sbClient.storage.from(CONFIG.SUPABASE_BUCKET).remove([photo.file_path]);if(storageError)throw storageError}const {error:dbError}=await sbClient.from(CONFIG.SUPABASE_PHOTOS_TABLE).delete().eq('id',id);if(dbError)throw dbError;await loadRIData(r);renderRI()}catch(error){console.error(error);alert('Failed to delete photo: '+(error.message||error))}}
+function editableHeaders(){return HEADERS.filter(h=>!['Last edited'].includes(h))}
+function blankRecord(){const r={__id:null,__db_id:null,__is_outage:false,__is_inactive:false,__outage_note:'',__inspection_due_date:'',__raw:{}};HEADERS.forEach(h=>r[h]=null);return r}
+function showEditCodePrompt(){
+  if($('editDeleteBtn'))$('editDeleteBtn').style.display='none';if($('editInactiveBtn'))$('editInactiveBtn').style.display='none';
+  $('editCodeInput').value='';
+  $('editCodeError').style.display='none';
+  $('editCodeBox').style.display='block';
+  $('editFormSection').style.display='none';
+  setTimeout(()=>$('editCodeInput').focus(),50);
+}
+function showEditForm(){
+  $('editCodeBox').style.display='none';
+  $('editFormSection').style.display='block';
+  if($('editDeleteBtn'))$('editDeleteBtn').style.display=editMode==='edit'?'inline-flex':'none';if($('editInactiveBtn')){const r=selectedRecord();$('editInactiveBtn').style.display=editMode==='edit'?'inline-flex':'none';$('editInactiveBtn').textContent=r&&isInactive(r)?'Activate':'Inactive';$('editInactiveBtn').classList.toggle('is-active',!!(r&&isInactive(r)))}
+  renderEditFields();
+}
+function openEdit(){
+  const r=selectedRecord();
+  if(!r)return;
+  editMode='edit';
+  $('editModalTitle').textContent='Edit Details — '+(r.Name||'No name recorded');
+  $('editModal').classList.add('open');
+  document.body.style.overflow='hidden';
+  editAccessGranted=editAccessGranted||hasValidProtectedAccessSession();
+  if(editAccessGranted)showEditForm();
+  else showEditCodePrompt();
+}
+function openAddNew(){
+  editMode='add';
+  $('editModalTitle').textContent='Add New Navaid';
+  $('editModal').classList.add('open');
+  document.body.style.overflow='hidden';
+  editAccessGranted=editAccessGranted||hasValidProtectedAccessSession();
+  if(editAccessGranted)showEditForm();
+  else showEditCodePrompt();
+}
+function closeEdit(){
+  $('editModal').classList.remove('open');
+  document.body.style.overflow='';
+}
+async function unlockEdit(){
+  const input=$('editCodeInput'),button=$('editUnlockBtn'),errorEl=$('editCodeError');
+  const code=clean(input?.value);
+  errorEl.style.display='block';errorEl.style.color='var(--muted)';errorEl.textContent='Checking access code...';
+  if(input)input.disabled=true;if(button){button.disabled=true;button.textContent='Checking...'}
+  try{
+    const result=await verifyProtectedAccessCode(code);
+    if(!result.valid){errorEl.style.color='#b91c1c';errorEl.textContent=result.message||'Incorrect access code.';if(input){input.value='';input.focus()}return}
+    editAccessGranted=true;errorEl.style.display='none';if(input)input.value='';showEditForm();
+  }catch(error){console.error('Access verification failed:',error);errorEl.style.color='#b91c1c';errorEl.textContent=error.name==='AbortError'?'The request timed out. Please try again.':'Unable to verify access. Please try again.'}
+  finally{if(input)input.disabled=false;if(button){button.disabled=false;button.textContent='Unlock'}}
+}
+function uniqueFieldOptions(field, currentValue){
+const current=String(currentValue==='-'?'':currentValue??'').trim();
+const values=[...new Set(state.records.map(r=>String(r[field]??'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+if(current&&!values.includes(current))values.unshift(current);
+return ['',...values]
+}
+function selectHtml(field,value,preferredOptions){
+const current=String(value==='-'?'':value??'').trim();
+let opts=preferredOptions?[...preferredOptions]:uniqueFieldOptions(field,current);
+if(!opts.includes(''))opts.unshift('');
+if(current&&!opts.includes(current))opts.splice(1,0,current);
+return `<select class="field" data-edit-field="${esc(field)}">${opts.map(o=>`<option value="${esc(o)}" ${o===current?'selected':''}>${esc(o===''?'Blank':o)}</option>`).join('')}</select>`
+}
+function categorySelectHtml(value){
+return selectHtml('Category',value,['','Category A','Category B','Category C'])
+}
+function decimalToDdmParts(value,kind){const n=Number(value);if(!Number.isFinite(n))return {deg:'',min:''};const abs=Math.abs(n),deg=Math.floor(abs),min=(abs-deg)*60;return {deg:String(deg),min:min.toFixed(5).replace(/0+$/,'').replace(/\.$/,'')}}
+function coordinateDdmHtml(h,value){const kind=h.startsWith('Lat')?'lat':'lng';const hemi=kind==='lat'?'S':'E';const parts=decimalToDdmParts(value,kind);const label=kind==='lat'?'Lat':'Long';const max=kind==='lat'?90:180;return `<div class="edit-field coord-edit-field" data-coordinate-group="${kind}"><label>${label} (Degrees + Decimal Minutes)</label><div class="coord-ddm-row"><div class="coord-input-wrap"><input class="field" type="number" inputmode="numeric" min="0" max="${max}" step="1" data-coordinate-deg="${kind}" value="${esc(parts.deg)}" placeholder="Degrees"><span class="coord-unit">°</span></div><div style="display:flex;gap:8px;align-items:center;min-width:0"><div class="coord-input-wrap" style="flex:1;min-width:0"><input class="field" type="number" inputmode="decimal" min="0" max="59.999999" step="0.00001" data-coordinate-min="${kind}" value="${esc(parts.min)}" placeholder="Decimal minutes"><span class="coord-unit">′</span></div><span class="coord-hemi" aria-label="Hemisphere ${hemi}">${hemi}</span></div></div><div class="coord-ddm-help">Enter positive degrees and decimal minutes. Hemisphere is fixed to ${hemi}.</div>${kind==='lat'?'<div class="coord-pin-row"><button class="btn-pin-map" id="pinOnMapBtn" type="button" onclick="startPinOnMap()">Pin on map</button><div class="box-desc">Tap/click the map to set Lat/Long.</div></div>':''}</div>`}
+function readDdmCoordinate(kind){const degEl=document.querySelector(`[data-coordinate-deg="${kind}"]`),minEl=document.querySelector(`[data-coordinate-min="${kind}"]`);if(!degEl||!minEl)return null;const degRaw=clean(degEl.value),minRaw=clean(minEl.value);if(!degRaw&&!minRaw)return '';if(!degRaw||!minRaw)throw new Error(`Please enter both ${kind==='lat'?'latitude':'longitude'} degrees and decimal minutes.`);const deg=Number(degRaw),min=Number(minRaw),limit=kind==='lat'?90:180;if(!Number.isFinite(deg)||deg<0||deg>limit||!Number.isInteger(deg))throw new Error(`${kind==='lat'?'Latitude':'Longitude'} degrees must be a whole number from 0 to ${limit}.`);if(!Number.isFinite(min)||min<0||min>=60)throw new Error(`${kind==='lat'?'Latitude':'Longitude'} decimal minutes must be from 0 to less than 60.`);if(deg===limit&&min>0)throw new Error(`${kind==='lat'?'Latitude':'Longitude'} cannot exceed ${limit} degrees.`);const decimal=deg+(min/60);return Number((kind==='lat'?-decimal:decimal).toFixed(8))}
+function setDdmCoordinate(kind,value){const degEl=document.querySelector(`[data-coordinate-deg="${kind}"]`),minEl=document.querySelector(`[data-coordinate-min="${kind}"]`);if(!degEl||!minEl)return;const parts=decimalToDdmParts(value,kind);degEl.value=parts.deg;minEl.value=parts.min}
+function renderEditFields(){const r=editMode==='add'?blankRecord():selectedRecord();if(!r)return;const dropdownFields=new Set(['Owner','Class','Category','Type','Sub type']);$('editFields').innerHTML=editableHeaders().map(h=>{const val=displayValue(r,h);if(h==='Lat (Decimal Degrees)'||h==='Long (Decimal Degrees)')return coordinateDdmHtml(h,val==='-'?'':val);if(dropdownFields.has(h))return `<div class="edit-field"><label>${esc(h)}</label>${h==='Category'?categorySelectHtml(val):selectHtml(h,val)}</div>`;const tag=(String(val).length>55||['Note','Light Character'].includes(h))?'textarea':'input';return `<div class="edit-field"><label>${esc(h)}</label>${tag==='textarea'?`<textarea class="field" data-edit-field="${esc(h)}">${esc(val==='-'?'':val)}</textarea>`:`<input class="field" data-edit-field="${esc(h)}" value="${esc(val==='-'?'':val)}">`}</div>`}).join('')}
+async function saveEdit(){
+  const edits={};
+  document.querySelectorAll('[data-edit-field]').forEach(el=>{edits[el.dataset.editField]=el.value});
+  let dbUpdate;
+  try{
+    edits['Lat (Decimal Degrees)']=readDdmCoordinate('lat');
+    edits['Long (Decimal Degrees)']=readDdmCoordinate('lng');
+    dbUpdate=appEditsToDb(edits);
+  }catch(error){alert(error.message||error);return}
+  const saveBtn=$('editSaveBtn');
+  const originalText=saveBtn?.textContent||'Save Changes';
+  if(saveBtn){saveBtn.disabled=true;saveBtn.textContent='Saving...'}
+  try{
+    if(editMode==='add'){
+      const {data,error}=await sbClient.from(CONFIG.SUPABASE_TABLE).insert(dbUpdate).select('*').single();
+      if(error)throw error;
+      if(!data?.id)throw new Error('Supabase did not return the newly saved record. Check INSERT/SELECT RLS policies.');
+      const nr=dbToApp(data);
+      state.records.push(nr);state.selectedId=nr.__id;buildClassFilter();closeEdit();renderAll(true);
+      if(hasGps(nr))map.setView([latOf(nr),lonOf(nr)],15);
+      else alert('New Navaid has been saved to Supabase. It will not appear as a pin until valid Lat/Long values are added.');
+      return;
+    }
+    const r=selectedRecord();
+    if(!r?.__db_id)throw new Error('The selected NavAid does not have a valid Supabase record ID.');
+    Object.entries(edits).forEach(([k,v])=>{r[k]=v===''?null:v});
+    if(dbUpdate.lat!==undefined)r['Lat (Decimal Degrees)']=dbUpdate.lat;
+    if(dbUpdate.lng!==undefined)r['Long (Decimal Degrees)']=dbUpdate.lng;
+    closeEdit();renderAll(false);
+    const {error:updateError}=await sbClient.from(CONFIG.SUPABASE_TABLE).update(dbUpdate).eq('id',r.__db_id);
+    if(updateError)throw updateError;
+    const {data:serverRow,error:readError}=await sbClient.from(CONFIG.SUPABASE_TABLE).select('*').eq('id',r.__db_id).single();
+    if(readError)throw readError;
+    const failedFields=[];
+    Object.entries(dbUpdate).forEach(([dbField,intended])=>{
+      const actual=serverRow?.[dbField]??null;
+      const wanted=intended??null;
+      const same=(typeof wanted==='number')?Number(actual)===Number(wanted):String(actual??'')===String(wanted??'');
+      if(!same)failedFields.push(dbField);
+    });
+    if(failedFields.length){
+      console.error('Supabase persistence verification failed',{id:r.__db_id,failedFields,dbUpdate,serverRow});
+      alert('The values are visible on this screen, but Supabase did not persist them. They will disappear after refresh.\n\nFields not saved: '+failedFields.join(', '));
+      return;
+    }
+    const saved=dbToApp(serverRow);
+    const index=state.records.findIndex(x=>String(x.__id)===String(r.__id));
+    if(index>=0)state.records[index]=saved;
+    state.selectedId=saved.__id;
+    buildClassFilter();renderAll(false);
+  }catch(error){
+    console.error('NavAid save failed:',error);
+    alert('The values may be visible only on this screen, but permanent save failed: '+(error.message||error));
+  }finally{
+    if(saveBtn){saveBtn.disabled=false;saveBtn.textContent=originalText}
+  }
+}
+
+function currentEditFormValues(){const values={};document.querySelectorAll('[data-edit-field]').forEach(el=>{values[el.dataset.editField]=el.value});values['Lat (Decimal Degrees)']=readDdmCoordinate('lat');values['Long (Decimal Degrees)']=readDdmCoordinate('lng');return values}
+function setEditFormValues(values){if(!values)return;document.querySelectorAll('[data-edit-field]').forEach(el=>{if(Object.prototype.hasOwnProperty.call(values,el.dataset.editField))el.value=values[el.dataset.editField]??''});if(Object.prototype.hasOwnProperty.call(values,'Lat (Decimal Degrees)'))setDdmCoordinate('lat',values['Lat (Decimal Degrees)']);if(Object.prototype.hasOwnProperty.call(values,'Long (Decimal Degrees)'))setDdmCoordinate('lng',values['Long (Decimal Degrees)'])}
+function startPinOnMap(){if(!$('editFormSection')||$('editFormSection').style.display==='none'){alert('Please unlock the form first.');return}try{pinPickSavedValues=currentEditFormValues()}catch(error){pinPickSavedValues={};document.querySelectorAll('[data-edit-field]').forEach(el=>{pinPickSavedValues[el.dataset.editField]=el.value})}pinPickMode=true;$('editModal').classList.remove('open');document.body.style.overflow='';if($('pinPickBanner'))$('pinPickBanner').classList.add('open');alert('Pin on map mode is active. Click or tap the map to set the Lat/Long for this Navaid.')}
+function cancelPinPick(){pinPickMode=false;pinPickSavedValues=null;if($('pinPickBanner'))$('pinPickBanner').classList.remove('open');$('editModal').classList.add('open');document.body.style.overflow='hidden'}
+function finishPinPick(latlng){if(!pinPickMode||!latlng)return;const values=pinPickSavedValues||{};values['Lat (Decimal Degrees)']=Number(latlng.lat).toFixed(8);values['Long (Decimal Degrees)']=Number(latlng.lng).toFixed(8);pinPickMode=false;pinPickSavedValues=null;if($('pinPickBanner'))$('pinPickBanner').classList.remove('open');$('editModal').classList.add('open');document.body.style.overflow='hidden';$('editCodeBox').style.display='none';$('editFormSection').style.display='block';if($('editDeleteBtn'))$('editDeleteBtn').style.display=editMode==='edit'?'inline-flex':'none';if($('editInactiveBtn'))$('editInactiveBtn').style.display=editMode==='edit'?'inline-flex':'none';renderEditFields();setEditFormValues(values);setTimeout(()=>$('editSaveBtn')?.focus(),50)}
+async function toggleCurrentNavaidInactive(){const r=selectedRecord();if(!r||editMode!=='edit')return;const next=!isInactive(r);const action=next?'mark this NavAid as inactive':'reactivate this NavAid';if(!confirm('Do you want to '+action+'?'))return;try{const {error}=await sbClient.from(CONFIG.SUPABASE_TABLE).update({is_inactive:next}).eq('id',r.__db_id);if(error)throw error;r.__is_inactive=next;closeEdit();if(next){state.inactiveOnly=false;state.selectedId=gpsRows(state.records.filter(x=>!isInactive(x)))[0]?.__id||null}renderAll(true);alert(next?'NavAid is now inactive and excluded from board counts.':'NavAid has been reactivated.')}catch(error){console.error(error);alert('Failed to update inactive status: '+(error.message||error)+'\n\nSupabase must have a boolean column named is_inactive (default false).')}}
+async function deleteCurrentNavaid(){const r=selectedRecord();if(!r||editMode!=='edit')return;if(!confirm('Do you really want to delete this NavAid?'))return;try{const {error}=await sbClient.from(CONFIG.SUPABASE_TABLE).delete().eq('id',r.__db_id);if(error)throw error;state.records=state.records.filter(x=>x.__id!==r.__id);state.filtered=state.filtered.filter(x=>x.__id!==r.__id);state.selectedId=gpsRows(state.records)[0]?.__id||null;closeEdit();buildClassFilter();renderAll(true);alert('NavAid has been deleted.')}catch(error){console.error(error);alert('Failed to delete NavAid: '+(error.message||error))}}
+function applyMobileLayoutOrder(){
+const isMobile=window.matchMedia('(max-width:900px)').matches;
+const container=document.querySelector('.container');const main=document.querySelector('.main');const mapCard=main?.querySelector('.card:not(.detail-card)');const mapBody=mapCard?.querySelector('.box-body');const tableWrap=document.querySelector('.table-wrap');const detailsPanel=$('detailsPanel');if(!container||!mapBody||!tableWrap)return;let mobileTableCard=$('mobileTableCard');if(isMobile){if(!mobileTableCard){mobileTableCard=document.createElement('div');mobileTableCard.id='mobileTableCard';mobileTableCard.className='card mobile-table-card';mobileTableCard.innerHTML='<div class="box-head"><h2 class="box-title">All Navaids List</h2><div class="box-desc">Tap a row to view details.</div></div><div class="box-body" id="mobileTableBody"></div>'}const mobileTableBody=mobileTableCard.querySelector('#mobileTableBody');if(tableWrap.parentElement!==mobileTableBody)mobileTableBody.appendChild(tableWrap);if(mobileTableCard.parentElement!==container)container.appendChild(mobileTableCard);if(detailsPanel&&detailsPanel.nextSibling!==mobileTableCard)container.insertBefore(mobileTableCard,detailsPanel.nextSibling)}else{if(tableWrap.parentElement!==mapBody)mapBody.appendChild(tableWrap);if(mobileTableCard?.parentNode)mobileTableCard.remove()}setTimeout(()=>{try{map.invalidateSize()}catch(e){}},100)}
+
+function defaultPlanningDate(){const d=new Date();d.setMonth(d.getMonth()+3);return d.toISOString().slice(0,10)}
+function openForwardPlanning(){const input=$('forwardPlanningDate');if(input)input.value=state.forwardPlanningDate||defaultPlanningDate();updateForwardPlanningSummary();$('forwardPlanningModal').classList.add('open');document.body.style.overflow='hidden'}
+function closeForwardPlanning(){$('forwardPlanningModal').classList.remove('open');document.body.style.overflow=''}
+function updateForwardPlanningButton(){const btn=$('forwardPlanningBtn');if(!btn)return;btn.classList.toggle('active',planningFilterActive());btn.textContent=planningFilterActive()?('Forward planning: '+new Date(state.forwardPlanningDate+'T00:00:00').toLocaleDateString('en-NZ')):'Forward planning'}
+function updateForwardPlanningSummary(){const el=$('forwardPlanningSummary');if(!el)return;const date=$('forwardPlanningDate')?.value||state.forwardPlanningDate;if(!date){el.textContent='No planning date selected.';return}const target=new Date(date+'T23:59:59');const rows=gpsRows(scoped()).filter(r=>{let d=dueDate(r);return d&&d<=target});el.textContent=`${rows.length} pin(s) will be due for inspection on or before ${target.toLocaleDateString('en-NZ')}.`} 
+function applyForwardPlanning(){const date=$('forwardPlanningDate')?.value;if(!date){alert('Please select a planning date.');return}state.forwardPlanningDate=date;state.outageOnly=false;state.overdueOnly=false;updateForwardPlanningButton();closeForwardPlanning();renderAll(true)}
+function clearForwardPlanning(){state.forwardPlanningDate=null;if($('forwardPlanningDate'))$('forwardPlanningDate').value='';updateForwardPlanningButton();updateForwardPlanningSummary();closeForwardPlanning();renderAll(true)}
+function currentWetmapsUrl(){const c=map.getCenter();const z=Math.max(1,Math.min(18,Math.round(map.getZoom()||10)));return `https://wetmaps.co.nz/#${z}/${c.lat.toFixed(4)}/${c.lng.toFixed(4)}`}function openMarineChart(){const url=currentWetmapsUrl();$('marineChartFrame').src=url;$('marineChartOpenLink').href=url;$('marineChartModal').classList.add('open');document.body.style.overflow='hidden'}function closeMarineChart(){$('marineChartModal').classList.remove('open');document.body.style.overflow=''}function mapCardEl(){return document.querySelector('.main>.card:not(.detail-card)')}
+function isMapFullscreen(){return mapCardEl()?.classList.contains('map-fullscreen-active')}
+function setMapFullscreen(on){const card=mapCardEl();const btn=$('mapFullscreenBtn');const detail=document.querySelector('.detail-card');if(!card)return;if(!on&&detail)detail.classList.remove('fullscreen-detail-active');card.classList.toggle('map-fullscreen-active',!!on);document.body.classList.toggle('map-fullscreen-body',!!on);if(btn)btn.textContent=on?'✕ Close':'⛶ Fullscreen';setTimeout(()=>{try{map.invalidateSize()}catch(e){}},160)}
+function toggleMapFullscreen(){setMapFullscreen(!isMapFullscreen())}
+function showFullscreenDetail(){if(!isMapFullscreen())return;const detail=document.querySelector('.detail-card');if(!detail)return;detail.classList.add('fullscreen-detail-active');document.body.classList.add('map-fullscreen-body');setTimeout(()=>detail.scrollTo({top:0,behavior:'instant'}),0)}
+function hideFullscreenDetail(){const detail=document.querySelector('.detail-card');if(detail)detail.classList.remove('fullscreen-detail-active');if(!isMapFullscreen())document.body.classList.remove('map-fullscreen-body');setTimeout(()=>{try{map.invalidateSize()}catch(e){}},100)}
+
+function openFinder(){
+  $('finderError').style.display='none';
+  $('finderModal').classList.add('open');
+  document.body.style.overflow='hidden';
+  updateFinderFormat();
+  setTimeout(()=>$('finderIdNumber')?.focus(),50);
+}
+function closeFinder(){
+  $('finderModal').classList.remove('open');
+  document.body.style.overflow='';
+}
+function updateFinderFormat(){
+  const ddm=$('finderFormat').value==='ddm';
+  $('finderDdmFields').style.display=ddm?'grid':'none';
+  $('finderDecimalFields').style.display=ddm?'none':'grid';
+  $('finderError').style.display='none';
+}
+function finderNumber(id,label){
+  const raw=clean($(id)?.value);
+  if(raw==='')throw new Error('Please enter '+label+'.');
+  const value=Number(raw);
+  if(!Number.isFinite(value))throw new Error('Invalid '+label+'.');
+  return value;
+}
+function finderDdmCoordinate(kind){
+  const isLat=kind==='lat',limit=isLat?90:180,label=isLat?'latitude':'longitude';
+  const deg=finderNumber(isLat?'finderLatDeg':'finderLonDeg',label+' degrees');
+  const min=finderNumber(isLat?'finderLatMin':'finderLonMin',label+' decimal minutes');
+  const hemi=$(isLat?'finderLatHemi':'finderLonHemi').value;
+  if(!Number.isInteger(deg)||deg<0||deg>limit)throw new Error((isLat?'Latitude':'Longitude')+' degrees must be a whole number from 0 to '+limit+'.');
+  if(min<0||min>=60)throw new Error((isLat?'Latitude':'Longitude')+' minutes must be from 0 to less than 60.');
+  if(deg===limit&&min>0)throw new Error((isLat?'Latitude':'Longitude')+' cannot exceed '+limit+' degrees.');
+  const magnitude=deg+(min/60),negative=hemi==='S'||hemi==='W';
+  return Number((negative?-magnitude:magnitude).toFixed(8));
+}
+function finderDecimalCoordinate(kind){
+  const isLat=kind==='lat',limit=isLat?90:180,label=isLat?'latitude':'longitude';
+  const value=finderNumber(isLat?'finderLatDecimal':'finderLonDecimal',label+' decimal degrees');
+  const hemi=$(isLat?'finderLatDecimalHemi':'finderLonDecimalHemi').value;
+  if(value<0||value>limit)throw new Error((isLat?'Latitude':'Longitude')+' must be from 0 to '+limit+' degrees. Use the hemisphere dropdown for direction.');
+  const negative=hemi==='S'||hemi==='W';
+  return Number((negative?-value:value).toFixed(8));
+}
+function findByPermanentId(){
+  const errorEl=$('finderError');
+  try{
+    const raw=clean($('finderIdNumber')?.value);
+    if(!raw)throw new Error('Please enter an ID number.');
+    const digits=raw.replace(/[^0-9]/g,'');
+    if(!digits)throw new Error('ID number must contain digits.');
+    const target=Number(digits);
+    if(!Number.isSafeInteger(target)||target<0)throw new Error('Invalid ID number.');
+    const r=state.records.find(x=>Number(x['ID Number'])===target);
+    if(!r)throw new Error('No NavAid was found for ID No. '+String(target).padStart(4,'0')+'.');
+    state.selectedId=r.__id;
+    closeFinder();
+    renderDetail();
+    const lat=latOf(r),lng=lonOf(r);
+    if(lat!==null&&lng!==null)map.setView([lat,lng],15);
+    const card=document.querySelector('.detail-card');
+    if(card&&window.matchMedia('(max-width:900px)').matches)card.scrollIntoView({behavior:'smooth',block:'start'});
+  }catch(error){
+    errorEl.textContent=error.message||String(error);
+    errorEl.style.display='block';
+  }
+}
+function findCoordinate(){
+  const errorEl=$('finderError');
+  try{
+    const ddm=$('finderFormat').value==='ddm';
+    const lat=ddm?finderDdmCoordinate('lat'):finderDecimalCoordinate('lat');
+    const lng=ddm?finderDdmCoordinate('lng'):finderDecimalCoordinate('lng');
+    const ll=[lat,lng];
+    if(state.finderLocation)map.removeLayer(state.finderLocation);
+    const icon=L.divIcon({className:'finder-pin-icon',html:'<div class="finder-pin-shape"></div>',iconSize:[28,36],iconAnchor:[14,34],popupAnchor:[0,-34]});
+    state.finderLocation=L.marker(ll,{icon,zIndexOffset:1200}).addTo(map).bindPopup('<b>Finder Location</b><br>'+formatCoordDDM(lat,'lat')+'<br>'+formatCoordDDM(lng,'lng')).openPopup();
+    closeFinder();
+    map.invalidateSize();
+    map.setView(ll,15);
+  }catch(error){
+    errorEl.textContent=error.message||String(error);
+    errorEl.style.display='block';
+  }
+}
+document.addEventListener('DOMContentLoaded',()=>{document.querySelectorAll('#userGate [data-navaid-user]').forEach(b=>b.onclick=()=>setNavaidUser(b.dataset.navaidUser));$('switchNavaidUserBtn').onclick=openNavaidUserGate;restoreNavaidUser();['nameSearch','ownerSearch','typeSearch','classFilter'].forEach(id=>$(id).addEventListener('input',()=>renderAll(true)));setInterval(updateOutageDuration,60000);$('outageOnlyBtn').onclick=()=>{state.outageOnly=!state.outageOnly;renderAll(true)};$('headerOutageBtn').onclick=()=>{state.outageOnly=!state.outageOnly;renderAll(true)};$('overdueOnlyBtn').onclick=()=>{state.overdueOnly=!state.overdueOnly;renderAll(true)};$('detailOutageBtn').onclick=async()=>{let r=selectedRecord();if(!r)return;const next=!isOutage(r);try{const outageUpdatedAt=next?new Date().toISOString():null;const {error}=await sbClient.from(CONFIG.SUPABASE_TABLE).update({is_outage:next,outage_note:next?'Marked from web app':null,outage_updated_at:outageUpdatedAt}).eq('id',r.__db_id);if(error)throw error;r.__is_outage=next;r.__outage_note=next?'Marked from web app':'';r.__raw={...(r.__raw||{}),is_outage:next,outage_note:next?'Marked from web app':null,outage_updated_at:outageUpdatedAt};renderAll(false)}catch(error){console.error(error);alert('Failed to update outage status: '+(error.message||error))}};$('repairInspectionBtn').onclick=openRI;$('detailNoteAddBtn').onclick=addDetailNote;$('detailNoteText').addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='Enter')addDetailNote()});document.querySelectorAll('#detailNotesQuick [data-quick-note]').forEach(b=>b.onclick=()=>addQuickNote(b.dataset.quickNote,b));$('noteDeleteConfirmBtn').onclick=confirmNoteDeleteCode;$('noteDeleteCancelBtn').onclick=closeNoteDeleteCodePrompt;$('noteDeleteCodeInput').addEventListener('keydown',e=>{if(e.key==='Enter')confirmNoteDeleteCode();if(e.key==='Escape')closeNoteDeleteCodePrompt()});$('riCloseBtn').onclick=closeRI;$('repairAdd').onclick=()=>addRI('repair');$('inspectionAdd').onclick=()=>addRI('inspection');$('liftedCleanedQuickBtn').onclick=async()=>{const btn=$('liftedCleanedQuickBtn');if(btn)btn.disabled=true;try{$('inspectionNote').value='Lifted & cleaned';await addRI('inspection')}finally{if(btn)btn.disabled=false}};$('photoInput').onchange=e=>{handlePhotos(e.target.files);e.target.value=''};$('photoCameraInput').onchange=e=>{handlePhotos(e.target.files);e.target.value=''};$('editDetailsBtn').onclick=openEdit;$('addNewBtn').onclick=openAddNew;$('editCloseBtn').onclick=closeEdit;$('editCancelBtn').onclick=closeEdit;$('editUnlockBtn').onclick=unlockEdit;$('editCodeInput').addEventListener('keydown',e=>{if(e.key==='Enter')unlockEdit()});$('editSaveBtn').onclick=saveEdit;$('editInactiveBtn').onclick=toggleCurrentNavaidInactive;$('editDeleteBtn').onclick=deleteCurrentNavaid;$('pinPickCancelBtn').onclick=cancelPinPick;$('mapFullscreenBtn').onclick=toggleMapFullscreen;$('mapDetailBackBtn').onclick=hideFullscreenDetail;$('marineChartBtn').onclick=openMarineChart;$('marineOverlayBtn').onclick=toggleMarineOverlay;updateMarineOverlayButton();$('marineChartCloseBtn').onclick=closeMarineChart;$('resetBtn').onclick=resetFilters;$('inactiveOnlyBtn').onclick=()=>{state.inactiveOnly=!state.inactiveOnly;state.outageOnly=false;state.overdueOnly=false;state.forwardPlanningDate=null;updateForwardPlanningButton();$('inactiveOnlyBtn').classList.toggle('active',state.inactiveOnly);state.selectedId=null;renderAll(true)};$('allNotesBtn').onclick=openAllNotes;$('allNotesCloseBtn').onclick=closeAllNotes;$('forwardPlanningBtn').onclick=openForwardPlanning;$('forwardPlanningCloseBtn').onclick=closeForwardPlanning;$('forwardPlanningApplyBtn').onclick=applyForwardPlanning;$('forwardPlanningClearBtn').onclick=clearForwardPlanning;$('forwardPlanningDate').addEventListener('input',updateForwardPlanningSummary);updateForwardPlanningButton();$('finderBtn').onclick=openFinder;$('finderCloseBtn').onclick=closeFinder;$('finderCancelBtn').onclick=closeFinder;$('finderFindBtn').onclick=findCoordinate;$('finderIdBtn').onclick=findByPermanentId;$('finderFormat').onchange=updateFinderFormat;$('finderModal').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.tagName!=='BUTTON'){if(e.target.id==='finderIdNumber')findByPermanentId();else findCoordinate()}if(e.key==='Escape')closeFinder()});$('locationBtn').onclick=()=>{navigator.geolocation?.getCurrentPosition(p=>{let ll=[p.coords.latitude,p.coords.longitude];if(state.userLocation)map.removeLayer(state.userLocation);state.userLocation=L.circleMarker(ll,{radius:8,color:'#fff',weight:2,fillColor:'#0f172a',fillOpacity:1}).addTo(map).bindPopup('Current Location').openPopup();map.setView(ll,15)})};window.addEventListener('resize',()=>setTimeout(()=>{applyMobileLayoutOrder();if(!window.matchMedia('(max-width:900px)').matches&&isMapFullscreen())setMapFullscreen(false);map.invalidateSize()},120));loadData();applyMobileLayoutOrder()});
+
+// HM_IMAGE_VIEWER_START
+let viewerScale=1,viewerX=0,viewerY=0,viewerBound=false,viewerDragging=false,viewerStart={x:0,y:0,tx:0,ty:0},viewerPinch=null;
+function viewerEls(){return{viewer:document.getElementById('imageViewer'),stage:document.getElementById('viewerStage'),img:document.getElementById('viewerImg'),label:document.getElementById('viewerZoomLabel'),title:document.getElementById('viewerTitle')}}
+function viewerApply(){const {img,label}=viewerEls();if(!img)return;img.style.transform=`translate(${viewerX}px,${viewerY}px) scale(${viewerScale})`;if(label)label.textContent=Math.round(viewerScale*100)+'%'}
+function viewerClampScale(v){return Math.min(Math.max(v,.5),6)}
+function viewerSetScale(next,centerX,centerY){const old=viewerScale;viewerScale=viewerClampScale(next);if(centerX!==undefined&&centerY!==undefined&&old!==viewerScale){viewerX+=(centerX-window.innerWidth/2)*(1-viewerScale/old);viewerY+=(centerY-window.innerHeight/2)*(1-viewerScale/old)}if(viewerScale<=1){viewerX=0;viewerY=0}viewerApply()}
+function openViewer(src,name){const {viewer,img,title}=viewerEls();if(!viewer||!img)return;img.src=src;if(title)title.textContent=name||'Uploaded photo';viewerScale=1;viewerX=0;viewerY=0;viewer.classList.add('open');viewer.setAttribute('aria-hidden','false');bindViewerEvents();viewerApply()}
+function closeViewer(){const {viewer,img}=viewerEls();if(viewer){viewer.classList.remove('open');viewer.setAttribute('aria-hidden','true')}if(img)img.classList.remove('dragging');viewerDragging=false;viewerPinch=null}
+function viewerZoomIn(){viewerSetScale(viewerScale*1.25)}function viewerZoomOut(){viewerSetScale(viewerScale/1.25)}function viewerReset(){viewerScale=1;viewerX=0;viewerY=0;viewerApply()}
+function bindViewerEvents(){if(viewerBound)return;viewerBound=true;const {viewer,stage,img}=viewerEls();if(!viewer||!stage||!img)return;viewer.addEventListener('wheel',e=>{if(!viewer.classList.contains('open'))return;e.preventDefault();const factor=e.deltaY<0?1.16:1/1.16;viewerSetScale(viewerScale*factor,e.clientX,e.clientY)},{passive:false});img.addEventListener('dblclick',e=>{e.preventDefault();viewerScale>1?viewerReset():viewerSetScale(2,e.clientX,e.clientY)});img.addEventListener('pointerdown',e=>{if(viewerScale<=1)return;viewerDragging=true;img.classList.add('dragging');viewerStart={x:e.clientX,y:e.clientY,tx:viewerX,ty:viewerY};img.setPointerCapture?.(e.pointerId)});img.addEventListener('pointermove',e=>{if(!viewerDragging)return;viewerX=viewerStart.tx+(e.clientX-viewerStart.x);viewerY=viewerStart.ty+(e.clientY-viewerStart.y);viewerApply()});function endDrag(){viewerDragging=false;img.classList.remove('dragging')}img.addEventListener('pointerup',endDrag);img.addEventListener('pointercancel',endDrag);viewer.addEventListener('touchstart',e=>{if(e.touches.length===2){e.preventDefault();viewerPinch={dist:Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY),scale:viewerScale}}},{passive:false});viewer.addEventListener('touchmove',e=>{if(e.touches.length===2&&viewerPinch){e.preventDefault();const dist=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);viewerSetScale(viewerPinch.scale*(dist/viewerPinch.dist))}},{passive:false});viewer.addEventListener('touchend',()=>{viewerPinch=null});document.addEventListener('keydown',e=>{if(!viewer.classList.contains('open'))return;if(e.key==='Escape')closeViewer();if(e.key==='+'||e.key==='=')viewerZoomIn();if(e.key==='-')viewerZoomOut();if(e.key==='0')viewerReset()})}
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.querySelector('.detail-card')?.classList.contains('fullscreen-detail-active')){hideFullscreenDetail();return}if(e.key==='Escape'&&pinPickMode){cancelPinPick();return}if(e.key==='Escape'&&isMapFullscreen())setMapFullscreen(false)});
+// HM_IMAGE_VIEWER_END
+</script>
+<div class="image-viewer" id="imageViewer" aria-hidden="true">
+  <div class="viewer-title" id="viewerTitle">Uploaded photo</div>
+  <div class="viewer-toolbar">
+    <button type="button" onclick="viewerZoomOut()">−</button>
+    <div class="viewer-zoom-label" id="viewerZoomLabel">100%</div>
+    <button type="button" onclick="viewerZoomIn()">+</button>
+    <button type="button" onclick="viewerReset()">Reset</button>
+    <button type="button" class="viewer-close" onclick="closeViewer()">Close</button>
+  </div>
+  <div class="viewer-stage" id="viewerStage"><img id="viewerImg" class="viewer-img" alt="Expanded uploaded photo"></div>
+  <div class="viewer-hint">Mouse wheel or +/− to zoom · Drag to pan · Double-click to reset</div>
+</div>
+</body></html>
