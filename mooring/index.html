@@ -1,0 +1,2289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Moorings Database</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <style>
+    :root { --bg:#f8fafc; --card:#fff; --text:#0f172a; --muted:#64748b; --line:#e2e8f0; --primary:#0f172a; --primary-soft:#e0f2fe; --shadow:0 8px 22px rgba(15,23,42,.06); --radius:20px; --danger:#b91c1c; --danger-soft:#fee2e2; --danger-pin:#dc2626; --terminated:#475569; --terminated-soft:#f1f5f9; --location:#2563eb; }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--text);background:var(--bg)}
+    .container{max-width:1480px;margin:0 auto;padding:24px}
+    .header{display:flex;align-items:end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:20px}
+    .badges{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+    .badge{display:inline-flex;align-items:center;padding:8px 12px;border-radius:999px;background:#f1f5f9;border:1px solid var(--line);font-size:12px;font-weight:600}
+    .badge.secondary{background:#eef2ff;color:#3730a3;border-color:#c7d2fe}
+    .badge.alert{background:#fff1f2;color:var(--danger);border-color:#fecdd3}
+    .badge.terminated{background:var(--terminated-soft);color:var(--terminated);border-color:#cbd5e1}
+    .badge.facility{background:#ecfeff;color:#0e7490;border-color:#a5f3fc}
+    h1{margin:0;font-size:30px;line-height:1.2}
+    .subtitle{margin-top:8px;color:var(--muted);font-size:14px;max-width:1040px}
+    .actions{display:flex;gap:8px;flex-wrap:wrap}
+    button{border:1px solid #cbd5e1;background:#fff;color:var(--text);border-radius:16px;padding:10px 14px;font-size:14px;font-weight:600;cursor:pointer;transition:.18s ease;box-shadow:0 1px 0 rgba(15,23,42,.03)}
+    button:hover{transform:translateY(-1px);box-shadow:var(--shadow)}
+    button.primary{background:var(--primary);color:#fff;border-color:var(--primary)}
+    button.ghost{background:#fff}
+    button.small{padding:8px 12px;font-size:13px;border-radius:12px}
+    button.danger{border-color:#fecaca;color:var(--danger);background:#fff1f2}
+    button.pink{background:#ec4899;color:#fff;border-color:#ec4899}
+    button.pink:hover{background:#db2777;border-color:#db2777}
+    .temp-user-filter-wrap{margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
+    .temp-user-filter-title{font-size:12px;color:var(--muted);font-weight:700;margin-bottom:8px}
+    .temp-user-filter-chips{display:flex;flex-wrap:wrap;gap:8px}
+    .temp-user-filter-chips button{padding:7px 10px;font-size:12px;border-radius:999px}
+    .temp-user-filter-chips button.active,
+    .temp-user-filter-chips button.primary,
+    .temp-user-filter-chips button[aria-pressed="true"]{background:var(--primary)!important;color:#fff!important;border-color:var(--primary)!important}
+
+    .stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-bottom:20px}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+    .stat-card{padding:20px}
+    .stat-top{display:flex;align-items:center;gap:12px}
+    .icon-box{width:40px;height:40px;border-radius:14px;display:flex;align-items:center;justify-content:center;background:#f1f5f9;font-size:18px}
+    .stat-label{font-size:13px;color:var(--muted)}
+    .stat-value{font-size:28px;font-weight:700}
+    .stat-sub{font-size:12px;color:var(--muted)}
+    .mini-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
+    .mini-stat-label{font-size:12px;color:var(--muted)}
+    .mini-stat-value{font-size:22px;font-weight:800;color:var(--text);line-height:1.1}
+    .mini-stat-sub{font-size:11px;color:var(--muted);margin-top:3px}
+    .overdue-details-toggle{margin-top:14px}
+    #overdueDetailsSection.collapsed{display:none}
+    #mappedDetailsSection.collapsed{display:none}
+    .facility-filter-wrap{margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
+    .facility-filter-title{font-size:12px;color:var(--muted);font-weight:700;margin-bottom:8px}
+    .facility-filter-chips{display:flex;flex-wrap:wrap;gap:8px}
+    .facility-filter-chips button{padding:7px 10px;font-size:12px;border-radius:999px}
+    .facility-filter-chips button.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+    .overdue-filter-wrap{margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
+    .overdue-filter-title{font-size:12px;color:var(--muted);font-weight:700;margin-bottom:8px}
+    .overdue-filter-chips{display:flex;flex-wrap:wrap;gap:8px}
+    .overdue-filter-chips button{padding:7px 10px;font-size:12px;border-radius:999px}
+    .overdue-filter-chips button.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+
+    .main-grid{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(340px,.9fr);gap:24px;align-items:start}
+    .panel-head{padding:22px 22px 0 22px}
+    .panel-title{font-size:22px;font-weight:700;margin:0}
+    .panel-desc{font-size:14px;color:var(--muted);margin-top:8px}
+    .panel-body{padding:20px 22px 22px 22px}
+    .filters-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+    .field{width:100%;border:1px solid #cbd5e1;border-radius:16px;padding:12px 14px;font-size:14px;outline:none;background:#fff}
+    .field:focus{border-color:#0ea5e9;box-shadow:0 0 0 4px rgba(14,165,233,.12)}
+
+    #map{height:720px;width:100%;border-radius:18px;overflow:hidden;border:1px solid var(--line)}
+    .leaflet-popup-content{min-width:260px}
+    .leaflet-container a{color:#0369a1}
+
+    .legend{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:16px}
+    .map-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:12px;flex-wrap:wrap}
+    .legend-item{display:flex;align-items:center;gap:8px;padding:10px 12px;border:1px solid var(--line);border-radius:14px;font-size:12px;color:var(--muted)}
+    .legend-dot{width:12px;height:12px;border-radius:999px;display:inline-block}
+    .legend-x{width:14px;height:14px;display:inline-flex;align-items:center;justify-content:center;color:#facc15;font-size:18px;font-weight:900;line-height:1;text-shadow:-1px -1px 0 #0f172a,1px -1px 0 #0f172a,-1px 1px 0 #0f172a,1px 1px 0 #0f172a}
+    .terminated-x-icon{background:transparent;border:none}
+    .terminated-x-symbol{width:18px;height:18px;display:flex;align-items:center;justify-content:center;color:#facc15;font-size:24px;font-weight:900;line-height:18px;text-shadow:-1.2px -1.2px 0 #0f172a,1.2px -1.2px 0 #0f172a,-1.2px 1.2px 0 #0f172a,1.2px 1.2px 0 #0f172a;transform:translate(-1px,-1px)}
+    .terminated-x-symbol.selected{font-size:30px;line-height:24px;text-shadow:-1.6px -1.6px 0 #0f172a,1.6px -1.6px 0 #0f172a,-1.6px 1.6px 0 #0f172a,1.6px 1.6px 0 #0f172a,0 0 6px rgba(250,204,21,.75)}
+
+    .table-wrap{overflow:auto;border:1px solid var(--line);border-radius:18px;background:#fff;margin-top:16px}
+    table{width:100%;border-collapse:collapse;min-width:900px}
+    thead{background:#f8fafc;color:var(--muted)}
+    th,td{padding:12px 14px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap;font-size:13px}
+    tbody tr{cursor:pointer}
+    tbody tr:hover{background:#f8fafc}
+    tbody tr.active{background:var(--primary-soft)}
+
+    .detail-card{position:sticky;top:24px}
+    .detail-top{background:#f8fafc;border-radius:18px;padding:16px;margin-bottom:16px}
+    .detail-top-title{margin-top:12px;font-size:20px;font-weight:700}
+    .detail-top-sub{margin-top:4px;color:var(--muted);font-size:14px}
+    .detail-toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+    .detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+    .detail-item{border:1px solid var(--line);border-radius:16px;padding:14px;background:#fff}
+    .detail-key{font-size:12px;color:var(--muted)}
+    .detail-val{margin-top:6px;font-size:14px;font-weight:600;color:var(--text);word-break:break-word}
+    .detail-sub{margin-top:6px;font-size:12px;color:var(--muted);word-break:break-word}
+    .muted-box{border:1px solid var(--line);border-radius:16px;padding:12px 14px;font-size:14px;color:var(--muted);background:#f8fafc}
+    .hidden{display:none!important}
+    .error-box{margin-top:14px;background:#fffbeb;color:#92400e;border:1px solid #fcd34d;padding:12px 14px;border-radius:14px;font-size:14px}
+    .alert-text{color:var(--danger)!important;font-weight:800!important}
+    .alert-note{color:var(--danger)!important}
+
+    .modal-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.55);display:flex;align-items:center;justify-content:center;padding:20px;z-index:5000;overflow:hidden}
+    .modal-card{width:min(520px,100%);max-height:80vh;background:#fff;border:1px solid var(--line);border-radius:24px;box-shadow:0 24px 70px rgba(15,23,42,.24);display:flex;flex-direction:column;overflow:hidden}
+    .modal-head{padding:18px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-shrink:0}
+    .modal-title{margin:0;font-size:18px;font-weight:700}
+    .modal-body{padding:20px;overflow-y:auto;flex:1}
+    .modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap}
+    .inline-note{font-size:12px;color:var(--muted);margin-top:8px}
+    .field-label{display:block;font-size:12px;color:var(--muted);margin-bottom:8px}
+    .code-error{margin-top:10px;padding:10px 12px;border-radius:12px;background:#fff1f2;border:1px solid #fecdd3;color:#be123c;font-size:13px}
+    .customer-grid{display:grid;grid-template-columns:1fr;gap:12px}
+    .customer-item{border:1px solid var(--line);border-radius:14px;padding:12px 14px;background:#fff}
+    .customer-key{font-size:12px;color:var(--muted)}
+    .customer-val{margin-top:6px;font-size:14px;font-weight:600;word-break:break-word}
+
+    /* History grid scrollable container */
+    #historyDetailsGrid{max-height:320px;overflow-y:auto;padding-right:4px}
+
+    /* ── Notes Section ── */
+    .notes-section{margin-top:16px;border:1px solid var(--line);border-radius:18px;overflow:hidden;background:#fff}
+    .notes-header{padding:14px 16px;border-bottom:1px solid var(--line);background:#f8fafc;display:flex;align-items:center;justify-content:space-between}
+    .notes-header-title{font-size:14px;font-weight:700;color:var(--text)}
+    .notes-add{padding:14px 16px;border-bottom:1px solid var(--line);background:#fff}
+    .notes-add-row{display:flex;gap:8px;align-items:flex-start}
+    .notes-textarea{flex:1;border:1px solid #cbd5e1;border-radius:12px;padding:10px 12px;font-size:13px;font-family:inherit;resize:vertical;min-height:68px;outline:none}
+    .notes-textarea:focus{border-color:#0ea5e9;box-shadow:0 0 0 3px rgba(14,165,233,.1)}
+    .notes-initial{width:72px;border:1px solid #cbd5e1;border-radius:12px;padding:10px 12px;font-size:13px;font-family:inherit;outline:none;text-transform:uppercase;flex-shrink:0}
+    .notes-initial:focus{border-color:#0ea5e9;box-shadow:0 0 0 3px rgba(14,165,233,.1)}
+    .notes-add-btn{flex-shrink:0;background:var(--primary);color:#fff;border:none;border-radius:12px;padding:10px 14px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap}
+    .notes-add-btn:hover{opacity:.88}
+    .notes-list{padding:12px 16px;display:flex;flex-direction:column;gap:10px;max-height:220px;overflow-y:auto;scrollbar-gutter:stable}
+    .notes-empty{padding:16px;text-align:center;color:var(--muted);font-size:13px}
+    .note-item{border:1px solid var(--line);border-radius:14px;padding:12px 14px;background:#fff;position:relative}
+    .note-item-meta{display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap}
+    .note-initial-badge{background:#0f172a;color:#fff;border-radius:8px;padding:2px 8px;font-size:11px;font-weight:700;letter-spacing:.04em}
+    .note-timestamp{font-size:11px;color:var(--muted)}
+    .note-text{font-size:13px;color:var(--text);line-height:1.55;white-space:pre-wrap;word-break:break-word}
+    .note-delete{position:absolute;top:10px;right:10px;background:none;border:none;color:#94a3b8;cursor:pointer;font-size:14px;padding:2px 6px;border-radius:6px;line-height:1}
+    .note-delete:hover{background:#fee2e2;color:var(--danger)}
+
+    /* ── Photos Section (SharePoint) ── */
+    .photos-section{margin-top:14px;border:1px solid var(--line);border-radius:18px;overflow:hidden;background:#fff}
+    .photos-header{padding:14px 16px;border-bottom:1px solid var(--line);background:#f8fafc;display:flex;align-items:center;justify-content:space-between}
+    .photos-header-title{font-size:14px;font-weight:700;color:var(--text)}
+    .photos-body{padding:14px 16px}
+    .sp-link-btn{display:flex;align-items:center;gap:10px;width:100%;background:#f0f7ff;border:1.5px solid #bfdbfe;border-radius:14px;padding:14px 16px;cursor:pointer;text-decoration:none;color:#1d4ed8;font-size:14px;font-weight:600;transition:.18s ease}
+    .sp-link-btn:hover{background:#dbeafe;border-color:#93c5fd;transform:translateY(-1px);box-shadow:0 4px 12px rgba(29,78,216,.12)}
+    .sp-link-icon{font-size:22px;flex-shrink:0}
+    .sp-link-text{text-align:left}
+    .sp-link-label{font-size:14px;font-weight:700;color:#1d4ed8}
+    .sp-link-sub{font-size:12px;color:#3b82f6;margin-top:2px;font-weight:400}
+    .sp-no-folder{padding:12px 14px;background:#f8fafc;border:1px solid var(--line);border-radius:12px;font-size:13px;color:var(--muted);text-align:center}
+
+    /* ── Temp User Modal ── */
+    #tempUserBtn{background:#0ea5e9;color:#fff;border-color:#0ea5e9}
+    #tempUserBtn:hover{background:#0284c7;border-color:#0284c7}
+    .temp-user-grid{display:grid;grid-template-columns:1fr;gap:12px}
+    .temp-user-row{border:1px solid var(--line);border-radius:16px;padding:14px;background:#fff}
+    .temp-user-row-title{font-size:14px;font-weight:800;color:var(--text);margin-bottom:10px}
+    .temp-user-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+    .temp-user-field{border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:#f8fafc}
+    .temp-user-key{font-size:11px;color:var(--muted);font-weight:700}
+    .temp-user-val{margin-top:5px;font-size:13px;color:var(--text);font-weight:600;word-break:break-word;white-space:pre-wrap}
+    .temp-user-edit-input{width:100%;margin-top:6px;border:1px solid #cbd5e1;border-radius:10px;padding:9px 10px;font-size:13px;font-family:inherit;outline:none;background:#fff}
+    .temp-user-edit-input:focus{border-color:#0ea5e9;box-shadow:0 0 0 3px rgba(14,165,233,.10)}
+    .temp-user-edit-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    @media (max-width:760px){.temp-user-fields{grid-template-columns:1fr}}
+    /* ── Edit Mooring Modal ── */
+    .edit-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+    .edit-field{width:100%;border:1px solid #cbd5e1;border-radius:14px;padding:10px 12px;font-size:14px;font-family:inherit;outline:none;background:#fff}
+    .edit-field:focus{border-color:#0ea5e9;box-shadow:0 0 0 3px rgba(14,165,233,.10)}
+    .edit-status{margin-top:12px;padding:10px 12px;border-radius:12px;font-size:13px;border:1px solid var(--line);background:#f8fafc;color:var(--muted)}
+    .edit-status.success{background:#ecfdf5;border-color:#bbf7d0;color:#047857}
+    .edit-status.error{background:#fff1f2;border-color:#fecdd3;color:#be123c}
+    @media (max-width:760px){.edit-form-grid{grid-template-columns:1fr}}
+
+    @media (max-width:1200px){
+      .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .main-grid{grid-template-columns:1fr}
+      .detail-card{position:static}
+    }
+    @media (max-width:760px){
+      .container{padding:16px}
+      .stats{grid-template-columns:1fr}
+      .filters-grid,.detail-grid,.legend{grid-template-columns:1fr}
+      h1{font-size:24px}
+      .modal-card{border-radius:18px}
+
+      /* 모바일: 가로 오버플로우 방지 */
+      body{overflow-x:hidden}
+      .main-grid{display:flex;flex-direction:column;gap:16px;width:100%;min-width:0}
+      .map-col{order:2;width:100%;min-width:0}
+      .detail-col{order:1;width:100%;min-width:0}
+      .map-col .card{width:100%;min-width:0;overflow:hidden}
+      #map{height:460px;width:100%!important;max-width:100%!important}
+      .table-wrap{width:100%;overflow-x:auto}
+      table{min-width:600px}
+    }
+
+    /* ===== Harbour Operations Launch UI 2026 ===== */
+    :root{
+      --navy-950:#06111f;--navy-900:#0a192b;--navy-800:#10263f;
+      --cyan:#22d3ee;--cyan-strong:#06b6d4;--blue:#3b82f6;
+      --surface:#ffffff;--surface-2:#f4f7fb;--line:#dbe5ef;
+      --text:#0b1f35;--muted:#61758a;--shadow:0 18px 50px rgba(6,17,31,.10);
+      --radius:22px;--primary:#0a192b;--primary-soft:#e6f7fb;
+    }
+    html{scroll-behavior:smooth;background:var(--navy-950)}
+    body{background:
+      radial-gradient(circle at 92% 2%,rgba(34,211,238,.16),transparent 26rem),
+      linear-gradient(180deg,var(--navy-950) 0,var(--navy-900) 330px,#eef3f8 330px,#f6f8fb 100%);
+      min-height:100vh;color:var(--text);letter-spacing:-.01em}
+    body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.16;background-image:linear-gradient(rgba(255,255,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px);background-size:32px 32px;mask-image:linear-gradient(to bottom,#000,transparent 380px)}
+    .container{max-width:1540px;padding:24px 28px 48px;position:relative}
+    .header{align-items:center;margin-bottom:24px;padding:18px 20px;border:1px solid rgba(255,255,255,.12);border-radius:24px;background:rgba(8,24,42,.72);box-shadow:0 22px 52px rgba(0,0,0,.20);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
+    .header h1{color:#fff;font-size:clamp(24px,3vw,38px);font-weight:800;letter-spacing:-.04em}
+    .header h1:before{content:"HM";display:inline-grid;place-items:center;width:42px;height:42px;margin-right:14px;border-radius:14px;background:linear-gradient(135deg,var(--cyan),#38bdf8);color:#062136;font-size:13px;letter-spacing:.08em;vertical-align:5px;box-shadow:0 0 28px rgba(34,211,238,.25)}
+    .header .subtitle:after{content:"Live mooring intelligence • Auckland Harbour";color:#9fb4c8}
+    .header .actions{justify-content:flex-end}
+    button{min-height:42px;border-radius:13px;border-color:#d2deea;font-weight:750;box-shadow:none}
+    button:hover{transform:translateY(-1px);box-shadow:0 8px 20px rgba(6,17,31,.12)}
+    button.primary{background:linear-gradient(135deg,#0c2945,#123e62);border-color:#24577d}
+    .header button{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.16);color:#eaf5ff}
+    .header button.primary{background:linear-gradient(135deg,var(--cyan),#38bdf8);color:#062136;border:0}
+    .header button.pink{background:rgba(34,211,238,.12);border-color:rgba(34,211,238,.35);color:#bdf6ff}
+    .stats{gap:14px;margin-bottom:18px}
+    .card{border-color:rgba(169,189,207,.45);box-shadow:var(--shadow);background:rgba(255,255,255,.96)}
+    .stat-card{padding:18px 20px;position:relative;overflow:hidden}
+    .stat-card:before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:linear-gradient(var(--cyan),var(--blue))}
+    .stat-top{align-items:center}.icon-box{background:#e8faff;color:#086d83;border:1px solid #c5f3fb}
+    .stat-value{font-size:32px;letter-spacing:-.05em}.stat-label{text-transform:uppercase;letter-spacing:.08em;font-size:11px;font-weight:800}
+    .stats + .card{position:relative;z-index:20;background:rgba(255,255,255,.9);backdrop-filter:blur(12px)}
+    .panel-head{padding:20px 22px 0}.panel-title{font-size:20px;letter-spacing:-.025em}.panel-desc{margin-top:5px}
+    .field{height:49px;border-radius:14px;border-color:#d5e0e9;background:#f8fbfd;font-weight:650}
+    .field::placeholder{color:#8294a6}.field:focus{background:#fff;border-color:var(--cyan-strong);box-shadow:0 0 0 4px rgba(6,182,212,.11)}
+    .main-grid{grid-template-columns:minmax(0,1.62fr) minmax(350px,.75fr);gap:18px}
+    #map{height:min(720px,72vh);min-height:560px;border-radius:18px;border-color:#cddae6;background:#dce6ed}
+    .leaflet-control-zoom a{border-radius:10px!important;margin:4px;background:#fff!important;color:#0a192b!important;border:1px solid #dbe5ef!important}
+    .leaflet-control-zoom{border:0!important;box-shadow:0 10px 28px rgba(6,17,31,.16)!important}
+    .leaflet-popup-content-wrapper{border-radius:17px;box-shadow:0 18px 44px rgba(6,17,31,.22)}
+    .map-actions{margin-top:14px}.map-actions button{background:#eef8fb;color:#075d71;border-color:#b9e9f1}
+    .legend{gap:7px}.legend-item{background:#f8fbfd;border-radius:12px;padding:9px 11px;color:#52697d;font-weight:650}
+    .table-wrap{max-height:360px;border-radius:16px;box-shadow:inset 0 1px 0 #fff}
+    thead{position:sticky;top:0;z-index:2;background:#edf4f8}th{font-size:11px;text-transform:uppercase;letter-spacing:.055em;color:#536b7f}
+    tbody tr{transition:background .14s}tbody tr.active{background:#dff6fb;box-shadow:inset 4px 0 var(--cyan-strong)}
+    .detail-card{top:18px;border-color:#cddce8;overflow:hidden}
+    .detail-card>.panel-head{background:linear-gradient(135deg,#0a192b,#123654);padding:20px 22px 15px}
+    .detail-card>.panel-head .panel-title{color:#fff}.detail-card>.panel-head .panel-desc{color:#9fb4c8}
+    .detail-top{background:linear-gradient(145deg,#eef8fb,#f8fbfd);border:1px solid #d7eaf0}
+    .detail-item{border-color:#dce6ee;background:#fbfdff}.detail-key{text-transform:uppercase;letter-spacing:.05em;font-size:10px;font-weight:800}.detail-val{font-size:15px}
+    .badge{font-weight:750}.badge.facility{background:#e7fbff}.notes-section,.photos-section{border-color:#d9e4ed}
+    .notes-header,.photos-header{background:#eff5f8}.notes-add-btn{background:linear-gradient(135deg,#0a2945,#0e496b)}
+    .modal-backdrop{background:rgba(3,12,23,.70);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+    .modal-card{border:1px solid rgba(255,255,255,.7);box-shadow:0 32px 90px rgba(0,0,0,.32)}
+    .modal-head{background:linear-gradient(135deg,#0a192b,#123654);border:0}.modal-title{color:#fff}.modal-head .danger{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.15);color:#fff}
+    .error-box{border-radius:12px}
+    ::-webkit-scrollbar{width:9px;height:9px}::-webkit-scrollbar-thumb{background:#b7c6d3;border-radius:99px;border:2px solid transparent;background-clip:padding-box}::-webkit-scrollbar-track{background:transparent}
+
+    @media(max-width:1200px){.main-grid{grid-template-columns:1fr}.detail-card{position:static}#map{height:620px;min-height:0}}
+    @media(max-width:760px){
+      body{background:linear-gradient(180deg,var(--navy-950) 0,var(--navy-900) 250px,#eef3f8 250px,#f6f8fb 100%);padding-bottom:calc(18px + env(safe-area-inset-bottom))}
+      .container{padding:12px 12px 28px}
+      .header{padding:14px;margin-bottom:12px;border-radius:19px;align-items:flex-start}
+      .header>div:first-child{width:100%}.header h1{font-size:23px}.header h1:before{width:36px;height:36px;border-radius:11px;margin-right:10px;vertical-align:3px}
+      .header .subtitle:after{font-size:12px}.header .actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));width:100%;gap:8px}
+      .header .actions button{width:100%;min-height:46px;padding:9px;font-size:12px}
+      .stats{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;gap:10px;margin:0 -12px 12px;padding:0 12px 5px}
+      .stat-card{min-width:82vw;scroll-snap-align:start;padding:16px}.stat-value{font-size:28px}
+      .stats + .card{position:sticky;top:8px;z-index:900;border-radius:18px;box-shadow:0 12px 30px rgba(6,17,31,.15)}
+      .stats + .card .panel-head{padding:14px 15px 0}.stats + .card .panel-title{font-size:14px;text-transform:uppercase;letter-spacing:.06em}.stats + .card .panel-body{padding:10px 14px 14px}
+      .filters-grid{grid-template-columns:1fr 1fr;gap:8px}.field{height:44px;padding:10px 11px;font-size:13px}
+      .main-grid{display:flex;flex-direction:column;gap:12px;margin-top:12px!important}.map-col{order:1}.detail-col{order:2}
+      .map-col .panel-head{padding:15px 15px 0}.map-col .panel-body{padding:12px 12px 15px}
+      #map{height:58vh;min-height:420px;max-height:600px;border-radius:15px}
+      .map-actions{justify-content:stretch}.map-actions button{width:100%;min-height:46px}
+      .legend{display:flex;overflow-x:auto;gap:7px;margin-top:12px;padding-bottom:3px}.legend-item{min-width:max-content}
+      .table-wrap{max-height:270px;margin-top:12px;border-radius:14px}table{min-width:760px}th,td{padding:10px 12px;font-size:12px}
+      .detail-card>.panel-head{padding:17px 16px 14px}.detail-card>.panel-body{padding:14px}.detail-grid{grid-template-columns:1fr 1fr;gap:8px}.detail-item{padding:11px;border-radius:13px}
+      .detail-toolbar{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.detail-toolbar button{width:100%;min-height:44px}
+      .notes-add-row{display:grid;grid-template-columns:72px 1fr}.notes-textarea{grid-column:1/-1}.notes-add-btn{width:100%}
+      .modal-backdrop{padding:0;align-items:flex-end}.modal-card{width:100%!important;max-height:92dvh!important;border-radius:24px 24px 0 0;border-bottom:0}.modal-head{padding:16px}.modal-body{padding:16px;padding-bottom:calc(22px + env(safe-area-inset-bottom))}
+      button:hover{transform:none}
+    }
+    @media(max-width:390px){.filters-grid,.detail-grid{grid-template-columns:1fr}.stat-card{min-width:88vw}#map{height:54vh;min-height:380px}}
+
+    /* ===== Mobile fit + Full Map mode ===== */
+    .detail-panel-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .back-to-map{background:#22d3ee!important;color:#062136!important;border:0!important;white-space:nowrap}
+    .map-actions #fullMapBtn{background:linear-gradient(135deg,#0a2945,#0e5977);color:#fff;border-color:#1a6b87}
+    body.full-map-open{overflow:hidden!important}
+    body.full-map-open .map-col{position:fixed;inset:0;z-index:6500;background:#06111f;padding:0}
+    body.full-map-open .map-col>.card{height:100dvh;border:0;border-radius:0;background:#06111f;display:flex;flex-direction:column}
+    body.full-map-open .map-col .panel-head{display:none}
+    body.full-map-open .map-col .panel-body{padding:0;display:flex;flex-direction:column;min-height:0;height:100%}
+    body.full-map-open #map{height:100dvh!important;min-height:100dvh!important;max-height:none!important;width:100%!important;border:0;border-radius:0}
+    body.full-map-open .map-actions{position:fixed;top:calc(12px + env(safe-area-inset-top));right:12px;z-index:6800;margin:0;display:flex;width:auto}
+    body.full-map-open .map-actions #refreshLocationCacheBtn{display:none}
+    body.full-map-open .map-actions #fullMapBtn{background:rgba(6,17,31,.9);color:#fff;border:1px solid rgba(255,255,255,.25);box-shadow:0 10px 30px rgba(0,0,0,.3);backdrop-filter:blur(10px)}
+    body.full-map-open .legend,body.full-map-open .table-wrap{display:none}
+    body.full-map-open.full-map-detail .detail-col{display:block;position:fixed;inset:0;z-index:7000;padding:0;background:rgba(3,12,23,.72);backdrop-filter:blur(7px)}
+    body.full-map-open.full-map-detail .detail-card{position:absolute;top:auto;left:50%;bottom:0;transform:translateX(-50%);width:min(760px,100%);max-height:88dvh;border-radius:25px 25px 0 0;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 -24px 80px rgba(0,0,0,.35)}
+    body.full-map-open.full-map-detail .detail-card>.panel-head{display:flex;flex-shrink:0}
+    body.full-map-open.full-map-detail .detail-card>.panel-body{overflow-y:auto;overscroll-behavior:contain;padding-bottom:calc(24px + env(safe-area-inset-bottom))}
+    body.full-map-open.full-map-detail #backToMapBtn{display:inline-flex!important;align-items:center;justify-content:center}
+    body.full-map-open:not(.full-map-detail) .detail-col{display:none}
+
+    @media(max-width:760px){
+      /* Both information cards fit the viewport; no horizontal page/card scrolling. */
+      .stats{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;overflow:visible!important;scroll-snap-type:none!important;margin:0 0 12px!important;padding:0!important;gap:8px!important;width:100%!important}
+      .stat-card{min-width:0!important;width:100%!important;scroll-snap-align:none!important;padding:13px 11px!important;border-radius:17px!important}
+      .stat-card .stat-top{align-items:flex-start;gap:8px}.stat-card .icon-box{width:34px;height:34px;min-width:34px;border-radius:11px;font-size:15px}
+      .stat-card .stat-label{font-size:9px;line-height:1.25;letter-spacing:.045em}.stat-card .stat-value{font-size:24px;line-height:1.05;margin-top:2px}.stat-card .stat-sub{font-size:10px;line-height:1.25;margin-top:3px}
+      .stat-card .overdue-details-toggle{width:100%;min-height:38px;padding:7px 8px;font-size:11px;margin-top:10px}
+      .stat-card .mini-stats{grid-template-columns:1fr;gap:7px}.facility-filter-chips,.overdue-filter-chips,.temp-user-filter-chips{gap:5px}.facility-filter-chips button,.overdue-filter-chips button,.temp-user-filter-chips button{font-size:10px;padding:6px 7px}
+      body.full-map-open .map-actions{top:calc(10px + env(safe-area-inset-top));right:10px}
+      body.full-map-open .map-actions #fullMapBtn{width:auto;min-height:44px;padding:10px 14px;font-size:12px}
+      body.full-map-open.full-map-detail .detail-card{max-height:90dvh}
+      body.full-map-open.full-map-detail .detail-card>.panel-head{padding:15px 14px}
+    }
+    @media(max-width:390px){
+      .stat-card{padding:11px 9px!important}.stat-card .icon-box{width:30px;height:30px;min-width:30px}.stat-card .stat-value{font-size:22px}.stat-card .stat-sub{font-size:9px}
+    }
+
+    .unified-search-grid{grid-template-columns:1fr!important}.full-screen-search{display:none}.stat-value.is-loading{font-size:0;height:34px}.stat-value.is-loading:after{content:"";display:block;width:58px;height:22px;border-radius:8px;background:linear-gradient(90deg,#dbe7ef,#fff,#dbe7ef);background-size:200%;animation:statShimmer 1.1s linear infinite}@keyframes statShimmer{to{background-position:-200%}}
+    body.full-map-open .full-screen-search{display:flex;position:fixed;top:calc(12px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);z-index:6850;width:min(620px,calc(100vw - 220px));gap:8px;padding:8px;border-radius:16px;background:rgba(6,17,31,.9);box-shadow:0 12px 36px rgba(0,0,0,.3);backdrop-filter:blur(12px)}body.full-map-open .full-screen-search .field{height:44px;min-width:0;background:#fff}body.full-map-open .full-screen-search button{height:44px;background:#22d3ee;color:#062136;border:0}
+    @media(max-width:760px){.unified-search-grid{display:block!important}.table-wrap{height:238px!important;max-height:238px!important;overflow:auto!important}body.full-map-open .full-screen-search{top:calc(64px + env(safe-area-inset-top));left:10px;right:10px;transform:none;width:auto;padding:7px}body.full-map-open .full-screen-search .field{height:42px;font-size:12px}body.full-map-open .full-screen-search button{height:42px;min-height:42px;font-size:11px}}
+
+    /* ===== Supabase email OTP authentication ===== */
+    .auth-screen{position:fixed;inset:0;z-index:20000;min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:20px;background:linear-gradient(160deg,#071827 0%,#0b2940 55%,#0f3a4d 100%);color:#eaf6ff}
+    .auth-card{width:min(430px,100%);padding:30px;border:1px solid rgba(148,163,184,.28);border-radius:20px;background:rgba(8,31,49,.94);box-shadow:0 24px 70px rgba(0,0,0,.38);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+    .auth-kicker{font-size:12px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;color:#5eead4;margin-bottom:12px}
+    .auth-title{margin:0 0 8px;color:#fff;font-size:26px}.auth-copy{margin:0 0 22px;color:#cbd5e1;font-size:14px;line-height:1.55}
+    .auth-label{display:block;font-size:14px;font-weight:700;color:#f1f5f9;margin-top:12px}
+    .auth-input{width:100%;box-sizing:border-box;margin-top:8px;padding:13px 14px;border:1px solid #45657c;border-radius:10px;background:#fff;color:#0f172a;outline:none;font-size:16px}
+    .auth-input:focus{border-color:#2dd4bf;box-shadow:0 0 0 3px rgba(45,212,191,.2)}
+    .auth-button{width:100%;margin-top:16px;padding:13px 16px;border:0;border-radius:10px;background:#2dd4bf;color:#05242b;font-weight:800;cursor:pointer}
+    .auth-button:hover{background:#5eead4}.auth-button:disabled{opacity:.58;cursor:wait}
+    .auth-secondary{width:100%;margin-top:10px;background:transparent;color:#e2e8f0;border-color:#64748b;box-shadow:none}.auth-secondary:hover{background:rgba(255,255,255,.08)}
+    .auth-message{min-height:24px;margin:14px 0 0;color:#e2e8f0;font-size:13px;line-height:1.45}
+    .auth-spinner{width:34px;height:34px;border:4px solid rgba(255,255,255,.25);border-top-color:#5eead4;border-radius:9999px;animation:spin .9s linear infinite}
+    .auth-user{display:inline-flex;align-items:center;max-width:260px;padding:8px 11px;border:1px solid rgba(255,255,255,.15);border-radius:12px;color:#bdf6ff;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    #signOutBtn{background:rgba(220,38,38,.16);border-color:rgba(248,113,113,.38);color:#fecaca}
+    #signOutBtn:hover{background:rgba(220,38,38,.28)}
+    @media(max-width:760px){.auth-card{padding:24px 20px}.auth-user{grid-column:1/-1;max-width:none;justify-content:center}.header .actions{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  </style>
+<style id="dashboardIntegrationStyle">
+.dashboard-back{position:fixed;z-index:120000;right:14px;bottom:14px;display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:0 14px;border:1px solid rgba(125,211,252,.55);border-radius:999px;background:rgba(7,24,40,.94);color:#e8f6ff;text-decoration:none;font:800 12px/1 Segoe UI,Arial,sans-serif;box-shadow:0 10px 28px rgba(0,0,0,.35)}
+.dashboard-back:hover,.dashboard-back:focus-visible{border-color:#67e8f9;background:#0c2a43;outline:none}
+@media(max-width:700px){.dashboard-back{right:8px;bottom:8px;min-height:38px;padding:0 11px;font-size:11px}}
+</style></head>
+<body><a href="../" class="dashboard-back" title="Return to Auckland Harbour Operations Monitoring Page">← Dashboard</a>
+
+  <div id="authScreen" class="auth-screen" aria-live="polite">
+    <div id="authChecking" class="auth-spinner" aria-label="Checking access"></div>
+    <form id="authForm" class="auth-card hidden" novalidate>
+      <div class="auth-kicker">Harbour Operations</div>
+      <h1 class="auth-title">Moorings Database access</h1>
+      <div id="authEmailStep">
+        <p class="auth-copy">Enter your registered email address to receive an 8-digit verification code.</p>
+        <label class="auth-label" for="authEmail">Email address</label>
+        <input id="authEmail" class="auth-input" type="email" autocomplete="email" placeholder="name@example.com" required />
+        <button id="authSendBtn" class="auth-button" type="submit">Send verification code</button>
+      </div>
+      <div id="authOtpStep" class="hidden">
+        <p class="auth-copy">Enter the 8-digit code sent to <strong id="authEmailDisplay"></strong>.</p>
+        <label class="auth-label" for="authOtp">Verification code</label>
+        <input id="authOtp" class="auth-input" type="text" inputmode="numeric" autocomplete="one-time-code" placeholder="00000000" maxlength="8" required />
+        <button id="authVerifyBtn" class="auth-button" type="submit">Verify and sign in</button>
+        <button id="authResendBtn" class="auth-secondary" type="button">Resend code</button>
+        <button id="authChangeEmailBtn" class="auth-secondary" type="button">Use a different email address</button>
+      </div>
+      <p id="authMessage" class="auth-message" role="status"></p>
+    </form>
+  </div>
+  <div id="appShell" class="container hidden">
+    <div class="header">
+      <div>
+        <div class="badges">
+      
+        </div>
+        <h1>Moorings Database</h1>
+        <div class="subtitle"></div>
+      </div>
+      <div class="actions">
+        <span id="authUserEmail" class="auth-user hidden" title="Signed-in account"></span>
+        <button class="primary" id="vesselSearchBtn" type="button" title="Open Vessel Search in a new window">Vessel Search</button>
+        <button id="resetFiltersBtn">Reset Filters</button>
+        <button id="fitAllBtn">Zoom out to All Pins</button>
+          <button id="currentLocationBtn" class="pink" type="button">Current Location</button>
+        <button id="signOutBtn" type="button">Sign out</button>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="card stat-card"><div class="stat-top"><div class="icon-box">📍</div><div><div class="stat-label">Mapped Pins</div><div class="stat-value" id="statMapped">0</div><div class="stat-sub">Visible pins on the map</div></div></div><button id="toggleMappedDetailsBtn" class="small ghost overdue-details-toggle" type="button">▶ Show Details</button><div id="mappedDetailsSection" class="collapsed"><div class="facility-filter-wrap"><div class="facility-filter-title">Facility Type Filter</div><div class="facility-filter-chips"><button type="button" class="small ghost facility-type-btn" data-facility-type="all">All Facility Types</button><button type="button" class="small ghost facility-type-btn" data-facility-type="swing">Swing</button><button type="button" class="small ghost facility-type-btn" data-facility-type="swing_mud">Swing Mud</button><button type="button" class="small ghost facility-type-btn" data-facility-type="pile">Pile</button><button type="button" class="small ghost facility-type-btn" data-facility-type="private_pile">Private Pile</button><button type="button" class="small ghost facility-type-btn" data-facility-type="commercial_swing">Commercial Swing</button><button type="button" class="small ghost facility-type-btn" data-facility-type="other">Other</button><button type="button" class="small ghost facility-type-btn" data-facility-type="unknown">Unknown</button></div></div><div class="temp-user-filter-wrap"><div class="temp-user-filter-title">Temp User Filter</div><div class="temp-user-filter-chips"><button type="button" class="small ghost temp-user-filter-btn" data-temp-user-filter="on">Temp User On</button></div></div></div></div>
+      <div class="card stat-card"><div class="stat-top"><div class="icon-box">🚨</div><div><div class="stat-label">Inspection Over 3 Years</div><div class="stat-value" id="statOverdueInspection">0</div><div class="stat-sub">Moorings with overdue inspections</div></div></div><button id="toggleOverdueDetailsBtn" class="small ghost overdue-details-toggle" type="button">▶ Show Details</button><div id="overdueDetailsSection" class="collapsed"><div class="mini-stats"><div><div class="mini-stat-label">Terminated Permits</div><div class="mini-stat-value" id="statTerminatedPermits">0</div><div class="mini-stat-sub"></div></div><div><div class="mini-stat-label"></div></div></div><div class="overdue-filter-wrap"><div class="overdue-filter-title">Overdue Age Filter</div><div class="overdue-filter-chips"><button type="button" class="small ghost overdue-age-btn" data-overdue-age="all">All Overdue</button><button type="button" class="small ghost overdue-age-btn" data-overdue-age="within2">≤ 2 months</button><button type="button" class="small ghost overdue-age-btn" data-overdue-age="3to4">3–4 months</button><button type="button" class="small ghost overdue-age-btn" data-overdue-age="5to11">5–11 months</button><button type="button" class="small ghost overdue-age-btn" data-overdue-age="12plus">12+ months</button></div></div><div class="detail-toolbar" style="margin-top:14px;"><button id="overdueOnlyBtn" class="small ghost" type="button">Show Only Overdue</button></div></div></div>
+    </div>
+
+    <div class="card">
+      <div class="panel-head"><h2 class="panel-title">Search</h2><div class="panel-desc"></div></div>
+      <div class="panel-body">
+        <div class="filters-grid unified-search-grid"><input id="f_search" class="field" placeholder="Search mooring code or vessel name" autocomplete="off" inputmode="search" /></div>
+        <div id="errorBox" class="error-box hidden"></div>
+      </div>
+    </div>
+
+    <div class="main-grid" style="margin-top:20px;">
+      <div class="map-col">
+        <div class="card">
+          <div class="panel-head"><h2 class="panel-title">Live Mooring Map</h2><div class="panel-desc"></div></div>
+          <div class="panel-body">
+            <div id="fullScreenSearchBar" class="full-screen-search"><input id="fullMapSearch" class="field" placeholder="Search mooring code or vessel name" autocomplete="off" inputmode="search" /><button id="fullMapSearchClear" class="small" type="button">Clear</button></div>
+            <div id="map"></div>
+            <div class="map-actions">
+              <button class="primary" id="fullMapBtn" type="button" title="Open the map in full-screen mode">Full Screen</button>
+              <button class="primary" id="refreshLocationCacheBtn" type="button" title="Admin: refresh cached pin GPS from ArcGIS into Supabase">Refresh Location Cache</button>
+            </div>
+            <div class="legend" id="legend"></div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Mooring Code</th>
+                    <th>Boat Name</th>
+                    <th>Licence Length Max</th>
+                    <th>Last Inspection</th>
+                    <th>Latitude</th>
+                    <th>Longitude</th>
+                  </tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="detail-col">
+        <div class="card detail-card">
+          <div class="panel-head detail-panel-head"><div><h2 class="panel-title">Mooring Detail</h2><div class="panel-desc"></div></div><button id="backToMapBtn" class="small back-to-map hidden" type="button">Back to map</button></div>
+          <div class="panel-body">
+            <div id="detailEmpty" class="muted-box">Select a pin or a table row to view the mooring details.</div>
+            <div id="detailContent" class="hidden">
+              <div class="detail-top">
+                <div class="badges" id="detailBadges"></div>
+                <div id="detailTitle" class="detail-top-title">-</div>
+                <div id="detailStatus" class="detail-top-sub"></div>
+                <div class="detail-toolbar">
+                  <button class="small primary hidden" id="tempUserBtn" type="button">Temp User On</button>
+                  <button class="small ghost" id="customerDetailsBtn">Customer Details</button>
+                  <button class="small ghost" id="historyBtn">History</button>
+                  <button class="small primary" id="editDetailsBtn" type="button">Edit</button>
+                </div>
+              </div>
+              <div id="detailGrid" class="detail-grid"></div>
+
+              <!-- Notes Section -->
+              <div class="notes-section" id="notesSection" style="margin-top:16px;">
+                <div class="notes-header">
+                  <span class="notes-header-title">&#x1F4DD; Notes</span>
+                  <span id="notesCount" style="font-size:12px;color:var(--muted);">0 entries</span>
+                </div>
+                <div class="notes-add">
+                  <div class="notes-add-row">
+                    <textarea id="noteInput" class="notes-textarea" placeholder="Enter note..."></textarea>
+                    <input id="noteInitial" class="notes-initial" maxlength="6" placeholder="Init." title="Your initials" />
+                    <button class="notes-add-btn" id="noteAddBtn" type="button">Add</button>
+                  </div>
+                </div>
+                <div class="notes-list" id="notesList">
+                  <div class="notes-empty" id="notesEmpty">No notes yet for this mooring.</div>
+                </div>
+              </div>
+
+              <!-- Photos Section — SharePoint -->
+              <div class="photos-section" id="photosSection" style="margin-top:14px;">
+                <div class="photos-header">
+                  <span class="photos-header-title">SharePoint</span>
+                </div>
+                <div class="photos-body" id="photosBody">
+                  <div class="sp-no-folder">Select a mooring to view its SharePoint folder.</div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lightbox removed: photos now link to SharePoint -->
+
+  <div id="customerModalBackdrop" class="modal-backdrop hidden" aria-hidden="true">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="customerModalTitle">
+      <div class="modal-head">
+        <h3 id="customerModalTitle" class="modal-title">Customer Details</h3>
+        <button id="customerModalClose" class="small danger" type="button">Close</button>
+      </div>
+      <div class="modal-body">
+        <div id="customerGateView">
+          <div class="muted-box">Enter the access code to unlock customer details for the selected mooring.</div>
+          <label class="field-label" for="customerAccessCodeInput">Access Code</label>
+          <input id="customerAccessCodeInput" class="field" type="password" placeholder="Enter access code" />
+          <div class="inline-note">Enter your access code to securely request customer details.</div>
+          <div id="customerCodeError" class="code-error hidden">Incorrect access code. Please try again.</div>
+          <div class="modal-actions">
+            <button id="customerUnlockBtn" class="primary" type="button">Unlock</button>
+          </div>
+        </div>
+        <div id="customerLoadingView" class="hidden">
+          <div class="muted-box">Loading customer details...</div>
+        </div>
+        <div id="customerDetailsView" class="hidden">
+          <div id="customerDetailsEmpty" class="muted-box hidden">No customer details were found for this mooring code.</div>
+          <div id="customerDetailsGrid" class="customer-grid"></div>
+          <div class="modal-actions">
+            <button id="customerLockBtn" class="ghost" type="button">Lock Again</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="tempUserAccessModalBackdrop" class="modal-backdrop hidden" aria-hidden="true">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="tempUserAccessModalTitle">
+      <div class="modal-head">
+        <h3 id="tempUserAccessModalTitle" class="modal-title">Temp User Access Code</h3>
+        <button id="tempUserAccessModalClose" class="small danger" type="button">Close</button>
+      </div>
+      <div class="modal-body">
+        <div class="muted-box">Enter the access code to unlock temp user details for the selected mooring.</div>
+        <label class="field-label" for="tempUserAccessCodeInput">Access Code</label>
+        <input id="tempUserAccessCodeInput" class="field" type="password" placeholder="Enter access code" autocomplete="off" />
+        <div class="inline-note">Enter the same access code used for Customer Details, History, and Edit.</div>
+        <div id="tempUserAccessCodeError" class="code-error hidden">Incorrect access code. Please try again.</div>
+        <div class="modal-actions"><button id="tempUserAccessUnlockBtn" class="primary" type="button">Unlock Temp User</button></div>
+      </div>
+    </div>
+  </div>
+  <div id="tempUserModalBackdrop" class="modal-backdrop hidden" aria-hidden="true">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="tempUserModalTitle" style="width:min(760px,100%);max-height:min(680px,86vh);">
+      <div class="modal-head">
+        <h3 id="tempUserModalTitle" class="modal-title">Temp User Details</h3>
+        <div class="temp-user-edit-actions">
+          <button id="tempUserEditBtn" class="small ghost" type="button">Edit</button>
+          <button id="tempUserSaveBtn" class="small primary hidden" type="button">Save</button>
+          <button id="tempUserCancelBtn" class="small ghost hidden" type="button">Cancel</button>
+          <button id="tempUserModalClose" class="small danger" type="button">Close</button>
+        </div>
+      </div>
+      <div class="modal-body">
+        <div id="tempUserEditStatus" class="edit-status hidden"></div>
+        <div id="tempUserDetailsEmpty" class="muted-box hidden">No temp user details were found for this mooring code.</div>
+        <div id="tempUserDetailsGrid" class="temp-user-grid"></div>
+      </div>
+    </div>
+  </div>
+  <div id="historyModalBackdrop" class="modal-backdrop hidden" aria-hidden="true">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="historyModalTitle" style="width:min(760px,100%);max-height:min(520px,80vh);">
+      <div class="modal-head">
+        <h3 id="historyModalTitle" class="modal-title">History</h3>
+        <button id="historyModalClose" class="small danger" type="button">Close</button>
+      </div>
+      <div class="modal-body">
+        <div id="historyGateView">
+          <div class="muted-box">Enter the access code to unlock history for the selected mooring.</div>
+          <label class="field-label" for="historyAccessCodeInput">Access Code</label>
+          <input id="historyAccessCodeInput" class="field" type="password" placeholder="Enter access code" />
+          <div class="inline-note">Enter the same access code used for Customer Details.</div>
+          <div id="historyCodeError" class="code-error hidden">Incorrect access code. Please try again.</div>
+          <div class="modal-actions">
+            <button id="historyUnlockBtn" class="primary" type="button">Unlock</button>
+          </div>
+        </div>
+        <div id="historyLoadingView" class="hidden">
+          <div class="muted-box">Loading history...</div>
+        </div>
+        <div id="historyDetailsView" class="hidden">
+          <div id="historyDetailsEmpty" class="muted-box hidden">No history rows were found for this mooring code.</div>
+          <div id="historyDetailsGrid" class="customer-grid"></div>
+          <div class="modal-actions">
+            <button id="historyLockBtn" class="ghost" type="button">Lock Again</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <div id="editAccessModalBackdrop" class="modal-backdrop hidden" aria-hidden="true">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="editAccessModalTitle">
+      <div class="modal-head">
+        <h3 id="editAccessModalTitle" class="modal-title">Edit Access Code</h3>
+        <button id="editAccessModalClose" class="small danger" type="button">Close</button>
+      </div>
+      <div class="modal-body">
+        <div class="muted-box">Enter the access code to edit details for the selected mooring.</div>
+        <label class="field-label" for="editAccessCodeInput">Access Code</label>
+        <input id="editAccessCodeInput" class="field" type="password" placeholder="Enter access code" autocomplete="off" />
+        <div id="editAccessCodeError" class="code-error hidden">Incorrect access code. Please try again.</div>
+        <div class="modal-actions"><button id="editAccessUnlockBtn" class="primary" type="button">Unlock Edit</button></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="editModalBackdrop" class="modal-backdrop hidden" aria-hidden="true">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="editModalTitle" style="width:min(840px,100%);max-height:min(780px,90vh);">
+      <div class="modal-head">
+        <h3 id="editModalTitle" class="modal-title">Edit Mooring Details</h3>
+        <div class="temp-user-edit-actions">
+          <button id="addTempUserBtn" class="small ghost" type="button">Add Temp User</button>
+          <button id="editModalClose" class="small danger" type="button">Close</button>
+        </div>
+      </div>
+      <div class="modal-body">
+        <div class="muted-box" id="editModalIntro">Update the selected latest mooring registry row below.</div>
+        <form id="editForm" style="margin-top:14px;">
+          <div class="edit-form-grid" id="editFormGrid"></div>
+          <div id="editStatus" class="edit-status hidden"></div>
+          <div class="modal-actions">
+            <button id="editCancelBtn" class="ghost" type="button">Cancel</button>
+            <button id="editSaveBtn" class="primary" type="submit">Save Changes</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SERVICE_URL = 'https://services2.arcgis.com/JkPEgZJGxhSjYOo0/arcgis/rest/services/MooringLocations/FeatureServer/0/query?where=1%3D1&outFields=*&f=geojson';
+    const MAP_CENTER = [-36.84, 174.78];
+    const MAP_ZOOM = 11;
+    const SEARCH_FOCUS_ZOOM = 16;
+    const ZONE_COLORS = ['#0ea5e9', '#10b981', '#f97316', '#8b5cf6', '#e11d48', '#14b8a6', '#f59e0b', '#06b6d4', '#64748b'];
+    const STALE_PIN_COLOR = '#dc2626';
+    const CURRENT_PIN_COLOR = '#16a34a';
+    const TERMINATED_PIN_COLOR = '#facc15';
+    const USER_LOCATION_COLOR = '#2563eb';
+
+    // =========================
+    // Supabase configuration
+    // Replace these placeholders before publishing.
+    // =========================
+    const SUPABASE_URL = 'https://wgwlnutnstrfuiiunlcu.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_iC7kbinoy61_5eQCnrV25Q_OioA7Y1x';
+    const SUPABASE_PUBLIC_TABLE = 'mooring_app_registry_import_stg';
+    const SUPABASE_CUSTOMER_TABLE = 'mooring_app_registry_join_current';
+    const SUPABASE_LOCATION_TABLE = 'mooring_app_locations_cache';
+    const SUPABASE_TEMP_USER_TABLE = 'mooring_app_registry_import_stg';
+    const QUICK_HANDLER_BASE_URL = 'https://hjrcnsuzrztaiwnttxnr.supabase.co';
+    const QUICK_HANDLER_ANON_KEY = 'sb_publishable_8vscwHQ7y50eUj-RywvmLQ_JGpSp2HE';
+
+    // Server-side access verification. No real access code is stored in this HTML.
+    const ACCESS_FUNCTION_URL = 'https://wgwlnutnstrfuiiunlcu.supabase.co/functions/v1/hyper-responder';
+    const ACCESS_APP_NAME = 'mooring';
+    let sharedAccessCode = '';
+    async function verifyProtectedAccessCode(code){
+      const normalized=String(code??'').trim();
+      if(normalized.length<5)return{valid:false,message:'Please enter a valid access code.'};
+      const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),10000);
+      try{const response=await fetch(ACCESS_FUNCTION_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({app:ACCESS_APP_NAME,code:normalized}),signal:controller.signal});
+        const payload=await response.json();
+        if(!response.ok||payload?.valid!==true)return{valid:false,message:payload?.message||payload?.error||'Incorrect access code.'};
+        sharedAccessCode=normalized;return{valid:true};
+      }finally{clearTimeout(timer)}
+    }
+    const EDIT_FIELDS = [
+      { key: 'mooring_code', label: 'Mooring Code', required: true },
+      { key: 'mooring_length', label: 'Mooring Length', type: 'number', step: 'any' },
+      { key: 'last_inspection_date', label: 'Last Inspection Date' },
+      { key: 'boat_vessel_name', label: 'Boat / Vessel Name' },
+      { key: 'customer_name', label: 'Customer Name' },
+      { key: 'customer_phone_mob', label: 'Customer Phone Mobile' },
+      { key: 'customer_phoneah', label: 'Customer Phone AH' },
+      { key: 'customer_phonewk', label: 'Customer Phone WK' },
+      { key: 'customer_email', label: 'Customer Email', type: 'email' },
+      { key: 'mooring_permit_date_of_issue', label: 'Mooring Permit Date Of Issue' },
+      { key: 'mooring_permit_date_of_termination', label: 'Mooring Permit Date Of Termination' },
+      { key: 'mooring_faclity_type_code', label: 'Mooring Facility Type Code' }
+    ];
+    const state = { records: [], filtered: [], selectedId: null, markers: {}, layerGroup: null, fetchedAt: null, registryLoaded: 0, overdueOnly: false, overdueAgeFilter: 'all', facilityTypeFilter: 'all', tempUserFilter: 'all' };
+    const TABLE_FIRST_PAINT_ROWS = 200;
+    const TABLE_CHUNK_ROWS = 250;
+    let tableRenderToken = 0;
+    let initialDataReady = false;
+    let locationFirstPaintDone = false;
+    const registryByCode = new Map();
+    const customerDetailsCache = new Map();
+    const historyDetailsCache = new Map();
+    const tempUserByCode = new Map();
+    let tempUserEditMode = false;
+    let tempUserAddMode = false;
+    let tempUserAddTargetRecord = null;
+    let customerAccessGranted = false;
+    let historyAccessGranted = false;
+    let tempUserAccessGranted = false;
+    let editAccessGranted = false;
+    let sharedAccessGranted = false;
+    let supabaseClient = null;
+    let userLocationMarker = null;
+    let userAccuracyCircle = null;
+
+    const el = (id) => document.getElementById(id);
+    const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (m) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+    const map = L.map('map', { preferCanvas: true }).setView(MAP_CENTER, MAP_ZOOM);
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap contributors' }).addTo(map);
+
+    function normalizeCode(value){ return String(value || '').trim().toUpperCase(); }
+    function showError(text=''){ const box = el('errorBox'); if(!text){ box.textContent=''; box.classList.add('hidden'); return; } box.textContent=text; box.classList.remove('hidden'); }
+    function zoneColor(zone){ const z = zone || 'Unknown'; let hash=0; for(let i=0;i<z.length;i++) hash=((hash<<5)-hash)+z.charCodeAt(i); return ZONE_COLORS[Math.abs(hash)%ZONE_COLORS.length]; }
+    function formatDMM(value, kind){ if(typeof value !== 'number' || Number.isNaN(value)) return '-'; const abs=Math.abs(value); const degrees=Math.floor(abs); const minutes=(abs-degrees)*60; const hemisphere = kind==='lat' ? (value>=0?'N':'S') : (value>=0?'E':'W'); const degPad = kind==='lat'?2:3; return `${String(degrees).padStart(degPad,'0')}°${minutes.toFixed(4)}' ${hemisphere}`; }
+    function formatDateValue(value){ if(value === null || value === undefined || value === '') return '-'; if(typeof value === 'number'){ const d = new Date(value); if(!Number.isNaN(d.getTime())) return d.toLocaleDateString('en-NZ',{ day:'numeric', month:'long', year:'numeric' }); } if(typeof value === 'string'){ const trimmed = value.trim(); const d = new Date(trimmed); if(!Number.isNaN(d.getTime())) return d.toLocaleDateString('en-NZ',{ day:'numeric', month:'long', year:'numeric' }); return trimmed; } return String(value); }
+
+    function parseInspectionDate(raw){
+      const value = String(raw || '').trim();
+      if(!value) return null;
+      const m = value.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?$/);
+      if(!m) return null;
+      const day = Number(m[1]);
+      const month = Number(m[2]);
+      const year = Number(m[3]);
+      const hour = Number(m[4] || 0);
+      const minute = Number(m[5] || 0);
+      const second = Number(m[6] || 0);
+      const date = new Date(year, month - 1, day, hour, minute, second);
+      return Number.isNaN(date.getTime()) ? null : date;
+    }
+
+    function inspectionThresholdDate(){
+      const today = new Date();
+      return new Date(today.getFullYear() - 3, today.getMonth(), today.getDate(), 0, 0, 0, 0);
+    }
+
+    function isInspectionStale(raw){
+      const parsed = parseInspectionDate(raw);
+      if(!parsed) return false;
+      return parsed < inspectionThresholdDate();
+    }
+
+    function inspectionAlertSubtext(raw){
+      return isInspectionStale(raw) ? 'More than 3 years old from today' : '';
+    }
+
+    function getRegistryExtra(mooringCode){ return registryByCode.get(normalizeCode(mooringCode)) || null; }
+    function firstNonEmpty(...values){
+      for(const value of values){
+        if(value !== null && value !== undefined && String(value).trim() !== '' && String(value).trim().toLowerCase() !== 'null') return value;
+      }
+      return '';
+    }
+    function normaliseRegistryRow(row){
+      return {
+        mooring_code: firstNonEmpty(row.mooring_code, row.MOORING_CODE, row.Mooring_Code, row['Mooring Code']),
+        mooring_length: firstNonEmpty(row.mooring_length, row.MOORING_LENGTH, row.mooringLength, row['Mooring Length']),
+        last_inspection_date: firstNonEmpty(row.last_inspection_date, row.LAST_INSPECTION_DATE, row.lastInspectionDate, row['Last Inspection Date']),
+        boat_vessel_name: firstNonEmpty(row.boat_vessel_name, row.BOAT_VESSEL_NAME, row.boatName, row['Boat Vessel Name'], row['Vessel Name']),
+        mooring_faclity_type_code: firstNonEmpty(row.mooring_faclity_type_code, row.MOORING_FACLITY_TYPE_CODE, row.mooring_facility_type_code, row.MOORING_FACILITY_TYPE_CODE, row['Mooring Faclity Type Code'], row['Mooring Facility Type Code']),
+        customer_name: firstNonEmpty(row.customer_name, row.CUSTOMER_NAME, row['Customer Name']),
+        customer_phone_mob: firstNonEmpty(row.customer_phone_mob, row.CUSTOMER_PHONE_MOB, row['Customer Phone Mob'], row['Customer Phone Mobile']),
+        customer_email: firstNonEmpty(row.customer_email, row.CUSTOMER_EMAIL, row['Customer Email']),
+        customer_phoneah: firstNonEmpty(row.customer_phoneah, row.CUSTOMER_PHONEAH, row['Customer Phone AH'], row['customer_phoneah']),
+        customer_phonewk: firstNonEmpty(row.customer_phonewk, row.CUSTOMER_PHONEWK, row['Customer Phone WK'], row['customer_phonewk']),
+        mooring_permit_date_of_issue: firstNonEmpty(row.mooring_permit_date_of_issue, row.MOORING_PERMIT_DATE_OF_ISSUE, row['Mooring Permit Date Of Issue']),
+        mooring_permit_date_of_termination: firstNonEmpty(row.mooring_permit_date_of_termination, row.MOORING_PERMIT_DATE_OF_TERMINATION, row['Mooring Permit Date Of Termination'])
+      };
+    }
+    function effectiveBoatName(record){ const extra = getRegistryExtra(record.mooringCode); return extra?.boat_vessel_name || record.boatName || '-'; }
+    function effectiveInspectionDate(record){ const extra = getRegistryExtra(record.mooringCode); return extra?.last_inspection_date || '-'; }
+    function permitTerminationDate(record){ const extra = getRegistryExtra(record.mooringCode); return extra?.mooring_permit_date_of_termination || ''; }
+    function facilityTypeCode(record){ const extra = getRegistryExtra(record.mooringCode); return String(extra?.mooring_faclity_type_code || '').trim().toUpperCase(); }
+    function facilityTypeLabelFromCode(code){
+      const normalized = String(code || '').trim().toUpperCase();
+      const map = {
+        S: 'Swing',
+        SMF: 'Swing',
+        SMC: 'Swing',
+        SM: 'Swing Mud',
+        P: 'Pile',
+        PP: 'Private Pile',
+        CSM: 'Commercial Swing'
+      };
+      return map[normalized] || '';
+    }
+    function facilityTypeLabel(record){ return facilityTypeLabelFromCode(facilityTypeCode(record)); }
+    function facilityFilterKey(record){
+      const code = facilityTypeCode(record);
+      if(['S','SMF','SMC'].includes(code)) return 'swing';
+      if(code === 'SM') return 'swing_mud';
+      if(code === 'P') return 'pile';
+      if(code === 'PP') return 'private_pile';
+      if(code === 'CSM') return 'commercial_swing';
+      return code ? 'other' : 'unknown';
+    }
+    function facilityFilterLabel(key){
+      return ({ all:'All Facility Types', swing:'Swing', swing_mud:'Swing Mud', pile:'Pile', private_pile:'Private Pile', commercial_swing:'Commercial Swing', other:'Other', unknown:'Unknown' })[key] || key;
+    }
+    function facilityTypeCounts(records){
+      const counts = { all: records.length, swing: 0, swing_mud: 0, pile: 0, private_pile: 0, commercial_swing: 0, other: 0, unknown: 0 };
+      records.forEach((record) => { const key = facilityFilterKey(record); counts[key] = (counts[key] || 0) + 1; });
+      return counts;
+    }
+    function hasTerminationDate(value){ const raw = String(value ?? '').trim(); return !!raw && raw.toLowerCase() !== 'null' && raw !== '-'; }
+    function isRecordTerminated(record){ return hasTerminationDate(permitTerminationDate(record)); }
+    function dateSortValue(raw){ const parsed = parseInspectionDate(raw); return parsed ? parsed.getTime() : 0; }
+    function chooseRegistryRow(current, candidate){
+      if(!current) return candidate;
+      const currentTerminated = hasTerminationDate(current?.mooring_permit_date_of_termination);
+      const candidateTerminated = hasTerminationDate(candidate?.mooring_permit_date_of_termination);
+      if(currentTerminated && !candidateTerminated) return candidate;
+      if(!currentTerminated && candidateTerminated) return current;
+      const currentDate = currentTerminated ? dateSortValue(current?.mooring_permit_date_of_termination) : dateSortValue(current?.mooring_permit_date_of_issue);
+      const candidateDate = candidateTerminated ? dateSortValue(candidate?.mooring_permit_date_of_termination) : dateSortValue(candidate?.mooring_permit_date_of_issue);
+      return candidateDate >= currentDate ? candidate : current;
+    }
+    function overdueStartDate(record){ const extra = getRegistryExtra(record.mooringCode); const inspection = parseInspectionDate(extra?.last_inspection_date); if(!inspection) return null; return new Date(inspection.getFullYear() + 3, inspection.getMonth(), inspection.getDate(), 0, 0, 0, 0); }
+    function completedMonthsSince(date){ if(!date) return null; const today = new Date(); let months = (today.getFullYear() - date.getFullYear()) * 12 + (today.getMonth() - date.getMonth()); if(today.getDate() < date.getDate()) months -= 1; return Math.max(0, months); }
+    function overdueAgeBucket(record){ if(!isRecordInspectionStale(record)) return null; const months = completedMonthsSince(overdueStartDate(record)); if(months === null) return null; if(months <= 2) return 'within2'; if(months <= 4) return '3to4'; if(months <= 11) return '5to11'; return '12plus'; }
+    function overdueAgeCounts(records){ const counts = { all: 0, within2: 0, '3to4': 0, '5to11': 0, '12plus': 0 }; records.forEach((record) => { const bucket = overdueAgeBucket(record); if(bucket){ counts.all += 1; counts[bucket] += 1; } }); return counts; }
+    function isRecordInspectionStale(record){ if(isRecordTerminated(record)) return false; const extra = getRegistryExtra(record.mooringCode); return isInspectionStale(extra?.last_inspection_date); }
+    function inspectionTextHtml(raw){
+      const display = escapeHtml(raw || '-');
+      return isInspectionStale(raw) ? `<span class="alert-text">${display}</span>` : display;
+    }
+
+
+    function grantSharedAccess(){
+      sharedAccessGranted = true;
+      customerAccessGranted = true;
+      historyAccessGranted = true;
+      editAccessGranted = true;
+      tempUserAccessGranted = true;
+    }
+    function revokeSharedAccess(){
+      sharedAccessGranted = false;
+      customerAccessGranted = false;
+      historyAccessGranted = false;
+      editAccessGranted = false;
+      tempUserAccessGranted = false;
+    }
+    function cleanContactValue(value){
+      const raw = String(value ?? '').trim();
+      if(!raw || raw === '-' || raw.toLowerCase() === 'null' || raw.toLowerCase() === 'undefined') return '';
+      return raw;
+    }
+    function otherContactsText(row){
+      const ah = cleanContactValue(row?.customer_phoneah);
+      const wk = cleanContactValue(row?.customer_phonewk);
+      const parts = [];
+      if(ah) parts.push(`AH: ${ah}`);
+      if(wk) parts.push(`WK: ${wk}`);
+      return parts.length ? parts.join(' / ') : '-';
+    }
+    function mergeOtherContactsByIssueDate(row, fallbackRows=[]){
+      if(!row) return row;
+      if(cleanContactValue(row.customer_phoneah) || cleanContactValue(row.customer_phonewk)) return row;
+      const rowIssue = String(row.mooring_permit_date_of_issue || '').trim();
+      const match = (fallbackRows || []).find((candidate) =>
+        String(candidate?.mooring_permit_date_of_issue || '').trim() === rowIssue &&
+        (cleanContactValue(candidate?.customer_phoneah) || cleanContactValue(candidate?.customer_phonewk))
+      );
+      return match ? { ...row, customer_phoneah: match.customer_phoneah, customer_phonewk: match.customer_phonewk } : row;
+    }
+    async function fetchRegistryRowsByCode(mooringCode){
+      const key = normalizeCode(mooringCode);
+      if(!key || !supabaseClient) return [];
+      try {
+        const { data, error } = await supabaseClient
+          .from(SUPABASE_PUBLIC_TABLE)
+          .select('*')
+          .ilike('mooring_code', key);
+        if(error) throw error;
+        return (data || []).map(normaliseRegistryRow);
+      } catch(err){
+        console.warn('fetchRegistryRowsByCode failed:', err);
+        return [];
+      }
+    }
+
+    function normaliseTempUserRow(row){
+      return {
+        mooring_code: firstNonEmpty(row.mooring_code, row.MOORING_CODE, row.Mooring_Code, row['Mooring Code']),
+        temp_boat_name: firstNonEmpty(row.Temp_Boat_Name, row.temp_boat_name, row.TEMP_BOAT_NAME, row['Temp Boat Name']),
+        occupied_date: firstNonEmpty(row.Occupied_Date, row.occupied_date, row.OCCUPIED_DATE, row['Occupied Date']),
+        temp_user_name: firstNonEmpty(row.Temp_User_Name, row.temp_user_name, row.TEMP_USER_NAME, row['Temp User Name']),
+        temp_user_phoneah: firstNonEmpty(row.Temp_User_PhoneAh, row.temp_user_phoneah, row.TEMP_USER_PHONEAH, row['Temp User PhoneAh'], row['Temp User Phone AH']),
+        temp_user_phonewk: firstNonEmpty(row.Temp_User_PhoneWk, row.temp_user_phonewk, row.TEMP_USER_PHONEWK, row['Temp User PhoneWk'], row['Temp User Phone WK']),
+        temp_user_phonemob: firstNonEmpty(row.Temp_User_PhoneMob, row.temp_user_phonemob, row.TEMP_USER_PHONEMOB, row['Temp User PhoneMob'], row['Temp User Phone Mobile']),
+        temp_user_email: firstNonEmpty(row.Temp_User_Email, row.temp_user_email, row.TEMP_USER_EMAIL, row['Temp User Email']),
+        _raw: row,
+        _original_mooring_code: firstNonEmpty(row.mooring_code, row.MOORING_CODE, row.Mooring_Code, row['Mooring Code']),
+        _original_occupied_date: firstNonEmpty(row.Occupied_Date, row.occupied_date, row.OCCUPIED_DATE, row['Occupied Date'])
+      };
+    }
+    function hasOccupiedDate(value){
+      const raw = String(value ?? '').trim();
+      if(!raw) return false;
+      const lowered = raw.toLowerCase();
+      if(lowered === 'null' || lowered === 'undefined' || lowered === 'nan' || raw === '-') return false;
+      return true;
+    }
+    async function loadTempUserData(){
+      tempUserByCode.clear();
+      if(!supabaseClient || !SUPABASE_TEMP_USER_TABLE) return;
+      try{
+        const pageSize = 1000;
+        let from = 0;
+        let loaded = 0;
+        while(true){
+          const { data, error } = await supabaseClient
+            .from(SUPABASE_TEMP_USER_TABLE)
+            .select('*')
+            .range(from, from + pageSize - 1);
+          if(error) throw error;
+          if(!data || !data.length) break;
+          data.forEach((rawRow) => {
+            const row = normaliseTempUserRow(rawRow);
+            if(!hasOccupiedDate(row.occupied_date)) return;
+            const key = normalizeCode(row.mooring_code);
+            if(!key) return;
+            if(!tempUserByCode.has(key)) tempUserByCode.set(key, []);
+            tempUserByCode.get(key).push(row);
+            loaded += 1;
+          });
+          if(data.length < pageSize) break;
+          from += pageSize;
+        }
+        console.info(`Loaded ${loaded} active temp user rows / ${tempUserByCode.size} mooring codes from ${SUPABASE_TEMP_USER_TABLE}`);
+      } catch(err){
+        console.warn(`Temp user data could not be loaded from ${SUPABASE_TEMP_USER_TABLE}:`, err);
+      }
+    }
+    function tempUserRowsForRecord(rec){
+      if(!rec) return [];
+      return (tempUserByCode.get(normalizeCode(rec.mooringCode)) || []).filter((row) => hasOccupiedDate(row.occupied_date));
+    }
+    function hasActiveTempUser(record){
+      return tempUserRowsForRecord(record).length > 0;
+    }
+    function tempUserFilterCounts(records){
+      const counts = { on: 0 };
+      records.forEach((record) => { if(hasActiveTempUser(record)) counts.on += 1; });
+      return counts;
+    }
+    function updateTempUserButton(rec){
+      const btn = el('tempUserBtn');
+      if(!btn) return;
+      const rows = tempUserRowsForRecord(rec);
+      const hasRows = rows.length > 0;
+      btn.classList.toggle('hidden', !hasRows);
+      btn.textContent = hasRows ? (rows.length > 1 ? `Temp User On (${rows.length})` : 'Temp User On') : 'Temp User On';
+    }
+    function tempUserColumnCandidates(key){
+      return {
+        mooring_code: ['mooring_code', 'MOORING_CODE', 'Mooring_Code', 'Mooring Code'],
+        temp_boat_name: ['Temp_Boat_Name', 'temp_boat_name', 'TEMP_BOAT_NAME', 'Temp Boat Name'],
+        occupied_date: ['Occupied_Date', 'occupied_date', 'OCCUPIED_DATE', 'Occupied Date'],
+        temp_user_name: ['Temp_User_Name', 'temp_user_name', 'TEMP_USER_NAME', 'Temp User Name'],
+        temp_user_phoneah: ['Temp_User_PhoneAh', 'temp_user_phoneah', 'TEMP_USER_PHONEAH', 'Temp User PhoneAh', 'Temp User Phone AH'],
+        temp_user_phonewk: ['Temp_User_PhoneWk', 'temp_user_phonewk', 'TEMP_USER_PHONEWK', 'Temp User PhoneWk', 'Temp User Phone WK'],
+        temp_user_phonemob: ['Temp_User_PhoneMob', 'temp_user_phonemob', 'TEMP_USER_PHONEMOB', 'Temp User PhoneMob', 'Temp User Phone Mobile'],
+        temp_user_email: ['Temp_User_Email', 'temp_user_email', 'TEMP_USER_EMAIL', 'Temp User Email'],
+        mooring_permit_date_of_issue: ['mooring_permit_date_of_issue', 'MOORING_PERMIT_DATE_OF_ISSUE', 'Mooring Permit Date Of Issue']
+      }[key] || [key];
+    }
+    function tempUserColumnName(rawRow, key){
+      const raw = rawRow || {};
+      const candidates = tempUserColumnCandidates(key);
+      const found = candidates.find((candidate) => Object.prototype.hasOwnProperty.call(raw, candidate));
+      return found || candidates[0];
+    }
+    function tempUserFieldDefs(){
+      return [
+        ['mooring_code', 'Mooring Code'],
+        ['temp_boat_name', 'Temp Boat Name'],
+        ['occupied_date', 'Occupied Date'],
+        ['temp_user_name', 'Temp User Name'],
+        ['temp_user_phoneah', 'Phone AH'],
+        ['temp_user_phonewk', 'Phone WK'],
+        ['temp_user_phonemob', 'Phone Mobile'],
+        ['temp_user_email', 'Email']
+      ];
+    }
+    function makeEmptyTempUserRow(rec){
+      const code = normalizeCode(rec?.mooringCode || '');
+      return { mooring_code: code, temp_boat_name: '', occupied_date: '', temp_user_name: '', temp_user_phoneah: '', temp_user_phonewk: '', temp_user_phonemob: '', temp_user_email: '', _raw: {}, _original_mooring_code: code, _original_occupied_date: '' };
+    }
+    function setTempUserEditStatus(message='', type=''){
+      const box = el('tempUserEditStatus');
+      if(!box) return;
+      if(!message){ box.textContent = ''; box.className = 'edit-status hidden'; return; }
+      box.textContent = message;
+      box.className = `edit-status ${type || ''}`;
+    }
+    function resetTempUserAccessModalState(){ el('tempUserAccessCodeInput').value = ''; el('tempUserAccessCodeError').classList.add('hidden'); }
+    function openTempUserAccessModal(){
+      const rec = selectedRecord();
+      if(!rec) return;
+      resetTempUserAccessModalState();
+      el('tempUserAccessModalBackdrop').classList.remove('hidden');
+      lockBodyScroll();
+      setTimeout(() => el('tempUserAccessCodeInput')?.focus(), 0);
+    }
+    function closeTempUserAccessModal(){ el('tempUserAccessModalBackdrop').classList.add('hidden'); unlockBodyScroll(); }
+    async function unlockTempUserAccess(){const input=el('tempUserAccessCodeInput'),errorEl=el('tempUserAccessCodeError');try{const result=await verifyProtectedAccessCode(input.value);if(!result.valid){errorEl.textContent=result.message;errorEl.classList.remove('hidden');return}errorEl.classList.add('hidden');grantSharedAccess();closeTempUserAccessModal();openTempUserModal()}catch(err){errorEl.textContent='Unable to verify access: '+(err?.message||err);errorEl.classList.remove('hidden')}}
+    function openTempUserProtected(){
+      const rec = selectedRecord();
+      if(!rec) return;
+      if(sharedAccessGranted || tempUserAccessGranted){ openTempUserModal(); return; }
+      openTempUserAccessModal();
+    }
+    function setTempUserEditMode(enabled){
+      tempUserEditMode = !!enabled;
+      el('tempUserEditBtn')?.classList.toggle('hidden', tempUserEditMode || tempUserAddMode);
+      el('tempUserSaveBtn')?.classList.toggle('hidden', !tempUserEditMode && !tempUserAddMode);
+      el('tempUserCancelBtn')?.classList.toggle('hidden', !tempUserEditMode && !tempUserAddMode);
+      renderTempUserModalContent();
+    }
+    function closeTempUserModal(){ tempUserEditMode = false; tempUserAddMode = false; tempUserAddTargetRecord = null; setTempUserEditStatus(''); el('tempUserModalBackdrop').classList.add('hidden'); unlockBodyScroll(); }
+    function tempUserRowsForModal(){
+      if(tempUserAddMode) return [makeEmptyTempUserRow(tempUserAddTargetRecord || selectedRecord())];
+      return tempUserRowsForRecord(selectedRecord());
+    }
+    function renderTempUserModalContent(){
+      const rec = tempUserAddTargetRecord || selectedRecord();
+      const rows = tempUserRowsForModal();
+      const empty = el('tempUserDetailsEmpty');
+      const grid = el('tempUserDetailsGrid');
+      if(!rec || !rows.length){ empty.classList.remove('hidden'); grid.innerHTML = ''; return; }
+      empty.classList.add('hidden');
+      const fields = tempUserFieldDefs();
+      const editable = tempUserEditMode || tempUserAddMode;
+      grid.innerHTML = rows.map((row, idx) => {
+        const title = tempUserAddMode ? 'Add Temp User' : (rows.length > 1 ? `Temp User #${idx + 1}` : 'Temp User On');
+        const body = fields.map(([key, label]) => {
+          const value = row[key] || '';
+          const display = key === 'occupied_date' ? (formatDateValue(value) || value || '-') : (value || '-');
+          if(editable){
+            const inputType = key === 'temp_user_email' ? 'email' : 'text';
+            const placeholder = key === 'occupied_date' ? 'e.g. 25/05/2026 0:00' : '';
+            return `<div class="temp-user-field"><label class="temp-user-key" for="temp_edit_${idx}_${key}">${escapeHtml(label)}</label><input id="temp_edit_${idx}_${key}" class="temp-user-edit-input" data-temp-row-index="${idx}" data-temp-field="${escapeHtml(key)}" type="${inputType}" placeholder="${escapeHtml(placeholder)}" value="${escapeHtml(value)}" /></div>`;
+          }
+          return `<div class="temp-user-field"><div class="temp-user-key">${escapeHtml(label)}</div><div class="temp-user-val">${escapeHtml(display)}</div></div>`;
+        }).join('');
+        return `<div class="temp-user-row" data-temp-row-index="${idx}"><div class="temp-user-row-title">${escapeHtml(title)}</div><div class="temp-user-fields">${body}</div></div>`;
+      }).join('');
+    }
+    function openTempUserModal(){
+      const rec = selectedRecord();
+      if(!rec) return;
+      tempUserEditMode = false;
+      tempUserAddMode = false;
+      tempUserAddTargetRecord = null;
+      setTempUserEditStatus('');
+      el('tempUserModalTitle').textContent = `Temp User Details — ${normalizeCode(rec.mooringCode)}`;
+      el('tempUserEditBtn')?.classList.remove('hidden');
+      el('tempUserSaveBtn')?.classList.add('hidden');
+      el('tempUserCancelBtn')?.classList.add('hidden');
+      el('tempUserModalBackdrop').classList.remove('hidden');
+      lockBodyScroll();
+      renderTempUserModalContent();
+    }
+    function openAddTempUserModal(){
+      const rec = selectedRecord();
+      if(!rec) return;
+      tempUserEditMode = false;
+      tempUserAddMode = true;
+      tempUserAddTargetRecord = rec;
+      setTempUserEditStatus('');
+      closeEditModal();
+      el('tempUserModalTitle').textContent = `Add Temp User — ${normalizeCode(rec.mooringCode)}`;
+      el('tempUserEditBtn')?.classList.add('hidden');
+      el('tempUserSaveBtn')?.classList.remove('hidden');
+      el('tempUserCancelBtn')?.classList.remove('hidden');
+      el('tempUserModalBackdrop').classList.remove('hidden');
+      lockBodyScroll();
+      renderTempUserModalContent();
+    }
+    function buildTempUserUpdatePayload(row, values, rawOverride=null){
+      const raw = rawOverride || row?._raw || {};
+      const payload = {};
+      Object.entries(values).forEach(([key, value]) => {
+        const column = tempUserColumnName(raw, key);
+        payload[column] = String(value ?? '').trim() === '' ? null : String(value ?? '').trim();
+      });
+      return payload;
+    }
+    async function fetchRawRegistryRowsForTempUser(mooringCode){
+      const key = normalizeCode(mooringCode);
+      if(!key || !supabaseClient) return [];
+      const { data, error } = await supabaseClient.from(SUPABASE_TEMP_USER_TABLE).select('*').ilike('mooring_code', key);
+      if(error) throw error;
+      return data || [];
+    }
+    function chooseRawRegistryRowForTempUser(rawRows, rec){
+      const selectedIssue = String(getRegistryExtra(rec?.mooringCode)?.mooring_permit_date_of_issue || '').trim();
+      if(selectedIssue){
+        const match = rawRows.find((raw) => String(firstNonEmpty(raw.mooring_permit_date_of_issue, raw.MOORING_PERMIT_DATE_OF_ISSUE, raw['Mooring Permit Date Of Issue']) || '').trim() === selectedIssue);
+        if(match) return match;
+      }
+      return rawRows[0] || null;
+    }
+    async function updateTempUserRow(row, values){
+      const raw = row?._raw || {};
+      const payload = buildTempUserUpdatePayload(row, values);
+      const idColumn = ['id', 'ID'].find((candidate) => Object.prototype.hasOwnProperty.call(raw, candidate));
+      let query = supabaseClient.from(SUPABASE_TEMP_USER_TABLE).update(payload);
+      if(idColumn && raw[idColumn] !== null && raw[idColumn] !== undefined && String(raw[idColumn]).trim() !== '') query = query.eq(idColumn, raw[idColumn]);
+      else {
+        const mooringColumn = tempUserColumnName(raw, 'mooring_code');
+        const occupiedColumn = tempUserColumnName(raw, 'occupied_date');
+        query = query.eq(mooringColumn, row._original_mooring_code || row.mooring_code).eq(occupiedColumn, row._original_occupied_date || row.occupied_date);
+      }
+      const { error } = await query;
+      if(error) throw error;
+    }
+    async function addTempUserToSelectedRegistryRow(values){
+      const rec = tempUserAddTargetRecord || selectedRecord();
+      if(!rec || !supabaseClient) return;
+      if(!hasOccupiedDate(values.occupied_date)) throw new Error('Occupied Date is required to activate Temp User On.');
+      const rawRows = await fetchRawRegistryRowsForTempUser(values.mooring_code || rec.mooringCode);
+      const raw = chooseRawRegistryRowForTempUser(rawRows, rec);
+      if(!raw) throw new Error('Could not find the selected mooring row in Supabase to add temp user details.');
+      const payload = buildTempUserUpdatePayload(makeEmptyTempUserRow(rec), values, raw);
+      const idColumn = ['id', 'ID'].find((candidate) => Object.prototype.hasOwnProperty.call(raw, candidate));
+      let query = supabaseClient.from(SUPABASE_TEMP_USER_TABLE).update(payload);
+      if(idColumn && raw[idColumn] !== null && raw[idColumn] !== undefined && String(raw[idColumn]).trim() !== '') query = query.eq(idColumn, raw[idColumn]);
+      else {
+        const mooringColumn = tempUserColumnName(raw, 'mooring_code');
+        const issueColumn = tempUserColumnName(raw, 'mooring_permit_date_of_issue');
+        query = query.eq(mooringColumn, firstNonEmpty(raw[mooringColumn], values.mooring_code, rec.mooringCode));
+        if(Object.prototype.hasOwnProperty.call(raw, issueColumn) && raw[issueColumn]) query = query.eq(issueColumn, raw[issueColumn]);
+      }
+      const { error } = await query;
+      if(error) throw error;
+    }
+    function readTempUserFormValues(idx=0){
+      const values = {};
+      tempUserFieldDefs().forEach(([key]) => {
+        const input = document.querySelector(`.temp-user-edit-input[data-temp-row-index="${idx}"][data-temp-field="${key}"]`);
+        if(input) values[key] = input.value;
+      });
+      return values;
+    }
+    async function saveTempUserEdits(){
+      const rec = tempUserAddTargetRecord || selectedRecord();
+      if(!rec || !supabaseClient) return;
+      const rows = tempUserRowsForModal();
+      if(!rows.length) return;
+      const saveBtn = el('tempUserSaveBtn');
+      if(saveBtn){ saveBtn.disabled = true; saveBtn.textContent = 'Saving…'; }
+      setTempUserEditStatus(tempUserAddMode ? 'Adding temp user details...' : 'Saving temp user details...', '');
+      try{
+        if(tempUserAddMode) await addTempUserToSelectedRegistryRow(readTempUserFormValues(0));
+        else for(let idx = 0; idx < rows.length; idx += 1) await updateTempUserRow(rows[idx], readTempUserFormValues(idx));
+        await loadTempUserData();
+        tempUserEditMode = false;
+        tempUserAddMode = false;
+        tempUserAddTargetRecord = null;
+        setTempUserEditStatus('Temp user details saved.', 'success');
+        renderAll(true, false, false);
+        el('tempUserEditBtn')?.classList.remove('hidden');
+        el('tempUserSaveBtn')?.classList.add('hidden');
+        el('tempUserCancelBtn')?.classList.add('hidden');
+        renderTempUserModalContent();
+      } catch(err){
+        console.error('saveTempUserEdits error:', err);
+        setTempUserEditStatus('Failed to save temp user details: ' + (err?.message || err), 'error');
+      } finally {
+        if(saveBtn){ saveBtn.disabled = false; saveBtn.textContent = 'Save'; }
+      }
+    }
+
+    function resetCustomerModalState(){
+      el('customerCodeError').classList.add('hidden');
+      el('customerAccessCodeInput').value = '';
+      el('customerGateView').classList.remove('hidden');
+      el('customerLoadingView').classList.add('hidden');
+      el('customerDetailsView').classList.add('hidden');
+      el('customerDetailsEmpty').classList.add('hidden');
+      el('customerDetailsGrid').innerHTML = '';
+    }
+    function openCustomerModal(){
+      const rec = selectedRecord();
+      if(!rec){ return; }
+      el('customerModalBackdrop').classList.remove('hidden');
+      lockBodyScroll();
+      if(sharedAccessGranted || customerAccessGranted){
+        showCustomerDetailsForRecord(rec, sharedAccessCode);
+      } else {
+        resetCustomerModalState();
+        el('customerAccessCodeInput').focus();
+      }
+    }
+    function lockBodyScroll(){ document.body.style.overflow='hidden'; }
+    function unlockBodyScroll(){ document.body.style.overflow=''; }
+    function closeCustomerModal(){ el('customerModalBackdrop').classList.add('hidden'); unlockBodyScroll(); }
+    function lockCustomerModal(){ customerAccessGranted = false; customerDetailsCache.clear(); resetCustomerModalState(); }
+
+    async function fetchCustomerDetailsByCode(mooringCode, accessCode) {
+      const key = normalizeCode(mooringCode);
+      if (!key) return null;
+      if (customerDetailsCache.has(key)) return customerDetailsCache.get(key);
+
+      const functionUrl = `${QUICK_HANDLER_BASE_URL}/functions/v1/quick-handler`;
+      const response = await fetch(functionUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': QUICK_HANDLER_ANON_KEY,
+        },
+        body: JSON.stringify({
+          mooring_code: key,
+          access_code: accessCode,
+        })
+      });
+
+      const payload = await response.json();
+      if (!response.ok) {
+        throw new Error(payload?.error || 'Failed to load customer details');
+      }
+
+      customerDetailsCache.set(key, payload || null);
+      return payload || null;
+    }
+
+    async function showCustomerDetailsForRecord(rec, accessCode = ""){
+      resetCustomerModalState();
+      el('customerGateView').classList.add('hidden');
+      el('customerLoadingView').classList.remove('hidden');
+      try {
+        const registryRows = await fetchRegistryRowsByCode(rec.mooringCode);
+        const selectedIssue = String(getRegistryExtra(rec.mooringCode)?.mooring_permit_date_of_issue || '').trim();
+        const registryFallback = registryRows.find((r) => String(r.mooring_permit_date_of_issue || '').trim() === selectedIssue) || registryRows[0] || {};
+        const row = { ...(registryFallback || {}) };
+        if(!cleanContactValue(row.customer_phoneah) && !cleanContactValue(row.customer_phonewk)){
+          const merged = mergeOtherContactsByIssueDate(row, registryRows);
+          row.customer_phoneah = merged.customer_phoneah;
+          row.customer_phonewk = merged.customer_phonewk;
+        }
+        el('customerLoadingView').classList.add('hidden');
+        el('customerDetailsView').classList.remove('hidden');
+        if(!row || (!row.customer_name && !row.customer_email && !row.customer_phone_mob && !row.customer_phoneah && !row.customer_phonewk)){ el('customerDetailsEmpty').classList.remove('hidden'); return; }
+        const items = [
+          ['Customer Name', row.customer_name || '-'],
+          ['Customer Email', row.customer_email || '-'],
+          ['Customer Phone', row.customer_phone_mob || '-'],
+          ['Other contacts', otherContactsText(row)]
+        ];
+        el('customerDetailsGrid').innerHTML = items.map(([k,v]) => `<div class="customer-item"><div class="customer-key">${escapeHtml(k)}</div><div class="customer-val">${escapeHtml(v)}</div></div>`).join('');
+      } catch (err){
+        el('customerLoadingView').classList.add('hidden');
+        el('customerDetailsView').classList.remove('hidden');
+        el('customerDetailsEmpty').classList.remove('hidden');
+        console.error('Customer details load failed:', err);
+        el('customerDetailsEmpty').textContent = 'Customer details could not be loaded: ' + (err?.message || err || 'Unknown error');
+      }
+    }
+
+    function resetHistoryModalState(){
+      el('historyCodeError').classList.add('hidden');
+      el('historyAccessCodeInput').value = '';
+      el('historyGateView').classList.remove('hidden');
+      el('historyLoadingView').classList.add('hidden');
+      el('historyDetailsView').classList.add('hidden');
+      el('historyDetailsEmpty').classList.add('hidden');
+      el('historyDetailsGrid').innerHTML = '';
+    }
+
+    function openHistoryModal(){
+      const rec = selectedRecord();
+      if(!rec){ return; }
+      el('historyModalBackdrop').classList.remove('hidden');
+      lockBodyScroll();
+      if(sharedAccessGranted || historyAccessGranted){
+        showHistoryForRecord(rec, sharedAccessCode);
+      } else {
+        resetHistoryModalState();
+        el('historyAccessCodeInput').focus();
+      }
+    }
+
+    function closeHistoryModal(){ el('historyModalBackdrop').classList.add('hidden'); unlockBodyScroll(); }
+    function lockHistoryModal(){ historyAccessGranted = false; historyDetailsCache.clear(); resetHistoryModalState(); }
+
+    async function fetchHistoryByCode(mooringCode, accessCode) {
+      const key = normalizeCode(mooringCode);
+      if(!key) return [];
+      if(historyDetailsCache.has(key)) return historyDetailsCache.get(key);
+      if(!sharedAccessGranted || !sharedAccessCode){
+        throw new Error('Access verification is required before loading history.');
+      }
+      const { data, error } = await supabaseClient
+        .from(SUPABASE_CUSTOMER_TABLE)
+        .select('*')
+        .ilike('mooring_code', key)
+        .order('last_inspection_ts', { ascending:false, nullsFirst:false });
+      if(error) throw error;
+      const rows = data || [];
+      historyDetailsCache.set(key, rows);
+      return rows;
+    }
+    async function showHistoryForRecord(rec, accessCode = ""){
+      resetHistoryModalState();
+      el('historyGateView').classList.add('hidden');
+      el('historyLoadingView').classList.remove('hidden');
+      try {
+        const rowsFromFunction = await fetchHistoryByCode(rec.mooringCode, accessCode || sharedAccessCode);
+        const registryRows = await fetchRegistryRowsByCode(rec.mooringCode);
+        const rows = (rowsFromFunction || []).map((row) => mergeOtherContactsByIssueDate(row, registryRows));
+        el('historyLoadingView').classList.add('hidden');
+        el('historyDetailsView').classList.remove('hidden');
+        if(!rows.length){ el('historyDetailsEmpty').classList.remove('hidden'); return; }
+        el('historyDetailsGrid').innerHTML = rows.map((row, idx) => `
+          <div class="customer-item">
+            <div class="customer-key">#</div>
+            <div class="customer-val">${idx + 1}</div>
+            <div class="customer-key" style="margin-top:10px;">Boat Name</div>
+            <div class="customer-val">${escapeHtml(row.boat_vessel_name || '-')}</div>
+            <div class="customer-key" style="margin-top:10px;">Customer Name</div>
+            <div class="customer-val">${escapeHtml(row.customer_name || '-')}</div>
+            <div class="customer-key" style="margin-top:10px;">Customer Email</div>
+            <div class="customer-val">${escapeHtml(row.customer_email || '-')}</div>
+            <div class="customer-key" style="margin-top:10px;">Customer Phone</div>
+            <div class="customer-val">${escapeHtml(row.customer_phone_mob || '-')}</div>
+            <div class="customer-key" style="margin-top:10px;">Other contacts</div>
+            <div class="customer-val">${escapeHtml(otherContactsText(row))}</div>
+            <div class="customer-key" style="margin-top:10px;">Permit Date Of Issue</div>
+            <div class="customer-val">${escapeHtml(row.mooring_permit_date_of_issue || '-')}</div>
+            <div class="customer-key" style="margin-top:10px;">Last Inspection Date</div>
+            <div class="customer-val">${escapeHtml(row.last_inspection_date || '-')}</div>
+          </div>
+        `).join('');
+      } catch (err){
+        console.error(err);
+        el('historyLoadingView').classList.add('hidden');
+        el('historyDetailsView').classList.remove('hidden');
+        el('historyDetailsEmpty').classList.remove('hidden');
+        el('historyDetailsEmpty').textContent = 'History could not be loaded: ' + (err?.message || err || 'Unknown error');
+      }
+    }
+
+
+    // ─────────────────────────────────────────────
+    // EDIT MODAL — access gate + Supabase update
+    // ─────────────────────────────────────────────
+    function resetEditAccessModalState(){ el('editAccessCodeInput').value = ''; el('editAccessCodeError').classList.add('hidden'); }
+    function openEditAccessModal(){ const rec = selectedRecord(); if(!rec) return; if(sharedAccessGranted || editAccessGranted){ openEditModal(); return; } resetEditAccessModalState(); el('editAccessModalBackdrop').classList.remove('hidden'); lockBodyScroll(); setTimeout(() => el('editAccessCodeInput')?.focus(), 0); }
+    function closeEditAccessModal(){ el('editAccessModalBackdrop').classList.add('hidden'); unlockBodyScroll(); }
+    async function unlockEdit(){const input=el('editAccessCodeInput'),errorEl=el('editAccessCodeError');try{const result=await verifyProtectedAccessCode(input.value);if(!result.valid){errorEl.textContent=result.message;errorEl.classList.remove('hidden');return}errorEl.classList.add('hidden');grantSharedAccess();closeEditAccessModal();openEditModal()}catch(err){errorEl.textContent='Unable to verify access: '+(err?.message||err);errorEl.classList.remove('hidden')}}
+    function buildEditRowFromRecord(rec){
+      const extra = getRegistryExtra(rec.mooringCode) || {};
+      return {
+        _original_mooring_code: extra.mooring_code || rec.mooringCode || '',
+        _original_issue_date: extra.mooring_permit_date_of_issue || '',
+        mooring_code: extra.mooring_code || rec.mooringCode || '',
+        mooring_length: extra.mooring_length || rec.mooringLength || '',
+        last_inspection_date: extra.last_inspection_date || '',
+        boat_vessel_name: extra.boat_vessel_name || rec.boatName || '',
+        customer_name: extra.customer_name || '',
+        customer_phone_mob: extra.customer_phone_mob || '',
+        customer_phoneah: extra.customer_phoneah || '',
+        customer_phonewk: extra.customer_phonewk || '',
+        customer_email: extra.customer_email || '',
+        mooring_permit_date_of_issue: extra.mooring_permit_date_of_issue || '',
+        mooring_permit_date_of_termination: extra.mooring_permit_date_of_termination || '',
+        mooring_faclity_type_code: extra.mooring_faclity_type_code || extra.mooring_facility_type_code || ''
+      };
+    }
+    function setEditStatus(message='', type=''){ const box = el('editStatus'); if(!message){ box.textContent=''; box.className='edit-status hidden'; return; } box.textContent = message; box.className = `edit-status ${type || ''}`; }
+    function setEditInputValue(fieldKey, value){ const input = el(`edit_${fieldKey}`); if(input && (input.value === '' || fieldKey.startsWith('customer_'))){ input.value = value ?? ''; } }
+    async function hydrateEditCustomerFields(rec){
+      try{
+        const registryRows = await fetchRegistryRowsByCode(rec.mooringCode);
+        const selectedIssue = String(getRegistryExtra(rec.mooringCode)?.mooring_permit_date_of_issue || '').trim();
+        const row = registryRows.find((r) => String(r.mooring_permit_date_of_issue || '').trim() === selectedIssue) || registryRows[0] || {};
+        setEditInputValue('customer_name', row.customer_name || '');
+        setEditInputValue('customer_phone_mob', row.customer_phone_mob || '');
+        setEditInputValue('customer_phoneah', row.customer_phoneah || '');
+        setEditInputValue('customer_phonewk', row.customer_phonewk || '');
+        setEditInputValue('customer_email', row.customer_email || '');
+        setEditStatus('', '');
+      }catch(err){
+        console.error('Could not prefill customer fields from target registry:', err);
+        setEditStatus('Customer details could not be prefilled: ' + (err?.message || err), 'error');
+      }
+    }
+    function openEditModal(){
+      const rec = selectedRecord(); if(!rec) return; const row = buildEditRowFromRecord(rec);
+      el('editModalTitle').textContent = `Edit Mooring Details — ${row.mooring_code || rec.mooringCode || ''}`;
+      el('editModalIntro').textContent = row._original_issue_date ? `Editing latest row only. Original issue date filter: ${row._original_issue_date}` : 'Editing selected row only.';
+      el('editFormGrid').innerHTML = EDIT_FIELDS.map((field) => { const value = row[field.key] ?? ''; const type = field.type || 'text'; const step = field.step ? ` step="${escapeHtml(field.step)}"` : ''; const required = field.required ? ' required' : ''; return `<div><label class="field-label" for="edit_${escapeHtml(field.key)}">${escapeHtml(field.label)}</label><input class="edit-field" id="edit_${escapeHtml(field.key)}" name="${escapeHtml(field.key)}" type="${escapeHtml(type)}"${step}${required} value="${escapeHtml(value)}" /></div>`; }).join('');
+      setEditStatus(''); el('editModalBackdrop').classList.remove('hidden'); lockBodyScroll(); setTimeout(() => el('edit_mooring_code')?.focus(), 0); hydrateEditCustomerFields(rec);
+    }
+    function closeEditModal(){ el('editModalBackdrop').classList.add('hidden'); unlockBodyScroll(); }
+    async function saveEditForm(event){
+      event.preventDefault();
+      const rec = selectedRecord();
+      if(!rec || !supabaseClient){ setEditStatus('Supabase is not ready yet. Please reload live moorings and try again.', 'error'); return; }
+      const originalRow = buildEditRowFromRecord(rec);
+      const originalCodeExact = String(originalRow._original_mooring_code || rec.mooringCode || '').trim();
+      const originalCodeNormalised = normalizeCode(originalCodeExact || rec.mooringCode);
+      const originalIssueDate = String(originalRow._original_issue_date || '').trim();
+      const payload = {};
+      EDIT_FIELDS.forEach((field) => { const input = el(`edit_${field.key}`); let value = input ? input.value.trim() : ''; if(field.type === 'number') value = value === '' ? null : Number(value); payload[field.key] = value === '' ? null : value; });
+      if(!payload.mooring_code){ setEditStatus('Mooring Code is required.', 'error'); return; }
+      if(Number.isNaN(payload.mooring_length)){ setEditStatus('Mooring Length must be a valid number.', 'error'); return; }
+      if(!originalIssueDate){ setEditStatus('Cannot safely update: original Mooring Permit Date Of Issue is missing. This value is needed to avoid changing older history rows.', 'error'); return; }
+      el('editSaveBtn').disabled = true; el('editSaveBtn').textContent = 'Saving…'; setEditStatus('Saving latest row only...', '');
+      try {
+        let result = await supabaseClient.from(SUPABASE_PUBLIC_TABLE).update(payload).eq('mooring_code', originalCodeExact || originalCodeNormalised).eq('mooring_permit_date_of_issue', originalIssueDate);
+        if(result.error) throw result.error;
+        if(result.count === 0 && originalCodeNormalised){ result = await supabaseClient.from(SUPABASE_PUBLIC_TABLE).update(payload).ilike('mooring_code', originalCodeNormalised).eq('mooring_permit_date_of_issue', originalIssueDate); if(result.error) throw result.error; }
+        const updated = normaliseRegistryRow(payload);
+        registryByCode.delete(normalizeCode(originalCodeExact)); registryByCode.delete(originalCodeNormalised); registryByCode.set(normalizeCode(updated.mooring_code), updated);
+        rec.mooringCode = updated.mooring_code || rec.mooringCode; rec.mooringLength = updated.mooring_length || rec.mooringLength; rec.boatName = updated.boat_vessel_name || rec.boatName;
+        customerDetailsCache.set(normalizeCode(updated.mooring_code), { customer_name: updated.customer_name || payload.customer_name || '', customer_phone_mob: updated.customer_phone_mob || payload.customer_phone_mob || '', customer_phoneah: updated.customer_phoneah || payload.customer_phoneah || '', customer_phonewk: updated.customer_phonewk || payload.customer_phonewk || '', customer_email: updated.customer_email || payload.customer_email || '' });
+        setEditStatus('Saved latest row only. Reload to confirm Supabase persisted the selected row.', 'success'); renderAll(true,false,false); setTimeout(closeEditModal, 900);
+      } catch(err){ console.error('saveEditForm error:', err); setEditStatus('Failed to save changes: ' + (err.message || err), 'error'); }
+      finally { el('editSaveBtn').disabled = false; el('editSaveBtn').textContent = 'Save Changes'; }
+    }
+
+    function featureToLocationCacheRow(feature){
+      const p = feature.properties || {};
+      const coords = feature.geometry?.coordinates || [];
+      const lat = typeof coords[1] === 'number' ? coords[1] : null;
+      const lon = typeof coords[0] === 'number' ? coords[0] : null;
+      if(lat === null || lon === null) return null;
+      const objectId = String(p.OBJECTID || p.objectid || '').trim();
+      const code = String(p.M_CODE || '').trim();
+      if(!objectId && !code) return null;
+      return {
+        source_objectid: objectId || code,
+        mooring_code: code || objectId,
+        mooring_length: p.M_LENGTH ?? null,
+        mooring_depth: p.M_DEPTH ?? null,
+        tag_number: p.M_TAGNUM || null,
+        boat_name: p.B_BOATNAME || null,
+        zone_name: p.MMA_NAME || p.ZONE_NAME || null,
+        latitude: lat,
+        longitude: lon,
+        raw: p,
+        cached_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+    }
+    function normalizeLocationCacheRow(row){
+      const lat = Number(row.latitude);
+      const lon = Number(row.longitude);
+      if(!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+      return {
+        id: row.source_objectid || row.id || row.mooring_code || `cache-${Math.random().toString(36).slice(2,8)}`,
+        mooringCode: row.mooring_code || '',
+        mooringLength: row.mooring_length ?? '',
+        mooringDepth: row.mooring_depth ?? '',
+        tagNumber: row.tag_number || '',
+        boatName: row.boat_name || '',
+        zoneName: row.zone_name || '',
+        lat,
+        lon,
+        latDmm: formatDMM(lat,'lat'),
+        lonDmm: formatDMM(lon,'lon'),
+        raw: row.raw || row
+      };
+    }
+    async function loadLocationCacheData(){
+      if(!supabaseClient) throw new Error('Supabase client is not ready');
+      const pageSize = 1000;
+      let from = 0;
+      const rows = [];
+      while(true){
+        const { data, error } = await supabaseClient
+          .from(SUPABASE_LOCATION_TABLE)
+          .select('source_objectid,mooring_code,mooring_length,mooring_depth,tag_number,boat_name,zone_name,latitude,longitude')
+          .range(from, from + pageSize - 1);
+        if(error) throw error;
+        if(!data || !data.length) break;
+        data.forEach((row) => {
+          const normalised = normalizeLocationCacheRow(row);
+          if(normalised) rows.push(normalised);
+        });
+        if(data.length < pageSize) break;
+        from += pageSize;
+      }
+      return rows;
+    }
+    async function fetchArcGISLocationRows(){
+      const pageSize = 500;
+      let offset = 0;
+      const allFeatures = [];
+      const seenIds = new Set();
+      while(true){
+        const url = new URL(SERVICE_URL);
+        url.searchParams.set('resultOffset', String(offset));
+        url.searchParams.set('resultRecordCount', String(pageSize));
+        url.searchParams.set('orderByFields', 'OBJECTID ASC');
+        const response = await fetch(url.toString(), { mode:'cors' });
+        if(!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = await response.json();
+        const features = data.features || [];
+        features.forEach((feature) => {
+          const p = feature.properties || {};
+          const id = String(p.OBJECTID || p.objectid || `${offset}-${allFeatures.length}`);
+          if(!seenIds.has(id)){
+            seenIds.add(id);
+            allFeatures.push(feature);
+          }
+        });
+        if(features.length < pageSize) break;
+        offset += pageSize;
+        if(offset > 50000) throw new Error('ArcGIS pagination safety stop reached.');
+      }
+      console.info(`Fetched ${allFeatures.length} ArcGIS mooring location features via pagination.`);
+      return allFeatures;
+    }
+    function openVesselSearch(){ window.open('https://gooktolove-debug.github.io/HM-vessel-search/', '_blank', 'noopener'); }
+
+    async function refreshLocationCacheFromArcGIS(){
+      const btn = el('refreshLocationCacheBtn');
+      if(!supabaseClient){ showError('Supabase is not ready. Please reload and try again.'); return; }
+      if(btn){ btn.disabled = true; btn.textContent = 'Refreshing Cache...'; }
+      try{
+        showError('Refreshing location cache from ArcGIS into Supabase...');
+        const features = await fetchArcGISLocationRows();
+        const rowsBySourceId = new Map();
+        features.map(featureToLocationCacheRow).filter(Boolean).forEach((row) => {
+          rowsBySourceId.set(String(row.source_objectid), row);
+        });
+        const rows = Array.from(rowsBySourceId.values());
+        if(!rows.length) throw new Error('No valid ArcGIS location rows found.');
+        const chunkSize = 500;
+        for(let i=0;i<rows.length;i+=chunkSize){
+          const chunk = rows.slice(i, i + chunkSize);
+          const { error } = await supabaseClient
+            .from(SUPABASE_LOCATION_TABLE)
+            .upsert(chunk, { onConflict: 'source_objectid' });
+          if(error) throw error;
+        }
+        showError('');
+        console.info(`Location cache refreshed: ${rows.length} rows saved to ${SUPABASE_LOCATION_TABLE}`);
+        await loadLiveData();
+      } catch(err){
+        console.error('refreshLocationCacheFromArcGIS failed:', err);
+        showError('Failed to refresh location cache. Check RLS insert/update policy, unique constraint on source_objectid, and table column names. ' + (err?.message || err));
+      } finally {
+        if(btn){ btn.disabled = false; btn.textContent = 'Refresh Location Cache'; }
+      }
+    }
+
+    function normalizeFeature(feature){
+      const p = feature.properties || {};
+      const coords = feature.geometry?.coordinates || [];
+      const lat = typeof coords[1]==='number' ? coords[1] : null;
+      const lon = typeof coords[0]==='number' ? coords[0] : null;
+      return {
+        id: p.OBJECTID || p.objectid || p.M_CODE || `row-${Math.random().toString(36).slice(2,8)}`,
+        mooringCode: p.M_CODE || '',
+        mooringLength: p.M_LENGTH ?? '',
+        mooringDepth: p.M_DEPTH ?? '',
+        tagNumber: p.M_TAGNUM || '',
+        boatName: p.B_BOATNAME || '',
+        zoneName: p.MMA_NAME || p.ZONE_NAME || '',
+        lat, lon,
+        latDmm: lat!==null ? formatDMM(lat,'lat') : '-',
+        lonDmm: lon!==null ? formatDMM(lon,'lon') : '-',
+        raw: p
+      };
+    }
+
+    async function loadRegistryData(){
+      registryByCode.clear();
+      tempUserByCode.clear();
+      if(!SUPABASE_URL || !SUPABASE_ANON_KEY || SUPABASE_URL === 'YOUR_SUPABASE_URL' || SUPABASE_ANON_KEY === 'YOUR_SUPABASE_ANON_KEY'){
+        showError('Supabase URL and anon key placeholders are still in this file. Fill them in to load registry data. The map can still load from ArcGIS.');
+        state.registryLoaded = 0;
+        return;
+      }
+      try {
+        supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const pageSize = 1000;
+        let from = 0;
+        let loaded = 0;
+        let matchedRows = 0;
+        while(true){
+          const { data, error } = await supabaseClient
+            .from(SUPABASE_PUBLIC_TABLE)
+            .select('*')
+            .range(from, from + pageSize - 1);
+          if(error) throw error;
+          if(!data || !data.length) break;
+          data.forEach((rawRow) => {
+            const row = normaliseRegistryRow(rawRow);
+            if(row.mooring_code){
+              const key = normalizeCode(row.mooring_code);
+              const existing = registryByCode.get(key) || null;
+              registryByCode.set(key, chooseRegistryRow(existing, row));
+              matchedRows += 1;
+              const tempRow = normaliseTempUserRow(rawRow);
+              if(hasOccupiedDate(tempRow.occupied_date)){
+                if(!tempUserByCode.has(key)) tempUserByCode.set(key, []);
+                tempUserByCode.get(key).push(tempRow);
+              }
+            }
+            loaded += 1;
+          });
+          if(data.length < pageSize) break;
+          from += pageSize;
+        }
+        state.registryLoaded = loaded;
+        if(loaded === 0){ showError(`Supabase table ${SUPABASE_PUBLIC_TABLE} returned 0 rows to the anon key. Last inspection cannot load until anon SELECT/RLS access is allowed, or a public view is used.`); }
+        else if(matchedRows === 0){ showError(`Supabase table ${SUPABASE_PUBLIC_TABLE} loaded ${loaded} rows, but no mooring_code field was readable. Check the column names in the imported table.`); }
+        else { showError(''); console.info(`Loaded ${loaded} Supabase rows / ${registryByCode.size} mooring codes from ${SUPABASE_PUBLIC_TABLE}`); }
+      } catch(err){ console.error(err); showError(`Supabase registry data failed to load from ${SUPABASE_PUBLIC_TABLE}. Check table name, anon SELECT/RLS policy, and columns. ${err?.message || ''}`); state.registryLoaded = 0; }
+    }
+
+    function renderLocationFirstPaint(resetBounds=true){ applyFilters(); el('statMapped').textContent=state.filtered.length; const o=el('statOverdueInspection'); if(o){o.textContent='';o.classList.add('is-loading');} renderMap(resetBounds); renderTable(); renderDetail(); locationFirstPaintDone=true; }
+    async function loadLiveData(){
+      try{
+        let rows = [];
+        let cacheError = null;
+        try{
+          rows = await loadLocationCacheData();
+          console.info(`Loaded ${rows.length} cached mooring locations from ${SUPABASE_LOCATION_TABLE}`);
+        } catch(err){
+          cacheError = err;
+          console.warn('Supabase location cache failed. Falling back to ArcGIS:', err);
+        }
+        if(!rows.length){
+          if(cacheError){
+            showError('Location cache could not be loaded, so the app is temporarily falling back to ArcGIS. ' + (cacheError?.message || ''));
+          } else {
+            showError('Location cache is empty. Falling back to ArcGIS. Use Refresh Location Cache once to save pins into Supabase.');
+          }
+          const features = await fetchArcGISLocationRows();
+          rows = features.map(normalizeFeature).filter(r => r.lat !== null && r.lon !== null);
+        } else {
+          showError('');
+        }
+        state.records = rows;
+        state.selectedId = rows[0]?.id || null;
+        state.fetchedAt = new Date();
+        if(initialDataReady) renderAll(true,true,false); else renderLocationFirstPaint(true);
+      } catch(err){
+        console.error(err);
+        showError('Unable to load mooring location data. Check Supabase location cache table, RLS SELECT policy, and ArcGIS fallback service. ' + (err?.message || ''));
+        state.records=[]; state.filtered=[]; state.selectedId=null; if(initialDataReady) renderAll(true,true,false);
+      }
+    }
+    async function loadAllData(){
+      showError('');
+      if(!supabaseClient && SUPABASE_URL && SUPABASE_ANON_KEY){
+        supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      }
+      await Promise.all([loadRegistryData(), loadLiveData()]);
+      initialDataReady=true; const o=el('statOverdueInspection'); if(o)o.classList.remove('is-loading'); renderAll(true,!locationFirstPaintDone,false);
+    }
+
+    function currentFilters(){ return { search:String(el('f_search')?.value||'').trim().toLowerCase() }; }
+
+    function applyFilters(){
+      const f = currentFilters();
+      state.filtered = state.records.filter((r)=>{
+        const mergedBoatName = effectiveBoatName(r);
+        if(state.facilityTypeFilter && state.facilityTypeFilter !== 'all' && facilityFilterKey(r) !== state.facilityTypeFilter) return false;
+        if(state.tempUserFilter === 'on' && !hasActiveTempUser(r)) return false;
+        if(state.overdueAgeFilter !== 'all'){
+          if(overdueAgeBucket(r) !== state.overdueAgeFilter) return false;
+        } else if(state.overdueOnly && !isRecordInspectionStale(r)) {
+          return false;
+        }
+        if(f.search && !String(r.mooringCode||'').toLowerCase().includes(f.search) && !String(mergedBoatName||'').toLowerCase().includes(f.search)) return false;
+        return true;
+      });
+      if(!state.filtered.some(r => r.id === state.selectedId)) state.selectedId = state.filtered[0]?.id || null;
+    }
+    function selectedRecord(){ return state.filtered.find(r => r.id === state.selectedId) || null; }
+
+    function renderStats(){
+      const overdueCount = state.records.filter(r => isRecordInspectionStale(r)).length;
+      const terminatedCount = state.records.filter(r => isRecordTerminated(r)).length;
+      const ageCounts = overdueAgeCounts(state.records);
+      const facilityCounts = facilityTypeCounts(state.records);
+      const tempUserCounts = tempUserFilterCounts(state.records);
+      el('statMapped').textContent = state.filtered.length;
+      el('statOverdueInspection').textContent = overdueCount;
+      const terminatedEl = el('statTerminatedPermits'); if(terminatedEl) terminatedEl.textContent = terminatedCount;
+      const activeOverdueEl = el('statActiveOverdue'); if(activeOverdueEl) activeOverdueEl.textContent = overdueCount;
+      const ageLabels = { all: `All Overdue (${ageCounts.all})`, within2: `≤ 2 months (${ageCounts.within2})`, '3to4': `3–4 months (${ageCounts['3to4']})`, '5to11': `5–11 months (${ageCounts['5to11']})`, '12plus': `12+ months (${ageCounts['12plus']})` };
+      document.querySelectorAll('.overdue-age-btn').forEach((btn) => { const key = btn.dataset.overdueAge; btn.textContent = ageLabels[key] || btn.textContent; const active = state.overdueOnly && state.overdueAgeFilter === key; btn.classList.toggle('active', active); btn.classList.toggle('primary', active); btn.classList.toggle('ghost', !active); });
+      const btn = el('overdueOnlyBtn');
+      if(btn){ btn.textContent = state.overdueOnly ? 'Show All Pins' : 'Show Only Overdue'; btn.classList.toggle('primary', state.overdueOnly); btn.classList.toggle('ghost', !state.overdueOnly); }
+      document.querySelectorAll('.facility-type-btn').forEach((btn) => {
+        const key = btn.dataset.facilityType || 'all';
+        btn.textContent = `${facilityFilterLabel(key)} (${facilityCounts[key] || 0})`;
+        const active = state.facilityTypeFilter === key;
+        btn.classList.toggle('active', active);
+        btn.classList.toggle('primary', active);
+        btn.classList.toggle('ghost', !active);
+      });
+      document.querySelectorAll('.temp-user-filter-btn').forEach((btn) => {
+        const active = state.tempUserFilter === 'on';
+        btn.textContent = 'Temp User On';
+        btn.classList.toggle('active', active);
+        btn.classList.toggle('primary', active);
+        btn.classList.toggle('ghost', !active);
+        btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+        btn.style.backgroundColor = active ? 'var(--primary)' : '';
+        btn.style.color = active ? '#fff' : '';
+        btn.style.borderColor = active ? 'var(--primary)' : '';
+      });
+    }
+    function popupHtml(r){
+      const extra = getRegistryExtra(r.mooringCode);
+      const terminated = isRecordTerminated(r);
+      const terminationDate = permitTerminationDate(r);
+      const inspectionDate = extra?.last_inspection_date || '-';
+      const ageBucket = overdueAgeBucket(r);
+      const ageText = ageBucket ? { within2:'Overdue ≤ 2 months', '3to4':'Overdue 3–4 months', '5to11':'Overdue 5–11 months', '12plus':'Overdue 12+ months' }[ageBucket] : '';
+      return `<div style="font-family:ui-sans-serif,-apple-system,Segoe UI,sans-serif;min-width:240px;">
+        <div style="font-size:15px;font-weight:700;color:#0f172a;">${escapeHtml(r.mooringCode || 'No Code')}</div>
+        ${terminated ? `<div style="margin-top:6px;color:#475569;font-weight:700;">⛔ Terminated: ${escapeHtml(terminationDate)}</div>` : ''}
+        ${ageText ? `<div style="margin-top:6px;color:#b91c1c;font-weight:700;">🚨 ${escapeHtml(ageText)}</div>` : ''}
+        <div style="margin-top:6px;color:#334155;"><strong>Boat:</strong> ${escapeHtml(extra?.boat_vessel_name || r.boatName || '-')}</div>
+        <div style="margin-top:4px;color:#334155;"><strong>Length:</strong> ${escapeHtml(extra?.mooring_length || r.mooringLength || '-')} m</div>
+        <div style="margin-top:4px;color:#334155;"><strong>Last Inspection:</strong> ${isRecordInspectionStale(r) ? `<span class="alert-text">${escapeHtml(inspectionDate)}</span>` : escapeHtml(inspectionDate)}</div>
+        <div style="margin-top:8px;color:#334155;"><strong>Lat:</strong> ${typeof r.lat==='number' ? r.lat.toFixed(7) : '-'}<br/><span style="color:#64748b;">${escapeHtml(r.latDmm)}</span></div>
+        <div style="margin-top:4px;color:#334155;"><strong>Lon:</strong> ${typeof r.lon==='number' ? r.lon.toFixed(7) : '-'}<br/><span style="color:#64748b;">${escapeHtml(r.lonDmm)}</span></div>
+      </div>`;
+    }
+    function focusSelectedMarker(openPopup=true){
+      const rec = selectedRecord();
+      if(!rec || !state.markers[rec.id]) return;
+      const marker = state.markers[rec.id];
+      map.setView([rec.lat, rec.lon], Math.max(map.getZoom(), SEARCH_FOCUS_ZOOM), { animate: true });
+      if(openPopup) marker.openPopup();
+    }
+
+    function markerFillColor(record){
+      if(isRecordTerminated(record)) return TERMINATED_PIN_COLOR;
+      return isRecordInspectionStale(record) ? STALE_PIN_COLOR : CURRENT_PIN_COLOR;
+    }
+    function terminatedXIcon(selected=false){
+      return L.divIcon({
+        className: 'terminated-x-icon',
+        html: `<div class="terminated-x-symbol ${selected ? 'selected' : ''}">×</div>`,
+        iconSize: selected ? [24, 24] : [18, 18],
+        iconAnchor: selected ? [12, 12] : [9, 9],
+        popupAnchor: [0, -10]
+      });
+    }
+
+    function createMooringMarker(record){
+      if(isRecordTerminated(record)){
+        return L.marker([record.lat, record.lon], { icon: terminatedXIcon(state.selectedId === record.id) });
+      }
+      return L.circleMarker([record.lat, record.lon], {
+        radius: state.selectedId === record.id ? 7 : 5,
+        color: '#ffffff',
+        weight: 1.5,
+        fillColor: markerFillColor(record),
+        fillOpacity: .95
+      });
+    }
+
+    function updateMarkerSelection(marker, record, selected){
+      if(!marker || !record) return;
+      if(isRecordTerminated(record)){
+        if(marker.setIcon) marker.setIcon(terminatedXIcon(selected));
+        return;
+      }
+      if(marker.setStyle){
+        marker.setStyle({
+          radius: selected ? 7 : 5,
+          color: selected ? '#0f172a' : '#ffffff',
+          weight: selected ? 2 : 1.5,
+          fillColor: markerFillColor(record),
+          fillOpacity: .95
+        });
+      }
+    }
+
+
+    function renderMap(resetBounds=false){
+      if(state.layerGroup) map.removeLayer(state.layerGroup);
+      state.markers={};
+      state.layerGroup=L.layerGroup();
+      const bounds=[];
+      state.filtered.forEach((r)=>{
+        const marker=createMooringMarker(r);
+        marker.bindPopup(() => popupHtml(r));
+        marker.on('click',()=>{ selectRecordById(r.id, false); if(document.body.classList.contains('full-map-open')) openFullMapDetail(); });
+        state.markers[r.id]=marker;
+        state.layerGroup.addLayer(marker);
+        bounds.push([r.lat,r.lon]);
+      });
+      state.layerGroup.addTo(map);
+      if(bounds.length && resetBounds) map.fitBounds(bounds,{padding:[24,24]});
+      const selected=selectedRecord();
+      if(selected && state.markers[selected.id]) updateMarkerSelection(state.markers[selected.id], selected, true);
+      renderLegend();
+    }
+
+    function renderLegend(){
+      const hasVisible = state.filtered.length > 0;
+      if(!hasVisible){
+        el('legend').innerHTML = '<div class="muted-box" style="grid-column:1/-1;">No mooring pins are currently visible.</div>';
+        return;
+      }
+      el('legend').innerHTML = `
+        <div class="legend-item"><span class="legend-dot" style="background:${CURRENT_PIN_COLOR}"></span><span>Inspection within 3 years</span></div>
+        <div class="legend-item"><span class="legend-dot" style="background:${STALE_PIN_COLOR}"></span><span>Inspection older than 3 years</span></div>
+        <div class="legend-item"><span class="legend-x">×</span><span>Terminated permit</span></div>
+        <div class="legend-item"><span class="legend-dot" style="background:${USER_LOCATION_COLOR}"></span><span>Current location</span></div>`;
+    }
+
+    function tableRowHtml(r){
+      const active = state.selectedId===r.id ? 'active' : '';
+      const mergedBoatName = effectiveBoatName(r);
+      const mergedInspectionDate = effectiveInspectionDate(r);
+      const stale = isRecordInspectionStale(r);
+      return `<tr class="${active}" data-id="${escapeHtml(r.id)}"><td><strong>${escapeHtml(r.mooringCode || '-')}</strong></td><td>${escapeHtml(mergedBoatName || '-')}</td><td>${escapeHtml(r.mooringLength || '-')}</td><td>${stale ? `<span class="alert-text">${escapeHtml(mergedInspectionDate || '-')}</span>` : escapeHtml(mergedInspectionDate || '-')}</td><td>${typeof r.lat==='number' ? r.lat.toFixed(7) : '-'}</td><td>${typeof r.lon==='number' ? r.lon.toFixed(7) : '-'}</td></tr>`;
+    }
+    function renderTable(){
+      const tbody = el('tableBody');
+      const token = ++tableRenderToken;
+      if(!state.filtered.length){ tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:#64748b;padding:40px 16px;">No mooring rows are currently visible.</td></tr>'; return; }
+      const rows = state.filtered.slice();
+      const firstEnd = Math.min(TABLE_FIRST_PAINT_ROWS, rows.length);
+      tbody.innerHTML = rows.slice(0,firstEnd).map(tableRowHtml).join('');
+      let cursor=firstEnd;
+      const appendChunk=()=>{ if(token!==tableRenderToken || cursor>=rows.length) return; const e=Math.min(cursor+TABLE_CHUNK_ROWS,rows.length); tbody.insertAdjacentHTML('beforeend',rows.slice(cursor,e).map(tableRowHtml).join('')); cursor=e; if(cursor<rows.length) requestAnimationFrame(appendChunk); };
+      if(cursor<rows.length) requestAnimationFrame(appendChunk);
+    }
+    function _origRenderDetail(){
+      const rec=selectedRecord();
+      const empty=el('detailEmpty');
+      const content=el('detailContent');
+      if(!rec){ empty.classList.remove('hidden'); content.classList.add('hidden'); return; }
+      const extra = getRegistryExtra(rec.mooringCode);
+      const inspectionDate = extra?.last_inspection_date || '-';
+      const terminated = isRecordTerminated(rec);
+      const terminationDate = permitTerminationDate(rec);
+      const inspectionStale = isRecordInspectionStale(rec);
+      const facilityCode = facilityTypeCode(rec);
+      const facilityLabel = facilityTypeLabelFromCode(facilityCode);
+      const facilityBadge = facilityLabel ? `<span class="badge facility" title="Facility type code: ${escapeHtml(facilityCode)}">${escapeHtml(facilityLabel)}</span>` : '';
+      const ageBucket = overdueAgeBucket(rec);
+      const ageText = ageBucket ? { within2:'Overdue ≤ 2 months', '3to4':'Overdue 3–4 months', '5to11':'Overdue 5–11 months', '12plus':'Overdue 12+ months' }[ageBucket] : '';
+      empty.classList.add('hidden'); content.classList.remove('hidden');
+      el('detailBadges').innerHTML = [`<span class="badge">${escapeHtml(rec.mooringCode || 'No Code')}</span>`, facilityBadge, terminated ? `<span class="badge terminated">⛔ Terminated</span>` : '', (!terminated && inspectionStale) ? `<span class="badge alert">Inspection overdue</span>` : ''].join('');
+      el('detailTitle').textContent = extra?.boat_vessel_name || rec.boatName || 'No vessel name recorded';
+      el('detailStatus').textContent = terminated ? `Permit terminated on ${terminationDate}` : (ageText || '');
+      const detailItems = [ ['Mooring Code', rec.mooringCode || '-', ''], ...(facilityLabel ? [['Facility Type', facilityLabel, facilityCode ? `Code: ${facilityCode}` : '', false]] : []), ['Boat Name', extra?.boat_vessel_name || rec.boatName || '-', extra ? '' : 'Fallback to public ArcGIS field'], ['Licence Length Max', extra?.mooring_length || rec.mooringLength || '-', 'meters'], ...(terminated ? [['Permit Status', '⛔ Terminated', `Termination date: ${terminationDate}`, false]] : []), ...(ageText ? [['Overdue Age', ageText, 'Measured from the 3-year inspection due date', false]] : []), ['Last Inspection Date', inspectionDate || '-', inspectionStale ? 'More than 3 years old from today' : (extra ? '' : 'No inspection row found in Supabase'), inspectionStale], ['Latitude', typeof rec.lat==='number' ? rec.lat.toFixed(7) : '-', rec.latDmm], ['Longitude', typeof rec.lon==='number' ? rec.lon.toFixed(7) : '-', rec.lonDmm] ];
+      el('detailGrid').innerHTML = detailItems.map((item) => { const [k,v,sub,isAlert] = item; return `<div class="detail-item"><div class="detail-key">${escapeHtml(k)}</div><div class="detail-val ${isAlert ? 'alert-text' : ''}">${escapeHtml(v)}</div>${sub ? `<div class="detail-sub ${isAlert ? 'alert-note' : ''}">${escapeHtml(sub)}</div>` : ''}</div>`; }).join('');
+      if(state.markers[rec.id]){ Object.entries(state.markers).forEach(([id,marker])=>{ const record = state.filtered.find(r => String(r.id)===String(id)); updateMarkerSelection(marker, record, String(rec.id)===String(id)); }); }
+    }
+    function showCurrentLocation(){
+      const btn = el('currentLocationBtn');
+      if(!navigator.geolocation){
+        showError('Current location is not supported by this browser/device.');
+        return;
+      }
+      if(btn){ btn.disabled = true; btn.textContent = 'Locating...'; }
+      navigator.geolocation.getCurrentPosition((position) => {
+        const lat = position.coords.latitude;
+        const lon = position.coords.longitude;
+        const accuracy = position.coords.accuracy;
+        const latlng = [lat, lon];
+        if(userLocationMarker) map.removeLayer(userLocationMarker);
+        if(userAccuracyCircle) map.removeLayer(userAccuracyCircle);
+        userAccuracyCircle = L.circle(latlng, {
+          radius: accuracy || 0,
+          color: USER_LOCATION_COLOR,
+          weight: 1,
+          fillColor: USER_LOCATION_COLOR,
+          fillOpacity: 0.12
+        }).addTo(map);
+        userLocationMarker = L.circleMarker(latlng, {
+          radius: 8,
+          color: '#ffffff',
+          weight: 2,
+          fillColor: USER_LOCATION_COLOR,
+          fillOpacity: 1
+        }).addTo(map);
+        userLocationMarker.bindPopup(`<div style="font-family:ui-sans-serif,-apple-system,Segoe UI,sans-serif;min-width:210px;"><div style="font-weight:800;color:#0f172a;">📍 Current Location</div><div style="margin-top:6px;color:#334155;"><strong>Lat:</strong> ${lat.toFixed(7)}</div><div style="margin-top:4px;color:#334155;"><strong>Lon:</strong> ${lon.toFixed(7)}</div><div style="margin-top:4px;color:#64748b;">Accuracy: ${Math.round(accuracy || 0)} m</div></div>`).openPopup();
+        map.setView(latlng, Math.max(map.getZoom(), SEARCH_FOCUS_ZOOM), { animate: true });
+        showError('');
+        if(btn){ btn.disabled = false; btn.textContent = 'Current Location'; }
+      }, (error) => {
+        let message = 'Unable to get current location.';
+        if(error.code === error.PERMISSION_DENIED) message = 'Location permission was denied. Please allow location access in the browser and try again.';
+        else if(error.code === error.POSITION_UNAVAILABLE) message = 'Current location is unavailable on this device/network.';
+        else if(error.code === error.TIMEOUT) message = 'Current location request timed out. Please try again.';
+        showError(message);
+        if(btn){ btn.disabled = false; btn.textContent = 'Current Location'; }
+      }, {
+        enableHighAccuracy: true,
+        timeout: 12000,
+        maximumAge: 30000
+      });
+    }
+    function selectRecordById(id, autoFocus=false){
+      const previousId=state.selectedId; state.selectedId=id;
+      const previous=state.filtered.find(r=>String(r.id)===String(previousId)); const current=selectedRecord();
+      if(previous&&state.markers[previous.id]) updateMarkerSelection(state.markers[previous.id],previous,false);
+      if(current&&state.markers[current.id]) updateMarkerSelection(state.markers[current.id],current,true);
+      const oldRow=el('tableBody').querySelector('tr.active'); if(oldRow) oldRow.classList.remove('active');
+      const newRow=Array.from(el('tableBody').querySelectorAll('tr[data-id]')).find(tr=>String(tr.dataset.id)===String(id)); if(newRow) newRow.classList.add('active');
+      renderDetail(); if(autoFocus&&current) focusSelectedMarker(true);
+    }
+    function setFullMapButtonLabel(){
+      const btn=el('fullMapBtn');
+      if(btn) btn.textContent=document.body.classList.contains('full-map-open') ? 'Exit Full Screen' : 'Full Screen';
+    }
+    function enterFullMap(){
+      document.body.classList.add('full-map-open');
+      document.body.classList.remove('full-map-detail');
+      setFullMapButtonLabel();
+      setTimeout(()=>map.invalidateSize(),60);
+    }
+    function exitFullMap(){
+      document.body.classList.remove('full-map-open','full-map-detail');
+      setFullMapButtonLabel();
+      setTimeout(()=>map.invalidateSize(),60);
+    }
+    function toggleFullMap(){
+      if(document.body.classList.contains('full-map-open')) exitFullMap(); else enterFullMap();
+    }
+    function openFullMapDetail(){
+      if(!document.body.classList.contains('full-map-open') || !selectedRecord()) return;
+      document.body.classList.add('full-map-detail');
+      renderDetail();
+    }
+    function backToFullMap(){
+      document.body.classList.remove('full-map-detail');
+      setTimeout(()=>map.invalidateSize(),40);
+    }
+    function renderAll(reapplyFilters=true, resetBounds=false, autoFocus=false){
+      if(reapplyFilters) applyFilters();
+      renderStats();
+      renderMap(resetBounds);
+      renderTable();
+      renderDetail();
+      if(autoFocus && state.filtered.length) focusSelectedMarker(true);
+    }
+
+    function toggleOverdueOnly(){ state.overdueOnly = !state.overdueOnly; if(!state.overdueOnly) state.overdueAgeFilter = 'all'; renderAll(true,false,false); }
+    function setOverdueAgeFilter(value){ state.overdueOnly = true; state.overdueAgeFilter = value || 'all'; renderAll(true,false,false); }
+    function toggleOverdueDetails(){ const section = el('overdueDetailsSection'); const btn = el('toggleOverdueDetailsBtn'); if(!section || !btn) return; const isCollapsed = section.classList.toggle('collapsed'); btn.textContent = isCollapsed ? '▶ Show Details' : '▼ Hide Details'; }
+    function toggleMappedDetails(){ const section = el('mappedDetailsSection'); const btn = el('toggleMappedDetailsBtn'); if(!section || !btn) return; const isCollapsed = section.classList.toggle('collapsed'); btn.textContent = isCollapsed ? '▶ Show Details' : '▼ Hide Details'; }
+    function setFacilityTypeFilter(value){ state.facilityTypeFilter = value || 'all'; renderAll(true,false,false); }
+    function setTempUserFilter(){
+      state.tempUserFilter = state.tempUserFilter === 'on' ? 'all' : 'on';
+      document.querySelectorAll('.temp-user-filter-btn').forEach((btn) => {
+        const active = state.tempUserFilter === 'on';
+        btn.classList.toggle('active', active);
+        btn.classList.toggle('primary', active);
+        btn.classList.toggle('ghost', !active);
+        btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+        btn.style.backgroundColor = active ? 'var(--primary)' : '';
+        btn.style.color = active ? '#fff' : '';
+        btn.style.borderColor = active ? 'var(--primary)' : '';
+      });
+      renderAll(true,false,false);
+    }
+    function resetFilters(){ if(el('f_search')) el('f_search').value=''; if(el('fullMapSearch')) el('fullMapSearch').value=''; state.overdueOnly = false; state.overdueAgeFilter = 'all'; state.facilityTypeFilter = 'all'; state.tempUserFilter = 'all'; renderAll(true,false,false); }
+    function fitAllPins(){ if(!state.filtered.length) return; map.fitBounds(state.filtered.map(r => [r.lat,r.lon]), { padding:[24,24] }); }
+
+    function initEvents(){
+      el('tableBody').addEventListener('click',(event)=>{ const row=event.target.closest('tr[data-id]'); if(row) selectRecordById(row.dataset.id,true); });
+      let filterTimer=null;
+      const runUnifiedSearch=(value,source)=>{ if(source!=='page') el('f_search').value=value; if(source!=='fullscreen') el('fullMapSearch').value=value; clearTimeout(filterTimer); filterTimer=setTimeout(()=>renderAll(true,false,!!String(value).trim()),180); };
+      el('f_search').addEventListener('input',e=>runUnifiedSearch(e.target.value,'page'));
+      el('fullMapSearch').addEventListener('input',e=>runUnifiedSearch(e.target.value,'fullscreen'));
+      el('fullMapSearchClear').addEventListener('click',()=>{ el('fullMapSearch').value=''; runUnifiedSearch('','fullscreen'); el('fullMapSearch').focus(); });
+      el('resetFiltersBtn').addEventListener('click',resetFilters);
+      el('fitAllBtn').addEventListener('click',fitAllPins);
+      el('currentLocationBtn').addEventListener('click',showCurrentLocation);
+      el('vesselSearchBtn').addEventListener('click',openVesselSearch);
+      el('fullMapBtn').addEventListener('click',toggleFullMap);
+      el('backToMapBtn').addEventListener('click',backToFullMap);
+      el('refreshLocationCacheBtn').addEventListener('click',refreshLocationCacheFromArcGIS);
+      el('overdueOnlyBtn').addEventListener('click',toggleOverdueOnly);
+      el('toggleOverdueDetailsBtn').addEventListener('click',toggleOverdueDetails);
+      el('toggleMappedDetailsBtn').addEventListener('click',toggleMappedDetails);
+      document.querySelectorAll('.facility-type-btn').forEach(btn => btn.addEventListener('click', () => setFacilityTypeFilter(btn.dataset.facilityType || 'all')));
+      document.querySelectorAll('.temp-user-filter-btn').forEach(btn => btn.addEventListener('click', () => setTempUserFilter()));
+      document.querySelectorAll('.overdue-age-btn').forEach(btn => btn.addEventListener('click', () => setOverdueAgeFilter(btn.dataset.overdueAge || 'all')));
+      el('tempUserBtn').addEventListener('click',openTempUserProtected);
+      el('customerDetailsBtn').addEventListener('click',openCustomerModal);
+      el('historyBtn').addEventListener('click',openHistoryModal);
+      el('editDetailsBtn').addEventListener('click',openEditAccessModal);
+      el('tempUserEditBtn').addEventListener('click',() => setTempUserEditMode(true));
+      el('tempUserSaveBtn').addEventListener('click',saveTempUserEdits);
+      el('tempUserCancelBtn').addEventListener('click',() => { if(tempUserAddMode){ closeTempUserModal(); } else { setTempUserEditStatus(''); setTempUserEditMode(false); } });
+      el('tempUserAccessModalClose').addEventListener('click',closeTempUserAccessModal);
+      el('tempUserAccessUnlockBtn').addEventListener('click',unlockTempUserAccess);
+      el('tempUserAccessCodeInput').addEventListener('keydown', (event) => { if(event.key === 'Enter'){ event.preventDefault(); unlockTempUserAccess(); } });
+      el('tempUserModalClose').addEventListener('click',closeTempUserModal);
+      el('customerModalClose').addEventListener('click',closeCustomerModal);
+      el('historyModalClose').addEventListener('click',closeHistoryModal);
+      el('editAccessModalClose').addEventListener('click',closeEditAccessModal);
+      el('editAccessUnlockBtn').addEventListener('click',unlockEdit);
+      el('editModalClose').addEventListener('click',closeEditModal);
+      el('addTempUserBtn').addEventListener('click',openAddTempUserModal);
+      el('editCancelBtn').addEventListener('click',closeEditModal);
+      el('editForm').addEventListener('submit',saveEditForm);
+      el('customerUnlockBtn').addEventListener('click', async () => {const rec=selectedRecord();if(!rec)return;const input=el('customerAccessCodeInput'),errorEl=el('customerCodeError');try{const result=await verifyProtectedAccessCode(input.value);if(!result.valid){errorEl.textContent=result.message;errorEl.classList.remove('hidden');return}errorEl.classList.add('hidden');grantSharedAccess();await showCustomerDetailsForRecord(rec,sharedAccessCode)}catch(err){errorEl.textContent='Unable to verify access: '+(err?.message||err);errorEl.classList.remove('hidden')}});
+      el('historyUnlockBtn').addEventListener('click', async () => {const rec=selectedRecord();if(!rec)return;const input=el('historyAccessCodeInput'),errorEl=el('historyCodeError');try{const result=await verifyProtectedAccessCode(input.value);if(!result.valid){errorEl.textContent=result.message;errorEl.classList.remove('hidden');return}errorEl.classList.add('hidden');grantSharedAccess();await showHistoryForRecord(rec,sharedAccessCode)}catch(err){errorEl.textContent='Unable to verify access: '+(err?.message||err);errorEl.classList.remove('hidden')}});
+      el('customerLockBtn').addEventListener('click',() => { revokeSharedAccess(); lockCustomerModal(); lockHistoryModal(); });
+      el('historyLockBtn').addEventListener('click',() => { revokeSharedAccess(); lockCustomerModal(); lockHistoryModal(); });
+      el('customerAccessCodeInput').addEventListener('keydown', async (event) => { if(event.key === 'Enter'){ event.preventDefault(); el('customerUnlockBtn').click(); } });
+      el('historyAccessCodeInput').addEventListener('keydown', async (event) => { if(event.key === 'Enter'){ event.preventDefault(); el('historyUnlockBtn').click(); } });
+      el('editAccessCodeInput').addEventListener('keydown', (event) => { if(event.key === 'Enter'){ event.preventDefault(); unlockEdit(); } });
+      el('tempUserAccessModalBackdrop').addEventListener('click', (event) => { if(event.target === el('tempUserAccessModalBackdrop')) closeTempUserAccessModal(); });
+      el('tempUserModalBackdrop').addEventListener('click', (event) => { if(event.target === el('tempUserModalBackdrop')) closeTempUserModal(); });
+      el('customerModalBackdrop').addEventListener('click', (event) => { if(event.target === el('customerModalBackdrop')) closeCustomerModal(); });
+      el('historyModalBackdrop').addEventListener('click', (event) => { if(event.target === el('historyModalBackdrop')) closeHistoryModal(); });
+      el('editAccessModalBackdrop').addEventListener('click', (event) => { if(event.target === el('editAccessModalBackdrop')) closeEditAccessModal(); });
+      el('editModalBackdrop').addEventListener('click', (event) => { if(event.target === el('editModalBackdrop')) closeEditModal(); });
+      window.addEventListener('keydown', (event) => {
+        if(event.key === 'Escape' && document.body.classList.contains('full-map-detail')){ backToFullMap(); return; }
+        if(event.key === 'Escape' && document.body.classList.contains('full-map-open')){ exitFullMap(); return; }
+        if(event.key === 'Escape' && !el('tempUserAccessModalBackdrop').classList.contains('hidden')) closeTempUserAccessModal();
+        if(event.key === 'Escape' && !el('tempUserModalBackdrop').classList.contains('hidden')) closeTempUserModal();
+        if(event.key === 'Escape' && !el('customerModalBackdrop').classList.contains('hidden')) closeCustomerModal();
+        if(event.key === 'Escape' && !el('historyModalBackdrop').classList.contains('hidden')) closeHistoryModal();
+        if(event.key === 'Escape' && !el('editAccessModalBackdrop').classList.contains('hidden')) closeEditAccessModal();
+        if(event.key === 'Escape' && !el('editModalBackdrop').classList.contains('hidden')) closeEditModal();
+      });
+    }
+
+    // ─────────────────────────────────────────────
+    // NOTES & PHOTOS — Supabase persistent storage
+    // Tables : mooring_notes, mooring_photos
+    // Bucket : mooring-photos
+    // ─────────────────────────────────────────────
+    const NOTES_TABLE  = 'mooring_app_notes';
+    // SharePoint — 알파벳 대분류별 폴더 매핑
+    const SP_ROOT = 'https://aucklandtransport.sharepoint.com/sites/ahmfs';
+    function spFolderUrl(mooringCode){
+      const first = (mooringCode || '').charAt(0).toUpperCase();
+      let folder;
+      if('ABCDE'.includes(first))      folder = 'MooringsAE';
+      else if('FGHIJ'.includes(first)) folder = 'MooringsFJ';
+      else if('KLMNO'.includes(first)) folder = 'MooringsKO';
+      else if('PQRST'.includes(first)) folder = 'Moorings%20PT';
+      else if('UVWXYZ'.includes(first))folder = 'Moorings%20UZ';
+      else                             folder = 'MooringsAE';
+      return `${SP_ROOT}/${folder}/${encodeURIComponent(mooringCode)}`;
+    }
+
+    // Local cache: avoid re-fetching on every panel render
+    const notesCache  = {};   // { [mooringCode]: Note[] }
+
+    function noteKey(rec)  { return normalizeCode(rec?.mooringCode || '_NO_CODE'); }
+
+    function formatNoteTimestamp(iso){
+      const d = new Date(iso);
+      return d.toLocaleString('en-NZ',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+    }
+
+    // ── NOTES: fetch ──────────────────────────────
+    async function fetchNotes(mooringCode){
+      const key = normalizeCode(mooringCode);
+      try {
+        const { data, error } = await supabaseClient
+          .from(NOTES_TABLE)
+          .select('id, mooring_code, note_text, initial, created_at')
+          .eq('mooring_code', key)
+          .order('created_at', { ascending: false });
+        if(error) throw error;
+        notesCache[key] = data || [];
+      } catch(err){
+        console.error('fetchNotes error:', err);
+        notesCache[key] = [];
+      }
+    }
+
+    // ── NOTES: render ─────────────────────────────
+    function renderNotes(){
+      const rec     = selectedRecord();
+      const listEl  = el('notesList');
+      const countEl = el('notesCount');
+      if(!rec){
+        listEl.innerHTML = '<div class="notes-empty">No notes yet for this mooring.</div>';
+        countEl.textContent = '0 entries';
+        return;
+      }
+      const key   = noteKey(rec);
+      const notes = notesCache[key] || [];
+      countEl.textContent = notes.length + ' entr' + (notes.length === 1 ? 'y' : 'ies');
+      if(!notes.length){
+        listEl.innerHTML = '<div class="notes-empty">No notes yet for this mooring.</div>';
+        return;
+      }
+      listEl.innerHTML = notes.map(n => `
+        <div class="note-item" data-note-id="${escapeHtml(n.id)}">
+          <button class="note-delete" data-note-id="${escapeHtml(n.id)}" title="Delete note">&#x2715;</button>
+          <div class="note-item-meta">
+            <span class="note-initial-badge">${escapeHtml(n.initial || '?')}</span>
+            <span class="note-timestamp">${escapeHtml(formatNoteTimestamp(n.created_at))}</span>
+          </div>
+          <div class="note-text">${escapeHtml(n.note_text)}</div>
+        </div>`).join('');
+      listEl.querySelectorAll('.note-delete').forEach(btn => {
+        btn.addEventListener('click', (e) => { e.stopPropagation(); deleteNote(btn.dataset.noteId, key); });
+      });
+    }
+
+    // ── NOTES: add ────────────────────────────────
+    async function addNote(){
+      const rec = selectedRecord();
+      if(!rec) return;
+      const text    = el('noteInput').value.trim();
+      const initial = el('noteInitial').value.trim().toUpperCase();
+      if(!text){ el('noteInput').focus(); return; }
+
+      const key = noteKey(rec);
+      el('noteAddBtn').disabled = true;
+      el('noteAddBtn').textContent = 'Saving…';
+      try {
+        const { data, error } = await supabaseClient
+          .from(NOTES_TABLE)
+          .insert({ mooring_code: key, note_text: text, initial: initial || '—' })
+          .select()
+          .single();
+        if(error) throw error;
+        // Prepend to cache (newest first)
+        if(!notesCache[key]) notesCache[key] = [];
+        notesCache[key].unshift(data);
+        el('noteInput').value = '';
+        renderNotes();
+        el('notesList').scrollTop = 0;
+      } catch(err){
+        console.error('addNote error:', err);
+        alert('Failed to save note: ' + (err.message || err));
+      } finally {
+        el('noteAddBtn').disabled = false;
+        el('noteAddBtn').textContent = 'Add';
+      }
+    }
+
+    // ── NOTES: delete ─────────────────────────────
+    async function deleteNote(noteId, key){
+      try {
+        const { error } = await supabaseClient
+          .from(NOTES_TABLE)
+          .delete()
+          .eq('id', noteId);
+        if(error) throw error;
+        notesCache[key] = (notesCache[key] || []).filter(n => n.id !== noteId);
+        renderNotes();
+      } catch(err){
+        console.error('deleteNote error:', err);
+        alert('Failed to delete note: ' + (err.message || err));
+      }
+    }
+
+
+    // ── PHOTOS: render SharePoint folder link ────
+    function renderPhotos(){
+      const rec    = selectedRecord();
+      const bodyEl = el('photosBody');
+      if(!rec){
+        bodyEl.innerHTML = '<div class="sp-no-folder">Select a mooring to view its SharePoint folder.</div>';
+        return;
+      }
+      const code  = normalizeCode(rec.mooringCode);
+      const spUrl = spFolderUrl(code);
+      bodyEl.innerHTML = `
+        <a class="sp-link-btn" href="${spUrl}" target="_blank" rel="noopener">
+          <span class="sp-link-icon">&#x1F4C2;</span>
+          <span class="sp-link-text">
+            <div class="sp-link-label">Open SharePoint Folder &mdash; ${code}</div>
+            <div class="sp-link-sub">Opens in SharePoint &bull; Sign in with your AT account</div>
+          </span>
+          <span style="margin-left:auto;font-size:16px;opacity:.5;">&#x2197;</span>
+        </a>`;
+    }
+
+
+    // ── renderDetail: extends _origRenderDetail ───
+    function renderDetail(){
+      _origRenderDetail();
+      const rec = selectedRecord();
+      updateTempUserButton(rec);
+      if(!rec) return;
+      const key = noteKey(rec);
+      renderNotes();
+      renderPhotos();
+      if(!supabaseClient) return;
+      fetchNotes(key).then(renderNotes);
+    }
+
+    // 모바일에서 Leaflet 지도 크기 강제 재계산
+    if(window.innerWidth <= 760){
+      setTimeout(() => map.invalidateSize(), 100);
+    }
+    window.addEventListener('resize', () => map.invalidateSize());
+
+    document.addEventListener('click', (event) => { if(event.target && event.target.id === 'editDetailsBtn') openEditAccessModal(); });
+    let mooringAppStarted = false;
+    let authEmailValue = '';
+    function setAuthBusy(busy, text=''){
+      ['authSendBtn','authVerifyBtn','authResendBtn','authChangeEmailBtn'].forEach((id)=>{ const node=el(id); if(node) node.disabled=busy; });
+      if(text) el('authMessage').textContent=text;
+    }
+    function showAuthStep(step){
+      const otpStep = step === 'otp';
+      el('authEmailStep').classList.toggle('hidden', otpStep);
+      el('authOtpStep').classList.toggle('hidden', !otpStep);
+      el('authMessage').textContent='';
+      setTimeout(()=>el(otpStep ? 'authOtp' : 'authEmail')?.focus(),0);
+    }
+    async function sendAuthOtp(event){
+      event?.preventDefault();
+      const email=String(el('authEmail').value||'').trim().toLowerCase();
+      if(!email){ el('authMessage').textContent='Please enter your registered email address.'; return; }
+      setAuthBusy(true,'Sending verification code...');
+      const { error } = await supabaseClient.auth.signInWithOtp({ email, options:{ shouldCreateUser:false } });
+      setAuthBusy(false);
+      if(error){ console.error('Email OTP error:',error); el('authMessage').textContent='The verification code could not be sent. Check the email address and try again.'; return; }
+      authEmailValue=email;
+      el('authEmailDisplay').textContent=email;
+      showAuthStep('otp');
+      el('authMessage').textContent='An 8-digit verification code has been sent to your email.';
+    }
+    async function verifyAuthOtp(event){
+      event?.preventDefault();
+      const token=String(el('authOtp').value||'').replace(/\D/g,'').slice(0,8);
+      if(!/^\d{8}$/.test(token)){ el('authMessage').textContent='Please enter the 8-digit verification code.'; return; }
+      setAuthBusy(true,'Verifying code...');
+      const { data,error } = await supabaseClient.auth.verifyOtp({ email:authEmailValue, token, type:'email' });
+      setAuthBusy(false);
+      if(error || !data?.session){ console.error('OTP verification error:',error); el('authMessage').textContent='The code is incorrect or has expired. Request a new code and try again.'; return; }
+    }
+    async function startMooringApp(session){
+      el('authScreen').classList.add('hidden');
+      el('appShell').classList.remove('hidden');
+      const email=session?.user?.email||'';
+      el('authUserEmail').textContent=email;
+      el('authUserEmail').classList.toggle('hidden',!email);
+      if(!mooringAppStarted){
+        mooringAppStarted=true;
+        initEvents();
+        el('noteAddBtn').addEventListener('click', addNote);
+        el('noteInput').addEventListener('keydown', (e) => { if(e.ctrlKey && e.key === 'Enter'){ e.preventDefault(); addNote(); } });
+        await loadAllData();
+      }
+      setTimeout(()=>map.invalidateSize(),80);
+    }
+    function showSignedOutScreen(){
+      el('appShell').classList.add('hidden');
+      el('authScreen').classList.remove('hidden');
+      el('authChecking').classList.add('hidden');
+      el('authForm').classList.remove('hidden');
+      el('authOtp').value='';
+      showAuthStep('email');
+    }
+    async function initialiseAuthentication(){
+      if(!supabaseClient) supabaseClient=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+      const { data,error }=await supabaseClient.auth.getSession();
+      if(error) console.error('Session check error:',error);
+      if(data?.session) await startMooringApp(data.session); else showSignedOutScreen();
+      supabaseClient.auth.onAuthStateChange((event,session)=>{
+        if(session) startMooringApp(session);
+        else if(event==='SIGNED_OUT') showSignedOutScreen();
+      });
+    }
+    el('authForm').addEventListener('submit',(event)=>{ el('authOtpStep').classList.contains('hidden') ? sendAuthOtp(event) : verifyAuthOtp(event); });
+    el('authOtp').addEventListener('input',(event)=>{ event.target.value=event.target.value.replace(/\D/g,'').slice(0,8); });
+    el('authResendBtn').addEventListener('click',sendAuthOtp);
+    el('authChangeEmailBtn').addEventListener('click',()=>showAuthStep('email'));
+    el('signOutBtn').addEventListener('click',async()=>{ const {error}=await supabaseClient.auth.signOut(); if(error){ console.error('Sign-out error:',error); alert('Sign out failed: '+error.message); } });
+    initialiseAuthentication();
+  </script>
+</body>
+</html>
