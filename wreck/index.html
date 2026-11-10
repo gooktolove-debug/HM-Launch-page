@@ -1,0 +1,1977 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Wreck/Abandoned Summary Board</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <style>
+    :root {
+      --bg:#f8fafc;
+      --card:#ffffff;
+      --text:#0f172a;
+      --muted:#64748b;
+      --line:#e2e8f0;
+      --primary:#0f172a;
+      --primary-soft:#e0f2fe;
+      --shadow:0 8px 22px rgba(15,23,42,.06);
+      --radius:20px;
+      --danger:#b91c1c;
+      --danger-soft:#fee2e2;
+      --wreck:#92400e;
+      --wreck-soft:#ffedd5;
+      --abandoned:#1d4ed8;
+      --abandoned-soft:#dbeafe;
+      --ready:#166534;
+      --ready-soft:#dcfce7;
+      --wip:#7c3aed;
+      --wip-soft:#ede9fe;
+      --completed:#475569;
+      --completed-soft:#e2e8f0;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--text);background:var(--bg)}
+    .container{max-width:1480px;margin:0 auto;padding:24px}
+    .header{display:flex;align-items:end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:20px}
+    .header h1{margin:0;font-size:32px;line-height:1.15}
+    .subtitle{margin-top:8px;color:var(--muted);font-size:14px;max-width:980px}
+    .actions{display:flex;gap:8px;flex-wrap:wrap}
+    button{border:1px solid #cbd5e1;background:#fff;color:var(--text);border-radius:16px;padding:10px 14px;font-size:14px;font-weight:600;cursor:pointer;transition:.18s ease;box-shadow:0 1px 0 rgba(15,23,42,.03)}
+    button:hover{transform:translateY(-1px);box-shadow:var(--shadow)}
+    button.primary{background:var(--primary);color:#fff;border-color:var(--primary)}
+    button.small{padding:8px 12px;font-size:13px;border-radius:12px}
+    button.danger{border-color:#fecaca;color:var(--danger);background:#fff1f2}
+    button.icon-btn{width:40px;height:40px;padding:0;border-radius:12px;display:inline-flex;align-items:center;justify-content:center}
+
+    .stats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:16px;margin-bottom:20px}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+    .stat-card{padding:20px}
+    .stat-top{display:flex;align-items:center;gap:12px}
+    .icon-box{width:42px;height:42px;border-radius:14px;display:flex;align-items:center;justify-content:center;background:#f1f5f9;font-size:18px}
+    .stat-label{font-size:13px;color:var(--muted)}
+    .stat-value{font-size:30px;font-weight:800;line-height:1.1}
+    .stat-sub{font-size:12px;color:var(--muted);margin-top:4px}
+    .stat-wreck .icon-box{background:var(--wreck-soft)}
+    .stat-abandoned .icon-box{background:var(--abandoned-soft)}
+    .stat-wip .icon-box{background:var(--wip-soft)}
+    .stat-ready .icon-box{background:var(--ready-soft)}
+ .stat-completed .icon-box{background:var(--completed-soft)}
+
+    .panel-head{padding:22px 22px 0 22px}
+    .panel-title{font-size:22px;font-weight:700;margin:0}
+    .panel-desc{font-size:14px;color:var(--muted);margin-top:8px}
+    .panel-body{padding:20px 22px 22px 22px}
+
+    .toolbar-row{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+    .filters-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+    .field, select.field, textarea.field, input[type="date"].field, input[type="number"].field, input[type="file"].field{
+      width:100%;border:1px solid #cbd5e1;border-radius:16px;padding:12px 14px;font-size:14px;outline:none;background:#fff
+    }
+    .field:focus{border-color:#0ea5e9;box-shadow:0 0 0 4px rgba(14,165,233,.12)}
+    textarea.field{min-height:90px;resize:vertical}
+
+    .main-grid{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(360px,.95fr);gap:24px;align-items:start;margin-top:20px}
+    #map{height:720px;width:100%;border-radius:18px;overflow:hidden;border:1px solid var(--line)}
+    .legend{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:16px}
+    .legend-item{display:flex;align-items:center;gap:8px;padding:10px 12px;border:1px solid var(--line);border-radius:14px;font-size:12px;color:var(--muted)}
+    .legend-dot{width:12px;height:12px;border-radius:999px;display:inline-block}
+
+    .table-wrap{overflow:auto;border:1px solid var(--line);border-radius:18px;background:#fff;margin-top:16px}
+
+    .split-table-host{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}
+    .split-table-wrap{overflow-x:auto;overflow-y:auto;max-width:100%;scrollbar-gutter:stable;background:#fff}
+    .split-table-title{position:sticky;left:0;padding:14px 14px 10px 14px;margin:0;font-size:18px;font-weight:800;border-bottom:1px solid var(--line);background:#fff;z-index:2}
+    .split-vessel-table{min-width:0!important;width:100%;table-layout:fixed}
+    .split-vessel-table th,.split-vessel-table td{white-space:normal;overflow-wrap:anywhere;text-overflow:clip}
+    .split-vessel-table th:nth-child(1),.split-vessel-table td:nth-child(1){width:32%}
+    .split-vessel-table th:nth-child(2),.split-vessel-table td:nth-child(2){width:31%;overflow:visible}
+    .split-vessel-table th:nth-child(3),.split-vessel-table td:nth-child(3){width:22%;padding-left:18px}
+    .split-vessel-table th:nth-child(4),.split-vessel-table td:nth-child(4){width:15%;text-align:center}
+    .split-vessel-table .status-pill{display:inline-flex;max-width:100%;white-space:nowrap;font-size:10px;padding:4px 7px}
+    .split-vessel-table .table-action-btn{white-space:nowrap;min-width:0;padding:6px 8px}
+    @media (max-width:1200px){.split-table-host{grid-template-columns:1fr}.split-vessel-table{min-width:0!important}}
+    .dmm-fieldset{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.3fr) 34px;gap:8px;align-items:center}.dmm-input-wrap{position:relative}.dmm-input-wrap .field{padding-right:34px}.dmm-unit{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--muted);pointer-events:none}.hemisphere-box{height:46px;border:1px solid #cbd5e1;border-radius:14px;background:#f8fafc;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px}.dmm-helper{font-size:11px;color:var(--muted);margin-top:6px}
+    .desktop-table-host,.mobile-table-host{min-width:0}
+    .mobile-list-card{display:none}
+    .mobile-list-card .panel-body{padding-top:16px}
+    .mobile-list-card .table-wrap{margin-top:0}
+    .mobile-list-grid{display:grid;gap:12px}
+    .mobile-vessel-card{border:1px solid var(--line);border-radius:18px;background:#fff;padding:14px 14px 12px 14px;display:flex;flex-direction:column;gap:10px;box-shadow:0 1px 0 rgba(15,23,42,.02)}
+    .mobile-vessel-card.active{outline:2px solid #0ea5e9;outline-offset:1px;background:var(--primary-soft)}
+    .mobile-vessel-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+    .mobile-vessel-title{font-size:16px;font-weight:800;line-height:1.3;word-break:break-word}
+    .mobile-vessel-meta{display:flex;flex-wrap:wrap;gap:8px}
+    .mobile-vessel-row{display:grid;grid-template-columns:98px 1fr;gap:10px;font-size:13px;align-items:start}
+    .mobile-vessel-key{color:var(--muted)}
+    .mobile-vessel-value{font-weight:600;color:var(--text);word-break:break-word;white-space:pre-wrap}
+    .mobile-vessel-actions{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;padding-top:2px}
+    .mobile-list-empty{border:1px solid var(--line);border-radius:16px;padding:18px;background:#f8fafc;color:var(--muted);font-size:14px;text-align:center}
+    table{width:100%;border-collapse:collapse;min-width:1240px}
+    thead{background:#f8fafc;color:var(--muted)}
+    th,td{padding:12px 14px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap;font-size:13px;vertical-align:top}
+    tbody tr{cursor:pointer}
+    tbody tr:hover{background:#f8fafc}
+    tbody tr.active{background:var(--primary-soft)}
+    tbody tr.completed-row{opacity:.82}
+
+    .detail-card{position:sticky;top:24px}
+    .detail-top{background:#f8fafc;border-radius:18px;padding:16px;margin-bottom:16px}
+    .detail-top-row{display:flex;justify-content:space-between;gap:8px;align-items:flex-start;flex-wrap:wrap}
+    .detail-top-title{margin-top:10px;font-size:22px;font-weight:800}
+    .detail-top-sub{margin-top:4px;color:var(--muted);font-size:14px}
+    .badges{display:flex;flex-wrap:wrap;gap:8px}
+    .badge{display:inline-flex;align-items:center;padding:8px 12px;border-radius:999px;background:#f1f5f9;border:1px solid var(--line);font-size:12px;font-weight:700}
+    .badge.wreck{background:var(--wreck-soft);border-color:#fdba74;color:var(--wreck)}
+    .badge.abandoned{background:var(--abandoned-soft);border-color:#93c5fd;color:var(--abandoned)}
+    .badge.wip{background:var(--wip-soft);border-color:#c4b5fd;color:var(--wip)}
+    .badge.ready{background:var(--ready-soft);border-color:#86efac;color:var(--ready)}
+    .badge.completed{background:var(--completed-soft);border-color:#cbd5e1;color:var(--completed)}
+    .badge.alert{background:#fff1f2;border-color:#fecdd3;color:var(--danger)}
+    .detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+    .detail-item{border:1px solid var(--line);border-radius:16px;padding:14px;background:#fff}
+    .detail-key{font-size:12px;color:var(--muted)}
+    .detail-val{margin-top:6px;font-size:14px;font-weight:700;color:var(--text);word-break:break-word}
+    .detail-sub{margin-top:6px;font-size:12px;color:var(--muted);word-break:break-word;white-space:pre-line}.gps-dmm{font-size:14px;font-weight:800;color:var(--text)}.gps-dd{margin-top:6px;font-size:12px;color:var(--muted);font-weight:500}
+    .muted-box{border:1px solid var(--line);border-radius:16px;padding:14px;font-size:14px;color:var(--muted);background:#f8fafc}
+    .hidden{display:none!important}
+    .alert-text{color:var(--danger)!important;font-weight:900!important}
+
+    .photo-wrap{grid-column:1 / -1}
+    .photo-card{border:1px solid var(--line);border-radius:18px;overflow:hidden;background:#fff}
+    .photo-main{width:100%;height:auto;max-height:none;object-fit:contain;background:#e2e8f0;display:block;cursor:zoom-in}
+    .photo-caption{padding:10px 14px;font-size:12px;color:var(--muted);border-top:1px solid var(--line)}
+    .thumb-strip{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:10px;padding:12px 14px;border-top:1px solid var(--line);background:#fff}
+    .thumb-item{position:relative;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#f8fafc;cursor:pointer}
+    .thumb-item img{display:block;width:100%;height:72px;object-fit:contain;background:#f1f5f9}
+    .thumb-item.active{outline:2px solid #0ea5e9;outline-offset:1px}
+
+    .notes-section{grid-column:1 / -1;border:1px solid var(--line);border-radius:18px;overflow:hidden;background:#fff;margin-top:4px}
+    .notes-header{padding:14px 16px;border-bottom:1px solid var(--line);background:#f8fafc;display:flex;align-items:center;justify-content:space-between;gap:10px}
+    .notes-add{padding:14px 16px;border-bottom:1px solid var(--line);background:#fff}
+    .notes-add-row{display:flex;gap:8px;align-items:flex-start}
+    .notes-list{padding:14px 16px;display:flex;flex-direction:column;gap:10px;max-height:320px;overflow-y:auto}
+    .note-item{border:1px solid var(--line);border-radius:14px;padding:12px 14px;background:#fff}
+    .note-item-meta{display:flex;gap:8px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-bottom:6px}
+    .note-text{font-size:13px;line-height:1.55;white-space:pre-wrap;word-break:break-word}
+    .notes-empty{text-align:center;color:var(--muted);font-size:13px;padding:16px}
+
+    .row-type{font-weight:700}
+    .row-type.wreck{color:var(--wreck)}
+    .row-type.abandoned{color:var(--abandoned)}
+    .status-pill{display:inline-flex;align-items:center;padding:4px 8px;border-radius:999px;font-size:11px;font-weight:700;border:1px solid var(--line);background:#fff}
+    .status-pill.wip{background:var(--wip-soft);border-color:#c4b5fd;color:var(--wip)}
+    .status-pill.ready{background:var(--ready-soft);border-color:#86efac;color:var(--ready)}
+    .status-pill.completed{background:var(--completed-soft);border-color:#cbd5e1;color:var(--completed)}
+    .table-action-btn{padding:6px 10px;font-size:12px;border-radius:10px}
+
+    .modal-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.55);display:flex;align-items:center;justify-content:center;padding:20px;z-index:5000}
+    .modal-card{width:min(840px,100%);max-height:88vh;background:#fff;border:1px solid var(--line);border-radius:24px;box-shadow:0 24px 70px rgba(15,23,42,.24);display:flex;flex-direction:column;overflow:hidden}
+    .modal-head{padding:18px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .modal-title{margin:0;font-size:18px;font-weight:800}
+    .modal-body{padding:20px;overflow-y:auto;flex:1}
+    .modal-actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:18px}
+    .form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+    .form-grid .full{grid-column:1 / -1}
+    .field-label{display:block;font-size:12px;color:var(--muted);margin-bottom:8px}
+    .helper-text{font-size:12px;color:var(--muted);margin-top:6px}
+    .preview-box{border:1px dashed #cbd5e1;border-radius:16px;padding:12px;background:#f8fafc}
+    .preview-strip{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:10px}
+    .preview-thumb{position:relative;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+    .preview-thumb img{display:block;width:100%;height:72px;object-fit:contain;background:#f1f5f9}
+    .preview-thumb-remove{position:absolute;top:6px;right:6px;width:24px;height:24px;border-radius:999px;padding:0;display:inline-flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.75);background:rgba(15,23,42,.82);color:#fff;font-size:15px;line-height:1;box-shadow:none}
+    .preview-thumb-remove:hover{transform:none;background:#991b1b;border-color:#fecaca}
+    .preview-thumb-badge{position:absolute;left:6px;bottom:6px;padding:3px 7px;border-radius:999px;background:rgba(255,255,255,.94);border:1px solid var(--line);font-size:10px;font-weight:700;color:var(--muted)}
+
+    .lightbox-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.84);display:flex;align-items:center;justify-content:center;padding:20px;z-index:7000}
+    .lightbox-card{width:min(1100px,100%);height:min(88vh,820px);background:#0f172a;border-radius:24px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 70px rgba(15,23,42,.42)}
+    .lightbox-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.12);color:#fff}
+    .lightbox-title{font-size:14px;font-weight:700;color:#fff}
+    .lightbox-controls{display:flex;gap:8px;flex-wrap:wrap}
+    .lightbox-controls button{background:rgba(255,255,255,.08);color:#fff;border-color:rgba(255,255,255,.16)}
+    .lightbox-stage{position:relative;flex:1;overflow:hidden;background:#020617;display:flex;align-items:center;justify-content:center}
+    .lightbox-image{display:block;max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;transform-origin:center center;cursor:grab;user-select:none;will-change:transform}
+    .lightbox-foot{padding:10px 16px;border-top:1px solid rgba(255,255,255,.12);color:#cbd5e1;font-size:12px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+
+    @media (max-width:1200px){
+      .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .main-grid{grid-template-columns:1fr}
+      .detail-card{position:static}
+    }
+    @media (max-width:760px){
+      .container{padding:16px}
+      .stats,.filters-grid,.detail-grid,.legend,.form-grid{grid-template-columns:1fr}
+      .header h1{font-size:26px}
+      .header{margin-bottom:16px}
+      .main-grid{gap:16px}
+      .map-col{order:1}
+      .detail-col{order:2}
+      .mobile-list-card{order:3;display:block}
+      .desktop-table-host{display:none}
+      .panel-head{padding:18px 18px 0 18px}
+      .panel-body{padding:16px 18px 18px 18px}
+      #map{height:min(82vw, 380px);min-height:280px;border-radius:16px}
+      .legend{gap:10px;margin-top:14px}
+      .legend-item{padding:12px 14px;font-size:13px}
+      .detail-top{padding:14px}
+      .detail-top-title{font-size:19px}
+      .detail-grid{gap:10px}
+      .detail-item{padding:12px}
+      .detail-val{font-size:15px}
+      .photo-main{height:auto;max-height:none}
+      .thumb-strip{grid-template-columns:repeat(auto-fill,minmax(78px,1fr))}
+      table{min-width:980px}
+      .notes-add-row{flex-direction:column}
+      .lightbox-card{height:min(92vh,820px)}
+    }
+  
+    /* ===== HM NAV PAGE VISUAL SYSTEM ===== */
+    :root{
+      --bg:#06111f;--bg2:#091a2d;--card:#0d2238;--surface:#0d2238;--surface2:#102a43;
+      --text:#eaf5ff;--muted:#8fa8bd;--line:rgba(149,190,219,.16);
+      --primary:#0f6b8f;--primary-soft:rgba(41,211,194,.10);--accent:#29d3c2;--accent2:#3ea6ff;
+      --shadow:0 24px 60px rgba(0,7,16,.32);--radius:20px;
+      --danger:#ff827b;--danger-soft:rgba(239,68,68,.14);--wreck:#ffc078;--wreck-soft:rgba(255,174,83,.12);
+      --abandoned:#83c8ff;--abandoned-soft:rgba(62,166,255,.12);--ready:#78efaa;--ready-soft:rgba(53,230,138,.12);
+      --wip:#c4a7ff;--wip-soft:rgba(167,139,250,.14);--completed:#b8c9d6;--completed-soft:rgba(148,163,184,.14)
+    }
+    html{background:#06111f}
+    body{min-height:100vh;background:radial-gradient(circle at 78% -10%,rgba(31,132,183,.22),transparent 38rem),radial-gradient(circle at 0 40%,rgba(21,198,179,.08),transparent 34rem),#06111f;color:var(--text);font-family:Inter,"Segoe UI",Arial,sans-serif}
+    body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.20;background-image:linear-gradient(rgba(255,255,255,.018) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.018) 1px,transparent 1px);background-size:34px 34px}
+    .container{position:relative;max-width:1800px;padding:24px 30px 40px}
+    .header{align-items:center;margin:0 0 20px;padding:18px 22px;border:1px solid var(--line);border-radius:20px;background:linear-gradient(135deg,rgba(13,34,56,.95),rgba(8,25,43,.9));box-shadow:var(--shadow);backdrop-filter:blur(18px)}
+    .brand-block{min-width:280px}.eyebrow{display:flex;align-items:center;gap:10px;color:#8fb4ca;font-size:11px;font-weight:850;letter-spacing:.16em}.brand-mark{display:grid;place-items:center;width:30px;height:30px;border:1px solid rgba(41,211,194,.5);border-radius:8px;color:#61f4e5;background:rgba(41,211,194,.09);letter-spacing:0}.brand-block h1{margin:7px 0 3px;font-size:clamp(27px,3vw,42px);font-weight:760;letter-spacing:-.045em}.brand-block h1 span{color:#6fe5dc}.brand-block p{margin:0;color:var(--muted);font-size:13px}
+    .actions{justify-content:flex-end}.actions button{min-height:38px;border-color:rgba(95,166,205,.20);border-radius:10px;background:#102d46;color:#c7dfec;font-size:12px;box-shadow:none}.actions button:hover{transform:translateY(-1px);border-color:rgba(41,211,194,.48);background:#143953;color:#76eee3}
+    button{border-color:rgba(95,166,205,.22);background:#102d46;color:#c7dfec;box-shadow:none}button:hover{border-color:rgba(41,211,194,.45);background:#143953;color:#79eee3}button.primary{background:linear-gradient(135deg,#178c88,#0d6a71);border-color:#29d3c2;color:#fff}button.danger{background:#5e2025;border-color:#a8444c;color:#ffd4d1}
+    .card{border:1px solid var(--line);background:linear-gradient(145deg,rgba(14,38,61,.97),rgba(8,25,43,.97));box-shadow:var(--shadow)}
+    .stats{gap:12px}.stat-card{position:relative;overflow:hidden;padding:18px}.stat-card:before{content:"";position:absolute;inset:0 0 auto;height:2px;background:linear-gradient(90deg,var(--accent),var(--accent2),transparent)}.stat-label,.stat-sub,.panel-desc,.detail-key,.detail-sub,.field-label,.helper-text,.dmm-helper,.photo-caption,.mobile-vessel-key,.note-item-meta{color:var(--muted)}.stat-value,.panel-title,.detail-top-title,.detail-val,.mobile-vessel-title,.modal-title{color:var(--text)}
+    .icon-box{border:1px solid rgba(62,166,255,.24);background:rgba(62,166,255,.10)!important}.stat-wreck .icon-box{color:#ffc078;border-color:rgba(255,174,83,.32);background:rgba(255,174,83,.12)!important}.stat-abandoned .icon-box{color:#83c8ff}.stat-wip .icon-box{color:#c4a7ff;border-color:rgba(167,139,250,.28);background:rgba(167,139,250,.12)!important}.stat-ready .icon-box{color:#78efaa;border-color:rgba(53,230,138,.28);background:rgba(53,230,138,.12)!important}.stat-completed .icon-box{color:#b8c9d6;background:rgba(148,163,184,.12)!important}
+    .field,select.field,textarea.field,input[type="date"].field,input[type="number"].field,input[type="file"].field{border-color:rgba(149,190,219,.24);background:#0b2136;color:#eaf5ff}.field::placeholder{color:#7895a8}.field:focus{outline:3px solid rgba(41,211,194,.12);border-color:#29d3c2;box-shadow:none}.hemisphere-box{border-color:rgba(149,190,219,.24);background:#102d46;color:#eaf5ff}
+    #map{border-color:var(--line);background:#0b1e31}.leaflet-control-zoom a{background:#102d46!important;color:#eaf5ff!important;border-color:rgba(149,190,219,.22)!important}.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:#102d46;color:#eaf5ff}
+    .legend-item,.detail-item,.detail-top,.muted-box,.photo-card,.notes-section,.note-item,.preview-box,.preview-thumb,.mobile-vessel-card,.mobile-list-empty{border-color:var(--line);background:rgba(11,33,54,.80);color:#d8eaf5}.legend-item{color:var(--muted)}
+    .table-wrap,.split-table-wrap{border-color:var(--line);background:#0b2136}.split-table-title,.notes-header,thead{border-color:var(--line);background:#0c2940;color:#d8eaf5}th,td{border-color:var(--line);color:#d8eaf5}tbody tr:hover,tbody tr.active{background:rgba(41,211,194,.10)}.split-table-wrap{background:#0b2136}.mobile-vessel-card.active{background:rgba(41,211,194,.10);outline-color:#29d3c2}
+    .detail-top{background:#0c2940}.badge,.status-pill{border-color:var(--line);background:#102d46;color:#c7dfec}.badge.wreck{background:var(--wreck-soft);border-color:rgba(255,174,83,.32);color:#ffc078}.badge.abandoned{background:var(--abandoned-soft);border-color:rgba(62,166,255,.28);color:#83c8ff}.badge.wip,.status-pill.wip{background:var(--wip-soft);border-color:rgba(167,139,250,.28);color:#c4a7ff}.badge.ready,.status-pill.ready{background:var(--ready-soft);border-color:rgba(53,230,138,.28);color:#78efaa}.badge.completed,.status-pill.completed{background:var(--completed-soft);border-color:rgba(148,163,184,.28);color:#cbd5e1}.badge.alert{background:rgba(239,68,68,.14);border-color:rgba(248,113,113,.3);color:#ff9b95}.row-type.wreck{color:#ffc078}.row-type.abandoned{color:#83c8ff}
+    .notes-header{background:#0c2940}.notes-add,.thumb-strip{border-color:var(--line);background:#0b2136}.notes-list{background:#081b2d}.photo-main,.thumb-item img,.preview-thumb img{background:#071524}.thumb-item{border-color:var(--line);background:#102d46}.thumb-item.active{outline-color:#29d3c2}
+    .modal-backdrop{background:rgba(2,10,18,.72);backdrop-filter:blur(6px)}.modal-card{border-color:rgba(149,190,219,.22);background:#0b2136;color:var(--text);box-shadow:0 28px 80px rgba(0,0,0,.48)}.modal-head{border-color:var(--line);background:#0d263d}.modal-body{background:#0b2136}.preview-box{background:#091d30}.lightbox-card{background:#071524}
+    .alert-text{color:#ff8e87!important}.photo-caption{border-color:var(--line)}
+    @media(max-width:1100px){.header{align-items:flex-start}.actions{justify-content:flex-start}.main-grid{grid-template-columns:minmax(0,1.35fr) minmax(330px,.8fr)}}
+    @media(max-width:760px){
+      .container{padding:8px}.header{padding:14px;border-radius:14px}.eyebrow{font-size:9px}.brand-mark{width:28px;height:28px}.brand-block h1{font-size:24px}.brand-block p{display:none}
+      .header .actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;width:100%;margin-top:14px}.header .actions button{width:100%;min-width:0;min-height:42px;padding:9px 7px;font-size:11px;white-space:normal;text-align:center}
+      .stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.stat-card{padding:13px}.stat-value{font-size:27px}.stat-label{font-size:11px}.stat-sub{font-size:10px}.main-grid{gap:10px}.panel-head{padding:14px 13px 0}.panel-body{padding:12px 13px 14px}#map{height:410px;min-height:410px}.detail-grid{grid-template-columns:1fr}.legend{grid-template-columns:repeat(2,minmax(0,1fr))}.legend-item{justify-content:center;padding:8px 6px}.modal-card{height:100vh;max-height:100vh;border-radius:0;border:0}.modal-head{position:sticky;top:0;z-index:10}
+    }
+    @media(max-width:420px){.stats{grid-template-columns:1fr 1fr}.stat-top{align-items:flex-start}.icon-box{width:36px;height:36px;border-radius:11px}.header .actions{grid-template-columns:1fr 1fr}}
+
+
+    /* Completed card period metrics */
+    .completed-stat-layout{display:grid;grid-template-columns:42px minmax(105px,1fr) minmax(122px,.9fr);align-items:center;gap:12px;width:100%}
+    .completed-total{min-width:0}.completed-periods{display:grid;gap:9px;align-self:stretch;padding-left:14px;border-left:1px solid rgba(149,190,219,.20)}
+    .completed-period-item{display:flex;align-items:center;justify-content:space-between;gap:10px;min-width:0}
+    .completed-period-item span{color:#9fb7c7;font-size:11px;font-weight:750;white-space:nowrap}
+    .completed-period-item strong{color:#f4fbff;font-size:20px;line-height:1;font-weight:900;font-variant-numeric:tabular-nums}
+    @media(max-width:1450px) and (min-width:761px){.stats{grid-template-columns:repeat(3,minmax(0,1fr))}.stat-completed{grid-column:span 2}.completed-stat-layout{grid-template-columns:42px minmax(130px,1fr) minmax(160px,1fr)}}
+    @media(max-width:760px){.completed-stat-layout{grid-template-columns:36px minmax(88px,1fr);align-items:start}.completed-periods{grid-column:1 / -1;grid-template-columns:1fr 1fr;padding:10px 0 0;border-left:0;border-top:1px solid rgba(149,190,219,.20)}.completed-period-item strong{font-size:18px}.completed-period-item span{white-space:normal}}
+
+
+
+/* ===== Mobile UX optimisation, desktop layout unchanged ===== */
+@media (max-width: 760px) {
+  html, body { width: 100%; max-width: 100%; overflow-x: hidden; }
+  body { -webkit-text-size-adjust: 100%; padding-bottom: env(safe-area-inset-bottom); }
+  .container { width: 100%; max-width: 100%; padding: 8px 8px calc(22px + env(safe-area-inset-bottom)); }
+
+  /* Compact app header */
+  .header { display: block; margin-bottom: 10px; padding: 13px 12px 12px; }
+  .brand-block { min-width: 0; width: 100%; }
+  .eyebrow { gap: 8px; line-height: 1.2; }
+  .brand-block h1 { margin: 8px 0 2px; font-size: 23px; line-height: 1.08; }
+  .header .actions { display: grid; grid-template-columns: 1fr 1fr; width: 100%; margin-top: 12px; gap: 8px; }
+  .header .actions button { min-height: 44px; padding: 8px 7px; font-size: 11px; line-height: 1.2; }
+
+  /* Summary cards: four compact cards plus a full-width completed card */
+  .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+  .stat-card { min-width: 0; padding: 12px; border-radius: 14px; }
+  .stat-top { gap: 9px; align-items: center; }
+  .icon-box { flex: 0 0 34px; width: 34px; height: 34px; font-size: 16px; }
+  .stat-label { font-size: 10px; line-height: 1.25; }
+  .stat-value { font-size: 25px; }
+  .stat-sub { display: none; }
+  .stat-completed { grid-column: 1 / -1; }
+  .completed-stat-layout { grid-template-columns: 34px minmax(78px, .75fr) minmax(145px, 1.25fr); align-items: center; gap: 10px; }
+  .completed-periods { grid-column: auto; grid-template-columns: 1fr; padding: 0 0 0 10px; border-top: 0; border-left: 1px solid rgba(149,190,219,.20); gap: 6px; }
+  .completed-period-item span { font-size: 10px; }
+  .completed-period-item strong { font-size: 17px; }
+
+  /* Filters */
+  .card { border-radius: 14px; }
+  .panel-head { padding: 14px 12px 0; }
+  .panel-title { font-size: 18px; }
+  .panel-desc { margin-top: 5px; font-size: 11px; line-height: 1.35; }
+  .panel-body { padding: 12px; }
+  .toolbar-row { margin-bottom: 10px; }
+  .toolbar-row .actions { width: 100%; display: grid; grid-template-columns: 1fr 1fr; }
+  .toolbar-row .actions button { width: 100%; min-height: 44px; padding: 8px; }
+  .filters-grid { grid-template-columns: 1fr; gap: 8px; }
+  .field, select.field, textarea.field, input[type="date"].field,
+  input[type="number"].field, input[type="file"].field { min-height: 46px; border-radius: 12px; padding: 11px 12px; font-size: 16px; }
+
+  /* Main content order: map, details, card list */
+  .main-grid { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+  .map-col, .detail-col, .mobile-list-card { width: 100%; min-width: 0; }
+  .map-col { order: 1; }
+  .detail-col { order: 2; }
+  .mobile-list-card { order: 3; }
+  #map { height: min(52vh, 420px); min-height: 310px; border-radius: 12px; }
+  .legend { grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 10px; }
+  .legend-item { min-width: 0; padding: 8px; justify-content: flex-start; font-size: 10px; line-height: 1.2; }
+  .legend-dot { flex: 0 0 10px; width: 10px; height: 10px; }
+
+  /* Details */
+  .detail-card { position: static; }
+  .detail-top { padding: 12px; margin-bottom: 10px; border-radius: 12px; }
+  .detail-top-title { margin-top: 8px; font-size: 20px; }
+  .detail-top-sub { font-size: 12px; line-height: 1.4; }
+  .detail-top-row > div:first-child { min-width: 0; flex: 1; }
+  .detail-top-row button { min-width: 62px; min-height: 42px; }
+  .badges { gap: 6px; }
+  .badge { padding: 6px 9px; font-size: 10px; }
+  .detail-grid { grid-template-columns: 1fr; gap: 8px; }
+  .detail-item { padding: 11px 12px; border-radius: 12px; }
+  .detail-key { font-size: 11px; }
+  .detail-val { margin-top: 4px; font-size: 14px; line-height: 1.45; }
+  .detail-sub { font-size: 11px; }
+
+  /* Photos */
+  .photo-card { border-radius: 13px; }
+  .photo-main { width: 100%; max-height: 48vh; object-fit: contain; }
+  .photo-caption { padding: 8px 10px; font-size: 10px; }
+  .thumb-strip { display: flex; overflow-x: auto; gap: 8px; padding: 9px; scroll-snap-type: x proximity; }
+  .thumb-item { flex: 0 0 82px; width: 82px; scroll-snap-align: start; }
+  .thumb-item img { height: 64px; }
+
+  /* Notes */
+  .notes-section { border-radius: 13px; }
+  .notes-header, .notes-add, .notes-list { padding-left: 11px; padding-right: 11px; }
+  .notes-add-row { display: grid; grid-template-columns: 1fr; gap: 8px; }
+  .notes-add-row textarea { min-height: 92px; }
+  .notes-add-row button { width: 100%; min-height: 44px; }
+  .notes-list { max-height: 280px; }
+  .note-item { padding: 11px; border-radius: 11px; }
+
+  /* Mobile vessel list cards */
+  .mobile-list-card .panel-desc { display: none; }
+  .mobile-list-card .panel-body { padding-top: 10px; }
+  .split-table-title { position: static; padding: 12px 2px 8px; background: transparent; border: 0; font-size: 17px; }
+  .mobile-list-grid { gap: 8px; }
+  .mobile-vessel-card { padding: 12px; border-radius: 13px; gap: 8px; }
+  .mobile-vessel-title { font-size: 15px; }
+  .mobile-vessel-row { grid-template-columns: 86px minmax(0,1fr); gap: 8px; font-size: 12px; }
+  .mobile-vessel-actions button { min-height: 38px; }
+
+  /* Full-screen edit/insert modal with sticky controls */
+  .modal-backdrop { padding: 0; align-items: stretch; }
+  .modal-card { width: 100%; height: 100dvh; max-height: none; border: 0; border-radius: 0; }
+  .modal-head { flex: 0 0 auto; position: sticky; top: 0; z-index: 20; padding: calc(12px + env(safe-area-inset-top)) 13px 12px; }
+  .modal-title { font-size: 17px; }
+  .modal-head button { min-height: 42px; }
+  .modal-body { padding: 13px 12px calc(92px + env(safe-area-inset-bottom)); }
+  .form-grid { grid-template-columns: 1fr; gap: 11px; }
+  .form-grid .full { grid-column: auto; }
+  .dmm-fieldset { grid-template-columns: minmax(0,.85fr) minmax(0,1.25fr) 38px; gap: 6px; }
+  .hemisphere-box { height: 46px; border-radius: 11px; }
+  .preview-strip { grid-template-columns: repeat(3, minmax(0,1fr)); gap: 7px; }
+  .preview-thumb img { height: 78px; }
+  .modal-actions { position: sticky; bottom: calc(-92px - env(safe-area-inset-bottom)); z-index: 20; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 18px -12px calc(-92px - env(safe-area-inset-bottom)); padding: 10px 12px calc(10px + env(safe-area-inset-bottom)); background: rgba(11,33,54,.97); border-top: 1px solid var(--line); backdrop-filter: blur(14px); }
+  .modal-actions button { width: 100%; min-height: 46px; padding: 9px; }
+  .modal-actions #deleteVesselBtn:not(.hidden) { grid-column: 1 / -1; }
+
+  /* Mobile lightbox */
+  .lightbox-backdrop { padding: 0; }
+  .lightbox-card { width: 100%; height: 100dvh; border-radius: 0; }
+  .lightbox-head { align-items: flex-start; padding: calc(10px + env(safe-area-inset-top)) 10px 10px; }
+  .lightbox-title { max-width: 34%; font-size: 11px; line-height: 1.3; }
+  .lightbox-controls { justify-content: flex-end; gap: 5px; }
+  .lightbox-controls button { min-width: 38px; min-height: 38px; padding: 6px; font-size: 11px; }
+  .lightbox-stage { touch-action: none; }
+  .lightbox-foot { padding: 8px 10px calc(8px + env(safe-area-inset-bottom)); font-size: 10px; }
+
+  /* General touch and overflow safety */
+  button, .thumb-item, .mobile-vessel-card, tbody tr { touch-action: manipulation; }
+  button { min-height: 42px; }
+  img { max-width: 100%; }
+}
+
+@media (max-width: 390px) {
+  .brand-block h1 { font-size: 21px; }
+  .header .actions button, .toolbar-row .actions button { font-size: 10px; }
+  .completed-stat-layout { grid-template-columns: 32px minmax(68px,.7fr) minmax(132px,1.3fr); gap: 8px; }
+  .completed-periods { padding-left: 8px; }
+  .mobile-vessel-row { grid-template-columns: 78px minmax(0,1fr); }
+  .preview-strip { grid-template-columns: repeat(2, minmax(0,1fr)); }
+}
+
+
+
+/* ===== Mobile split vessel lists: Wreck and Abandoned ===== */
+@media (max-width: 760px) {
+  .mobile-list-card { background: transparent; border: 0; box-shadow: none; }
+  .mobile-list-card > .panel-head { display: none; }
+  .mobile-list-card > .panel-body { padding: 0; }
+  .mobile-table-host { display: grid !important; gap: 12px; }
+  .mobile-vessel-section {
+    min-width: 0;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: linear-gradient(145deg,rgba(14,38,61,.97),rgba(8,25,43,.97));
+    box-shadow: var(--shadow);
+  }
+  .mobile-vessel-section-head {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 12px 13px;
+    border-bottom: 1px solid var(--line);
+    background: rgba(12,41,64,.98);
+    backdrop-filter: blur(12px);
+  }
+  .mobile-vessel-section-title {
+    margin: 0;
+    font-size: 17px;
+    font-weight: 850;
+    color: var(--text);
+  }
+  .mobile-vessel-section-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 30px;
+    padding: 4px 8px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: #102d46;
+    color: #c7dfec;
+    font-size: 11px;
+    font-weight: 800;
+  }
+  .mobile-vessel-section-list {
+    display: grid;
+    gap: 8px;
+    max-height: 515px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 10px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(143,168,189,.55) transparent;
+  }
+  .mobile-vessel-section-list::-webkit-scrollbar { width: 6px; }
+  .mobile-vessel-section-list::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: rgba(143,168,189,.55);
+  }
+  .mobile-vessel-section .mobile-list-empty { margin: 0; }
+}
+
+@media (max-width: 390px) {
+  .mobile-vessel-section-list { max-height: 485px; padding: 8px; }
+  .mobile-vessel-section-head { padding: 11px; }
+}
+
+
+    /* Completed date range summary */
+    .completed-range-panel{margin-top:14px;padding:14px;border:1px solid rgba(149,190,219,.20);border-radius:14px;background:rgba(7,21,36,.55)}
+    .completed-range-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+    .completed-range-title{font-size:13px;font-weight:850;color:var(--text)}
+    .completed-range-help{margin-top:3px;color:var(--muted);font-size:11px}
+    .completed-range-inputs{display:grid;grid-template-columns:minmax(150px,1fr) minmax(150px,1fr) auto;gap:10px;align-items:end}
+    .completed-range-field label{display:block;margin-bottom:6px;color:var(--muted);font-size:11px;font-weight:700}
+    .completed-range-results{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px}
+    .completed-range-result{padding:11px 12px;border:1px solid var(--line);border-radius:12px;background:#0c2940}
+    .completed-range-result span{display:block;color:var(--muted);font-size:10px;font-weight:750}
+    .completed-range-result strong{display:block;margin-top:4px;color:var(--text);font-size:22px;line-height:1;font-variant-numeric:tabular-nums}
+    .completed-range-result.wreck strong{color:#ffc078}
+    .completed-range-result.abandoned strong{color:#83c8ff}
+    .completed-range-message{margin-top:9px;color:var(--muted);font-size:11px;line-height:1.4}
+    .completed-range-message.error{color:#ff9b95;font-weight:750}
+    @media(max-width:760px){
+      .completed-range-panel{padding:11px;margin-top:10px}
+      .completed-range-inputs{grid-template-columns:1fr 1fr}
+      .completed-range-inputs button{grid-column:1 / -1;width:100%}
+      .completed-range-results{grid-template-columns:1fr 1fr}
+      .completed-range-result.total{grid-column:1 / -1}
+    }
+
+  
+.oa-bg{position:fixed;inset:0;z-index:8000;background:rgba(2,10,18,.88);padding:16px}.oa-shell{height:calc(100dvh - 32px);max-width:1500px;margin:auto;background:#081b2d;border:1px solid var(--line);border-radius:18px;display:flex;flex-direction:column;overflow:hidden}.oa-head{padding:14px 16px;background:#0d263d;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:10px}.oa-title{font-size:21px;font-weight:850}.oa-tools{padding:12px 16px;border-bottom:1px solid var(--line)}.oa-filter{display:grid;grid-template-columns:1fr 1fr auto;gap:9px;align-items:end}.oa-counts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}.oa-count{padding:9px 11px;background:#0c2940;border:1px solid var(--line);border-radius:11px}.oa-count small{display:block;color:var(--muted)}.oa-count strong{font-size:21px}.oa-body{display:grid;grid-template-columns:minmax(340px,.8fr) minmax(500px,1.2fr);gap:12px;padding:12px;min-height:0;flex:1}.oa-pane{border:1px solid var(--line);border-radius:13px;background:#0b2136;overflow:auto;padding:10px}.oa-section{display:flex;justify-content:space-between;position:sticky;top:-10px;background:#0c2940;padding:9px;z-index:2}.oa-list{display:grid;gap:7px;margin:8px 0 14px}.oa-row{padding:10px;background:#102d46;border:1px solid var(--line);border-radius:10px;cursor:pointer}.oa-row.active,.oa-row:hover{border-color:#29d3c2}.oa-meta{font-size:11px;color:var(--muted);margin-top:4px}.oa-detail-title{font-size:24px;font-weight:850}.oa-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}.oa-item{padding:10px;background:#0c2940;border:1px solid var(--line);border-radius:10px}.oa-item.full{grid-column:1/-1}.oa-k{font-size:10px;color:var(--muted)}.oa-v{margin-top:4px;font-weight:700;white-space:pre-wrap}.oa-photo{width:120px;height:84px;object-fit:cover;border-radius:9px;margin:5px;cursor:pointer}.oa-form-bg{position:fixed;inset:0;z-index:9000;background:rgba(2,10,18,.82);display:flex;align-items:center;justify-content:center;padding:16px}.oa-form{width:min(760px,100%);max-height:94dvh;overflow:auto;background:#0b2136;border:1px solid var(--line);border-radius:16px;padding:16px}.oa-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.oa-form-grid .full{grid-column:1/-1}.oa-status{display:inline-flex;padding:5px 8px;border-radius:999px;font-size:11px;font-weight:800}.oa-status.completed{background:var(--completed-soft);color:#cbd5e1}.oa-status.ready{background:var(--ready-soft);color:#78efaa}#oaFrom,#oaTo,#oaApproval,#oaDisposed{color-scheme:dark} @media(max-width:760px){.oa-bg{padding:0}.oa-shell{height:100dvh;border:0;border-radius:0}.oa-body{grid-template-columns:1fr;overflow:auto}.oa-pane{min-height:410px}.oa-filter{grid-template-columns:1fr 1fr}.oa-filter button{grid-column:1/-1}.oa-form-grid{grid-template-columns:1fr}.oa-form-grid .full{grid-column:auto}.oa-form-bg{padding:0}.oa-form{height:100dvh;max-height:none;border-radius:0}}
+</style>
+<style id="dashboardIntegrationStyle">
+.dashboard-back{position:fixed;z-index:120000;right:14px;bottom:14px;display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:0 14px;border:1px solid rgba(125,211,252,.55);border-radius:999px;background:rgba(7,24,40,.94);color:#e8f6ff;text-decoration:none;font:800 12px/1 Segoe UI,Arial,sans-serif;box-shadow:0 10px 28px rgba(0,0,0,.35)}
+.dashboard-back:hover,.dashboard-back:focus-visible{border-color:#67e8f9;background:#0c2a43;outline:none}
+@media(max-width:700px){.dashboard-back{right:8px;bottom:8px;min-height:38px;padding:0 11px;font-size:11px}}
+</style></head>
+<body><a href="../" class="dashboard-back" title="Return to Auckland Harbour Operations Monitoring Page">← Dashboard</a>
+  <div class="container">
+    <div class="header">
+      <div class="brand-block">
+        <div class="eyebrow"><span class="brand-mark">HM</span><span>AUCKLAND HARBOURMASTER</span></div>
+        <h1>Wreck / Abandoned <span>Summary Board</span></h1>
+        <p>Vessel status, location records and disposal workflow</p>
+      </div>
+      <div class="actions">
+        <button id="ownerApprovedBtn" class="primary">Owner Approved</button>
+        <button id="resetFiltersBtn">Reset Filters</button>
+        <button id="fitAllBtn">Zoom out to All Pins</button>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="card stat-card stat-wreck"><div class="stat-top"><div class="icon-box">⚓</div><div><div class="stat-label">Wreck</div><div class="stat-value" id="statWreck">0</div><div class="stat-sub">Total wreck vessels</div></div></div></div>
+      <div class="card stat-card stat-abandoned"><div class="stat-top"><div class="icon-box">🛶</div><div><div class="stat-label">Abandoned</div><div class="stat-value" id="statAbandoned">0</div><div class="stat-sub">Total abandoned vessels</div></div></div></div>
+      <div class="card stat-card stat-wip"><div class="stat-top"><div class="icon-box">🧾</div><div><div class="stat-label">Abandoned - WIP</div><div class="stat-value" id="statAbandonedWip">0</div><div class="stat-sub">In progress before final disposal stage</div></div></div></div>
+      <div class="card stat-card stat-ready"><div class="stat-top"><div class="icon-box">✅</div><div><div class="stat-label">Abandoned - Ready to dispose</div><div class="stat-value" id="statAbandonedReady">0</div><div class="stat-sub">Final Notice completed</div></div></div></div>
+      <div class="card stat-card stat-completed"><div class="stat-top completed-stat-layout"><div class="icon-box">📦</div><div class="completed-total"><div class="stat-label">Completed</div><div class="stat-value" id="statCompleted">0</div><div class="stat-sub" id="statCompletedBreakdown">Wreck 0 / Abandoned 0</div></div><div class="completed-periods"><div class="completed-period-item"><span>Last 30 days</span><strong id="statCompleted30Days">0</strong></div><div class="completed-period-item"><span>Last 12 months</span><strong id="statCompleted12Months">0</strong></div></div></div></div>
+    </div>
+
+    <div class="card">
+      <div class="panel-head">
+        <h2 class="panel-title">Live Filters</h2>
+        <div class="panel-desc">Search is currently limited to Vessel Name. Use the insert button to register a new vessel record.</div>
+      </div>
+      <div class="panel-body">
+        <div class="toolbar-row">
+          <div class="actions">
+            <button class="primary" id="insertVesselBtn">Insert New Vessel</button>
+            <button id="sharepointBtn" type="button">SharePoint</button>
+          </div>
+        </div>
+        <div class="filters-grid">
+          <input id="f_vesselName" class="field" placeholder="Search Vessel Name" />
+          <select id="f_type" class="field">
+            <option value="">All Types</option>
+            <option value="Wreck">Wreck</option>
+            <option value="Abandoned">Abandoned</option>
+          </select>
+        </div>
+        <section class="completed-range-panel" aria-labelledby="completedRangeTitle">
+          <div class="completed-range-head">
+            <div>
+              <div class="completed-range-title" id="completedRangeTitle">Completed by Date Range</div>
+              <div class="completed-range-help">Counts vessels completed from the start date through the end date, inclusive.</div>
+            </div>
+          </div>
+          <div class="completed-range-inputs">
+            <div class="completed-range-field">
+              <label for="completedFromDate">From</label>
+              <input id="completedFromDate" class="field" type="date" />
+            </div>
+            <div class="completed-range-field">
+              <label for="completedToDate">To</label>
+              <input id="completedToDate" class="field" type="date" />
+            </div>
+            <button id="clearCompletedRangeBtn" type="button">Clear Dates</button>
+          </div>
+          <div class="completed-range-results" aria-live="polite">
+            <div class="completed-range-result wreck"><span>Completed Wreck</span><strong id="completedRangeWreck">0</strong></div>
+            <div class="completed-range-result abandoned"><span>Completed Abandoned</span><strong id="completedRangeAbandoned">0</strong></div>
+            <div class="completed-range-result total"><span>Total Completed</span><strong id="completedRangeTotal">0</strong></div>
+          </div>
+          <div class="completed-range-message" id="completedRangeMessage">Select both dates to calculate the completed counts.</div>
+        </section>
+      </div>
+    </div>
+
+    <div class="main-grid">
+      <div class="map-col">
+        <div class="card">
+          <div class="panel-head">
+            <h2 class="panel-title">Location Map</h2>
+            <div class="panel-desc">Completed vessels remain in the list but disappear from the map because coordinates are cleared.</div>
+          </div>
+          <div class="panel-body">
+            <div id="map"></div>
+            <div class="legend" id="legend">
+              <div class="legend-item"><span class="legend-dot" style="background:#92400e"></span><span>Wreck</span></div>
+              <div class="legend-item"><span class="legend-dot" style="background:#2563eb"></span><span>Abandoned - WIP</span></div>
+              <div class="legend-item"><span class="legend-dot" style="background:#16a34a"></span><span>Ready to dispose</span></div>
+              <div class="legend-item"><span class="legend-dot" style="background:#64748b"></span><span>Completed (list only)</span></div>
+            </div>
+            <div id="desktopTableHost" class="desktop-table-host">
+            <div class="split-table-host">
+              <div class="table-wrap split-table-wrap">
+                <h3 class="split-table-title">Wreck</h3>
+                <table class="split-vessel-table">
+                  <thead>
+                    <tr>
+                      <th>Vessel Name</th>
+                      <th>Status</th>
+                      <th>Date</th>
+                      <th aria-label="Row actions"></th>
+                    </tr>
+                  </thead>
+                  <tbody id="tableBodyWreck"></tbody>
+                </table>
+              </div>
+              <div class="table-wrap split-table-wrap">
+                <h3 class="split-table-title">Abandoned</h3>
+                <table class="split-vessel-table">
+                  <thead>
+                    <tr>
+                      <th>Vessel Name</th>
+                      <th>Status</th>
+                      <th>Date</th>
+                      <th aria-label="Row actions"></th>
+                    </tr>
+                  </thead>
+                  <tbody id="tableBodyAbandoned"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="detail-col">
+        <div class="card detail-card">
+          <div class="panel-head">
+            <h2 class="panel-title">Details Information</h2>
+            <div class="panel-desc">Selected vessel summary and process milestones.</div>
+          </div>
+          <div class="panel-body">
+            <div id="detailEmpty" class="muted-box">Select a pin or a table row to view the vessel details.</div>
+            <div id="detailContent" class="hidden">
+              <div class="detail-top">
+                <div class="detail-top-row">
+                  <div>
+                    <div class="badges" id="detailBadges"></div>
+                    <div id="detailTitle" class="detail-top-title">-</div>
+                    <div id="detailStatus" class="detail-top-sub"></div>
+                  </div>
+                  <div><button id="editVesselBtn" class="small">Edit</button></div>
+                </div>
+              </div>
+              <div class="detail-grid" id="detailGrid"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="mobileListCard" class="card mobile-list-card hidden">
+        <div class="panel-head">
+          <h2 class="panel-title">Vessel List</h2>
+          <div class="panel-desc">Mobile layout places the full list below the details panel.</div>
+        </div>
+        <div class="panel-body">
+          <div id="mobileTableHost" class="mobile-table-host"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="oaBg" class="oa-bg hidden"><div class="oa-shell"><div class="oa-head"><div><div class="oa-title">Owner Approved</div><div class="panel-desc">Independent owner approval register</div></div><div class="actions"><button id="oaNew" class="primary">Add Record</button><button id="oaClose" class="danger">Close</button></div></div><div class="oa-tools"><div class="oa-filter"><div><label class="field-label">Owner Approval Date From</label><input id="oaFrom" class="field" type="date"></div><div><label class="field-label">Owner Approval Date To</label><input id="oaTo" class="field" type="date"></div><button id="oaClear">Clear Dates</button></div><div class="oa-counts"><div class="oa-count"><small>Wreck</small><strong id="oaWC">0</strong></div><div class="oa-count"><small>Abandoned</small><strong id="oaAC">0</strong></div><div class="oa-count"><small>Total</small><strong id="oaTC">0</strong></div></div></div><div class="oa-body"><div id="oaList" class="oa-pane"></div><div id="oaDetail" class="oa-pane"><div class="muted-box">Select a record.</div></div></div></div></div>
+  <div id="oaFormBg" class="oa-form-bg hidden"><form id="oaForm" class="oa-form"><div class="oa-head"><h3 id="oaFormTitle" class="modal-title">Owner Approved Record</h3><button id="oaFormClose" type="button" class="danger">Close</button></div><div class="oa-form-grid"><div><label class="field-label">Vessel Name</label><input id="oaName" class="field" required></div><div><label class="field-label">Classification</label><select id="oaType" class="field"><option>Abandoned</option><option>Wreck</option></select></div><div class="full"><label class="field-label">Owner Details</label><textarea id="oaOwner" class="field"></textarea></div><div><label class="field-label">Latitude</label><input id="oaLat" class="field" type="number" step="any"></div><div><label class="field-label">Longitude</label><input id="oaLon" class="field" type="number" step="any"></div><div><label class="field-label">Notified to HM</label><input id="oaNotified" class="field" type="date"></div><div><label class="field-label">Owner Approval Date</label><input id="oaApproval" class="field" type="date" required></div><div><label class="field-label">Date Disposed of</label><input id="oaDisposed" class="field" type="date"></div><div><label class="field-label">Status</label><input id="oaStatusView" class="field" readonly></div><div class="full"><label class="field-label">Add Photos</label><input id="oaFiles" class="field" type="file" accept="image/*" multiple></div></div><div class="modal-actions"><button id="oaDelete" type="button" class="danger hidden">Delete</button><button class="primary">Save</button></div></form></div>
+  <div id="vesselModalBackdrop" class="modal-backdrop hidden" aria-hidden="true">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="vesselModalTitle">
+      <div class="modal-head">
+        <h3 id="vesselModalTitle" class="modal-title">Insert New Vessel</h3>
+        <button id="vesselModalClose" class="small danger" type="button">Close</button>
+      </div>
+      <div class="modal-body">
+        <form id="vesselForm">
+          <div class="form-grid">
+            <div>
+              <label class="field-label" for="vesselNameInput">Vessel name</label>
+              <input id="vesselNameInput" class="field" required />
+            </div>
+            <div>
+              <label class="field-label" for="typeInput">Classification</label>
+              <select id="typeInput" class="field" required>
+                <option value="Wreck">Wreck</option>
+                <option value="Abandoned">Abandoned</option>
+              </select>
+            </div>
+            <div><label class="field-label">Lat (Degrees + Decimal Minutes)</label><div class="dmm-fieldset"><div class="dmm-input-wrap"><input id="latDegreesInput" class="field" type="number" min="0" max="90" step="1" value="0"><span class="dmm-unit">°</span></div><div class="dmm-input-wrap"><input id="latMinutesInput" class="field" type="number" min="0" max="59.9999" step="0.0001" value="0"><span class="dmm-unit">′</span></div><div class="hemisphere-box">S</div></div><div class="dmm-helper">Enter positive degrees and decimal minutes. Hemisphere is fixed to S.</div></div>
+            <div><label class="field-label">Long (Degrees + Decimal Minutes)</label><div class="dmm-fieldset"><div class="dmm-input-wrap"><input id="lonDegreesInput" class="field" type="number" min="0" max="180" step="1" value="0"><span class="dmm-unit">°</span></div><div class="dmm-input-wrap"><input id="lonMinutesInput" class="field" type="number" min="0" max="59.9999" step="0.0001" value="0"><span class="dmm-unit">′</span></div><div class="hemisphere-box">E</div></div><div class="dmm-helper">Enter positive degrees and decimal minutes. Hemisphere is fixed to E.</div></div>
+            <div class="full">
+              <label class="field-label" for="ownerInput">Owner details</label>
+              <textarea id="ownerInput" class="field" placeholder="Owner name / contact / remarks"></textarea>
+            </div>
+            <div>
+              <label class="field-label" for="notifiedHmInput">Notified to HM</label>
+              <input id="notifiedHmInput" class="field" type="date" />
+            </div>
+            <div>
+              <label class="field-label" for="mtaIssuedInput">MTA Notice issued</label>
+              <input id="mtaIssuedInput" class="field" type="date" />
+            </div>
+            <div>
+              <label class="field-label" for="mtaExpiryInput">MTA Notice expiry</label>
+              <input id="mtaExpiryInput" class="field" type="date" />
+            </div>
+            <div class="full">
+              <label class="field-label" for="photoFileInput">Uploaded photos</label>
+              <input id="photoFileInput" class="field" type="file" accept="image/*" multiple />
+              <div class="helper-text">You can upload one or more images. In edit mode, newly selected photos are added to existing photos, and each preview image can be removed individually before saving.</div>
+            </div>
+            <div class="full abandoned-only">
+              <label class="field-label" for="policeInput">Police Notification</label>
+              <input id="policeInput" class="field" type="date" />
+            </div>
+            <div class="abandoned-only">
+              <label class="field-label" for="news1Input">1st Newspaper listing</label>
+              <input id="news1Input" class="field" type="date" />
+            </div>
+            <div class="abandoned-only">
+              <label class="field-label" for="news2Input">2nd Newspaper listing</label>
+              <input id="news2Input" class="field" type="date" />
+            </div>
+            <div class="abandoned-only full">
+              <label class="field-label" for="finalNoticeInput">Final Notice</label>
+              <input id="finalNoticeInput" class="field" type="date" />
+            </div>
+            <div id="completionDateSection" class="full hidden">
+              <label class="field-label" for="completionDateInput">Completion Date</label>
+              <input id="completionDateInput" class="field" type="date" />
+              <div class="helper-text">Today is selected by default. You can choose a different completion date before saving.</div>
+            </div>
+            <div class="full">
+              <label class="field-label">Photo preview</label>
+              <div class="preview-box"><div id="photoPreviewStrip" class="preview-strip"></div><div id="photoPreviewEmpty" class="helper-text">No photos selected.</div></div>
+            </div>
+          </div>
+          <div class="modal-actions">
+            <button type="button" id="deleteVesselBtn" class="danger hidden">Delete Vessel</button>
+            <button type="button" id="cancelVesselBtn">Cancel</button>
+            <button type="submit" class="primary" id="saveVesselBtn">Save Vessel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div id="lightboxBackdrop" class="lightbox-backdrop hidden" aria-hidden="true">
+    <div class="lightbox-card" role="dialog" aria-modal="true" aria-labelledby="lightboxTitle">
+      <div class="lightbox-head">
+        <div class="lightbox-title" id="lightboxTitle">Photo viewer</div>
+        <div class="lightbox-controls">
+          <button id="prevPhotoBtn" class="small" type="button">◀ Prev</button>
+          <button id="zoomOutBtn" class="small" type="button">−</button>
+          <button id="resetZoomBtn" class="small" type="button">Reset</button>
+          <button id="zoomInBtn" class="small" type="button">＋</button>
+          <button id="nextPhotoBtn" class="small" type="button">Next ▶</button>
+          <button id="lightboxCloseBtn" class="small danger" type="button">Close</button>
+        </div>
+      </div>
+      <div class="lightbox-stage" id="lightboxStage">
+        <img id="lightboxImage" class="lightbox-image" alt="Selected vessel photo" draggable="false" />
+      </div>
+      <div class="lightbox-foot">
+        <div id="lightboxMeta">Photo 1 / 1</div>
+        <div>Zoom with buttons or mouse wheel</div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const MAP_CENTER = [-36.8485, 174.7633];
+    const MAP_ZOOM = 11;
+    const SEARCH_FOCUS_ZOOM = 14;
+    const STORAGE_KEY_V4 = 'wreckAbandonedBoardDataV4';
+    const STORAGE_KEY_V3 = 'wreckAbandonedBoardDataV3';
+    const SHAREPOINT_URL = 'https://aucklandtransport.sharepoint.com/sites/ahmfs/Abandoned%20Vessel%20Paperwork/Forms/AllItems.aspx';
+
+    // ===== Supabase config =====
+    // Replace the placeholders below before deployment.
+    // Note: because email login was removed, your Supabase RLS policies must allow anon access
+    // for the required tables/storage actions if you want the app to work without authentication.
+    const SUPABASE_URL = 'https://wgwlnutnstrfuiiunlcu.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_iC7kbinoy61_5eQCnrV25Q_OioA7Y1x';
+    const SUPABASE_BUCKET = 'wreck-abandoned-photos';
+
+    const state = {
+      records: [],
+      filtered: [],
+      selectedId: null,
+      markers: {},
+      layerGroup: null,
+      modalMode: 'insert',
+      editingId: null,
+      pendingPhotos: [],
+      completionRequested: false,
+      detailPhotoIndex: 0,
+      supabaseConfigured: false,
+      lightbox: {
+        recordId: null,
+        photos: [],
+        index: 0,
+        zoom: 1,
+        panX: 0,
+        panY: 0,
+        dragging: false,
+        dragStartX: 0,
+        dragStartY: 0,
+        startPanX: 0,
+        startPanY: 0
+      }
+    };
+
+    let supabaseClient = null;
+
+    const el = (id) => document.getElementById(id);
+    const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (m) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[m]));
+
+    function svgPlaceholder(label, color) {
+      const safeLabel = encodeURIComponent(label || 'Vessel');
+      const safeColor = encodeURIComponent(color || '#64748b');
+      return `data:image/svg+xml;charset=UTF-8,` +
+        `<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='700' viewBox='0 0 1200 700'>` +
+        `<rect width='1200' height='700' fill='${safeColor}'/>` +
+        `<text x='50%' y='48%' dominant-baseline='middle' text-anchor='middle' font-family='Segoe UI, Arial, sans-serif' font-size='44' font-weight='700' fill='white'>${safeLabel}</text>` +
+        `<text x='50%' y='58%' dominant-baseline='middle' text-anchor='middle' font-family='Segoe UI, Arial, sans-serif' font-size='24' fill='white'>Draft photo placeholder</text>` +
+        `</svg>`;
+    }
+
+    const SAMPLE_DATA = JSON.parse("[{\"id\": \"W1\", \"vesselName\": \"Spirit of Breaker Bay\", \"type\": \"Wreck\", \"lat\": -36.8811833, \"lon\": 174.8864, \"owner\": \"Vessel sank on mooring and declared wreck. Owner responded that he would recover the vessel. HM patrol checked in Nov 2021 and couldn't see it. BG confirmed that he has talked w...\", \"notifiedToHm\": \"\", \"mtaIssued\": \"2021-09-30\", \"mtaExpiry\": \"2021-10-30\", \"photos\": [], \"notes\": [{\"text\": \"Vessel sank on mooring and declared wreck. Owner responded that he would recover the vessel. HM patrol checked in Nov 2021 and couldn't see it. BG confirmed that he has talked with the owner recently and vessel hasn't been recovered\", \"createdAt\": \"2021-09-30T09:00:00\"}]}, {\"id\": \"W2\", \"vesselName\": \"Brezzin\", \"type\": \"Wreck\", \"lat\": -36.8581833, \"lon\": 174.8902, \"owner\": \"Unknown\", \"notifiedToHm\": \"\", \"mtaIssued\": \"2023-09-26\", \"mtaExpiry\": \"2023-10-26\", \"photos\": [], \"notes\": [{\"text\": \"Vessel sank on mooring, owner not in financial state to recover the vessel\", \"createdAt\": \"2023-09-26T09:00:00\"}]}, {\"id\": \"W3\", \"vesselName\": \"Lady Doreen\", \"type\": \"Wreck\", \"lat\": -36.86435, \"lon\": 174.6569333, \"owner\": \"Sunk, now sitting on the mangrove. Salvage operation planned on 11/5/2023\", \"notifiedToHm\": \"\", \"mtaIssued\": \"2023-02-03\", \"mtaExpiry\": \"2023-03-05\", \"photos\": [], \"notes\": [{\"text\": \"Sunk, now sitting on the mangrove. Salvage operation planned on 11/5/2023\", \"createdAt\": \"2023-02-03T09:00:00\"}]}, {\"id\": \"W4\", \"vesselName\": \"Serenity\", \"type\": \"Wreck\", \"lat\": -36.7980969722222, \"lon\": 175.039776972222, \"owner\": \"Ian Batten \u2013 022 120 1521/ kebatten@gmail.com | 16 Waitai Road, Ostend, Waiheke Island\", \"notifiedToHm\": \"\", \"mtaIssued\": \"2025-06-17\", \"mtaExpiry\": \"2025-07-17\", \"photos\": [], \"notes\": [{\"text\": \"Ian Batten \u2013 022 120 1521/ kebatten@gmail.com \\n16 Waitai Road, Ostend, Waiheke Island\", \"createdAt\": \"2025-06-17T09:00:00\"}]}, {\"id\": \"W5\", \"vesselName\": \"Tahi\", \"type\": \"Wreck\", \"lat\": -36.8225333, \"lon\": 174.7552167, \"owner\": \"David Melton \u2013 021 293 8502 | 5 Fox Place, Cloverlea, Palmerston North 4412\", \"notifiedToHm\": \"\", \"mtaIssued\": \"2025-07-21\", \"mtaExpiry\": \"2025-08-20\", \"photos\": [], \"notes\": [{\"text\": \"David Melton \u2013 021 293 8502 \\n5 Fox Place, Cloverlea, Palmerston North 4412\", \"createdAt\": \"2025-07-21T09:00:00\"}]}, {\"id\": \"W6\", \"vesselName\": \"Strait Aro II\", \"type\": \"Wreck\", \"lat\": -36.779, \"lon\": 174.6639667, \"owner\": \"David Redden - 027 206 1025/ reddend941@gmail.com | 7/10 Coutts Avenue, Paihia\", \"notifiedToHm\": \"\", \"mtaIssued\": \"2026-02-12\", \"mtaExpiry\": \"2026-03-14\", \"photos\": [], \"notes\": [{\"text\": \"David Redden - 027 206 1025/ reddend941@gmail.com\\n\\t7/10 Coutts Avenue, Paihia\", \"createdAt\": \"2026-02-12T09:00:00\"}]}, {\"id\": \"W7\", \"vesselName\": \"Prime Time\", \"type\": \"Wreck\", \"lat\": -36.84783, \"lon\": 174.79862, \"owner\": \"Mingguan Bu - 021 512 998/ mgbu12345@outlook.com | 15 Lockington Avenue, Henderson, Auckland 0612\", \"notifiedToHm\": \"\", \"mtaIssued\": \"2026-02-13\", \"mtaExpiry\": \"2026-03-15\", \"photos\": [], \"notes\": [{\"text\": \"Mingguan Bu - 021 512 998/ mgbu12345@outlook.com\\n\\t15 Lockington Avenue, Henderson, Auckland 0612\", \"createdAt\": \"2026-02-13T09:00:00\"}]}, {\"id\": \"W8\", \"vesselName\": \"Puriri\", \"type\": \"Wreck\", \"lat\": -36.8755667, \"lon\": 174.9027833, \"owner\": \"George Hayward - 022 1859 529/ hori.pakeha@hotmail.com | 179 Helenslee Road, Pokeno 2472\", \"notifiedToHm\": \"\", \"mtaIssued\": \"2026-02-18\", \"mtaExpiry\": \"2026-03-20\", \"photos\": [], \"notes\": [{\"text\": \"George Hayward - 022 1859 529/ hori.pakeha@hotmail.com\\n\\t179 Helenslee Road, Pokeno 2472\", \"createdAt\": \"2026-02-18T09:00:00\"}]}, {\"id\": \"W9\", \"vesselName\": \"Boadicea\", \"type\": \"Wreck\", \"lat\": -36.913, \"lon\": 174.8564833, \"owner\": \"Nick Whall - 0224658611, 0274731300, 027 765 2775, 027 242 3378/ serviceafloat@gmail.com | 29 Taniwha Street, Wai O Taiki Bay, Auckland 1072\", \"notifiedToHm\": \"\", \"mtaIssued\": \"2026-03-17\", \"mtaExpiry\": \"2026-04-16\", \"photos\": [], \"notes\": [{\"text\": \"Nick Whall - 0224658611, 0274731300, 027 765 2775, 027 242 3378/ serviceafloat@gmail.com\\n29 Taniwha Street, Wai O Taiki Bay, Auckland 1072\", \"createdAt\": \"2026-03-17T09:00:00\"}]}, {\"id\": \"W10\", \"vesselName\": \"No name\", \"type\": \"Wreck\", \"lat\": -36.6173833, \"lon\": 174.7686833, \"owner\": \"Jason Craig - 021 236 0802/ 2jasoncraig@gmail.com | 34 Sheffield Road, Hellensville\", \"notifiedToHm\": \"\", \"mtaIssued\": \"2026-04-13\", \"mtaExpiry\": \"2026-05-13\", \"photos\": [], \"notes\": [{\"text\": \"Jason Craig - 021 236 0802/ 2jasoncraig@gmail.com \\n\\t      \\t34 Sheffield Road, Hellensville\", \"createdAt\": \"2026-04-13T09:00:00\"}]}, {\"id\": \"A1\", \"vesselName\": \"Nothing Else Matters\", \"type\": \"Abandoned\", \"lat\": -36.4265667, \"lon\": 174.84055, \"owner\": \"Unknown\", \"notifiedToHm\": \"\", \"mtaIssued\": \"2025-07-24\", \"mtaExpiry\": \"2025-08-23\", \"policeNotification\": \"2025-07-25\", \"newspaper1\": \"2025-07-30\", \"newspaper2\": \"2025-08-01\", \"finalNotice\": \"2025-09-10\", \"photos\": [], \"notes\": [{\"text\": \"Unknown\", \"createdAt\": \"2025-07-24T09:00:00\"}]}, {\"id\": \"A2\", \"vesselName\": \"No name (12m Ferro Cement)\", \"type\": \"Abandoned\", \"lat\": -36.8375167, \"lon\": 174.7304167, \"owner\": \"Vessel pirating mooring since 2021, no details of owner found\", \"notifiedToHm\": \"\", \"mtaIssued\": \"2025-10-02\", \"mtaExpiry\": \"2025-11-01\", \"policeNotification\": \"2025-10-03\", \"newspaper1\": \"2026-03-25\", \"newspaper2\": \"2026-03-27\", \"finalNotice\": \"2026-04-22\", \"photos\": [], \"notes\": [{\"text\": \"Vessel pirating mooring since 2021, no details of owner found\", \"createdAt\": \"2025-10-02T09:00:00\"}]}, {\"id\": \"A3\", \"vesselName\": \"Platinum One\", \"type\": \"Abandoned\", \"lat\": -36.84705, \"lon\": 174.8053667, \"owner\": \"Karl Lance Haeger - 027 215 2410/ karlhaeger19372@gmail.com | Avondale Motor Park , 46 Bollard Ave, Mt Albert, Auckland 0600\", \"notifiedToHm\": \"\", \"mtaIssued\": \"2025-11-12\", \"mtaExpiry\": \"2025-12-12\", \"policeNotification\": \"2026-04-02\", \"newspaper1\": \"2026-03-25\", \"newspaper2\": \"2026-03-27\", \"finalNotice\": \"2026-04-22\", \"photos\": [], \"notes\": [{\"text\": \"Karl Lance Haeger - 027 215 2410/ karlhaeger19372@gmail.com \\n\\tAvondale Motor Park ,  46  Bollard Ave, Mt Albert, Auckland 0600\", \"createdAt\": \"2025-11-12T09:00:00\"}]}, {\"id\": \"A4\", \"vesselName\": \"Manah Prasadha\", \"type\": \"Abandoned\", \"lat\": -36.8814333, \"lon\": 174.88295, \"owner\": \"Dave Humphreys - 022 315 0013/ dave.autocare@hotmail.com / 22 Victory Road, Papatoetoe | New owner: Nathan Simon \u2013 0218763809/ +64 210 876 3809 (from PMU)\", \"notifiedToHm\": \"\", \"mtaIssued\": \"2026-01-12\", \"mtaExpiry\": \"2026-02-11\", \"policeNotification\": \"2026-01-13\", \"newspaper1\": \"2026-03-25\", \"newspaper2\": \"2026-03-27\", \"finalNotice\": \"2026-04-22\", \"photos\": [], \"notes\": [{\"text\": \"Dave Humphreys - 022 315 0013/ dave.autocare@hotmail.com / 22 Victory Road, Papatoetoe\\nNew owner: Nathan Simon \u2013 0218763809/ +64 210 876 3809 (from PMU)\", \"createdAt\": \"2026-01-12T09:00:00\"}]}, {\"id\": \"A5\", \"vesselName\": \"Gryphon\", \"type\": \"Abandoned\", \"lat\": -36.44245, \"lon\": 174.8332333, \"owner\": \"Joshua David STEVENSON \u2013 021370333/ joshsteve270@gmail.com | 29 Ruakaka Ridge View, Ruakaka 0171\", \"notifiedToHm\": \"\", \"mtaIssued\": \"2026-04-21\", \"mtaExpiry\": \"2026-05-21\", \"policeNotification\": \"2026-04-02\", \"newspaper1\": \"2026-03-25\", \"newspaper2\": \"2026-03-27\", \"finalNotice\": \"2026-04-22\", \"photos\": [], \"notes\": [{\"text\": \"Joshua David STEVENSON \u2013 021370333/ joshsteve270@gmail.com \\n29 Ruakaka Ridge View, Ruakaka 0171\", \"createdAt\": \"2026-04-21T09:00:00\"}]}, {\"id\": \"A6\", \"vesselName\": \"Figaro\", \"type\": \"Abandoned\", \"lat\": -36.8811667, \"lon\": 174.8827333, \"owner\": \"Shane James Witana \u2013 0273572056/ shanewitana@gmail.com Address: 93 Tiraumea Drive, Pakuranga, Auckland 2010 or 36 Sunderland Road, Half Moon Bay, Auckland 2012\", \"notifiedToHm\": \"\", \"mtaIssued\": \"2026-03-31\", \"mtaExpiry\": \"2026-04-30\", \"policeNotification\": \"2026-04-02\", \"newspaper1\": \"2026-03-25\", \"newspaper2\": \"2026-03-27\", \"finalNotice\": \"2026-04-22\", \"photos\": [], \"notes\": [{\"text\": \"Shane James Witana \u2013 0273572056/ shanewitana@gmail.com Address: 93 Tiraumea Drive, Pakuranga, Auckland 2010 or 36 Sunderland Road, Half Moon Bay, Auckland 2012\", \"createdAt\": \"2026-03-31T09:00:00\"}]}, {\"id\": \"A7\", \"vesselName\": \"Haeata\", \"type\": \"Abandoned\", \"lat\": -36.7759167, \"lon\": 174.66255, \"owner\": \"Robert Reynolds - 021 054 7139/ booboo.reynolds@gmail.com | 57 Hikurangi Street, Trentham, Upper Hutt 5018\", \"notifiedToHm\": \"\", \"mtaIssued\": \"2026-04-01\", \"mtaExpiry\": \"2026-05-01\", \"policeNotification\": \"2026-04-02\", \"newspaper1\": \"2026-03-25\", \"newspaper2\": \"2026-03-27\", \"finalNotice\": \"2026-04-22\", \"photos\": [], \"notes\": [{\"text\": \"Robert Reynolds - 021 054 7139/ booboo.reynolds@gmail.com \\n57 Hikurangi Street, Trentham, Upper Hutt 5018\", \"createdAt\": \"2026-04-01T09:00:00\"}]}, {\"id\": \"A8\", \"vesselName\": \"No name (or Secsea)\", \"type\": \"Abandoned\", \"lat\": -36.4259249722222, \"lon\": 174.735045972222, \"owner\": \"Richard Wendell - 020 407 90340/ 102mountainrd@gmail.com | 1a Duncan Avenue, Te Atatu South, Auckland 0610\", \"notifiedToHm\": \"\", \"mtaIssued\": \"2025-10-07\", \"mtaExpiry\": \"2025-11-06\", \"policeNotification\": \"2025-10-08\", \"newspaper1\": \"2026-03-25\", \"newspaper2\": \"2026-03-27\", \"finalNotice\": \"2026-04-22\", \"photos\": [], \"notes\": [{\"text\": \"Richard Wendell - 020 407 90340/ 102mountainrd@gmail.com \\n1a Duncan Avenue, Te Atatu South, Auckland 0610\", \"createdAt\": \"2025-10-07T09:00:00\"}]}]");
+
+    const map = L.map('map', { preferCanvas:true }).setView(MAP_CENTER, MAP_ZOOM);
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap contributors' }).addTo(map);
+
+    function formatDate(value) {
+      if (!value) return '-';
+      const d = new Date(value);
+      if (Number.isNaN(d.getTime())) return value;
+      return d.toLocaleDateString('en-NZ', { day:'numeric', month:'short', year:'numeric' });
+    }
+
+    function formatDateTime(value) {
+      if (!value) return '-';
+      const d = new Date(value);
+      if (Number.isNaN(d.getTime())) return value || '-';
+      return d.toLocaleString('en-NZ', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+    }
+
+    function isExpired(dateString) {
+      if (!dateString) return false;
+      const input = new Date(dateString + 'T23:59:59');
+      return input.getTime() < Date.now();
+    }
+
+    function hasCoordinates(record) {
+      return typeof record?.lat === 'number' && typeof record?.lon === 'number' && !Number.isNaN(record.lat) && !Number.isNaN(record.lon);
+    }
+
+    function formatDMM(value, kind) {
+      if (typeof value !== 'number' || Number.isNaN(value)) return '-';
+      const abs = Math.abs(value);
+      const degrees = Math.floor(abs);
+      const minutes = (abs - degrees) * 60;
+      const hemisphere = kind === 'lat' ? (value >= 0 ? 'N' : 'S') : (value >= 0 ? 'E' : 'W');
+      const degPad = kind === 'lat' ? 2 : 3;
+      return `${String(degrees).padStart(degPad, '0')}° ${minutes.toFixed(4)}′ ${hemisphere}`;
+    }
+
+    function deriveStatus(record) {
+      if (record.deletedAt) return 'Completed';
+      if (record.type === 'Abandoned') return record.finalNotice ? 'Ready to dispose' : 'WIP';
+      if (record.type === 'Wreck') {
+        if (record.mtaExpiry && isExpired(record.mtaExpiry)) return 'Ready to dispose';
+        if (record.mtaIssued) return 'WIP';
+        return '-';
+      }
+      return '-';
+    }
+
+    function statusClass(status) {
+      if (status === 'Completed') return 'completed';
+      if (status === 'Ready to dispose') return 'ready';
+      if (status === 'WIP') return 'wip';
+      return '';
+    }
+
+    function pinColor(record) {
+      const status = deriveStatus(record);
+      if (status === 'Completed') return '#64748b';
+      if (status === 'Ready to dispose') return '#16a34a';
+      if (record.type === 'Wreck') return '#92400e';
+      return '#2563eb';
+    }
+
+    function normalizePhotos(record) {
+      if (Array.isArray(record.photoMeta) && record.photoMeta.length) return record.photoMeta.map(photo => photo.url).filter(Boolean);
+      if (Array.isArray(record.photos) && record.photos.length) return record.photos.filter(Boolean);
+      if (record.photo) return [record.photo];
+      return [];
+    }
+
+    function withDerivedFields(record) {
+      return {
+        ...record,
+        lat: (record.lat === '' || record.lat === null || record.lat === undefined) ? null : Number(record.lat),
+        lon: (record.lon === '' || record.lon === null || record.lon === undefined) ? null : Number(record.lon),
+        notes: Array.isArray(record.notes) ? [...record.notes].sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt)) : [],
+        photoMeta: Array.isArray(record.photoMeta) ? record.photoMeta.filter(Boolean) : [],
+        photos: normalizePhotos(record),
+        status: deriveStatus(record)
+      };
+    }
+
+    function isSupabaseConfigured() {
+      return Boolean(SUPABASE_URL && SUPABASE_ANON_KEY && !SUPABASE_URL.includes('YOUR-PROJECT') && !SUPABASE_ANON_KEY.includes('YOUR-ANON-KEY'));
+    }
+
+    function isSupabaseActive() {
+      return state.supabaseConfigured && !!supabaseClient;
+    }
+
+    function localPersistRecords() {
+      localStorage.setItem(STORAGE_KEY_V4, JSON.stringify(state.records));
+    }
+
+    function loadDataFromLocalStorage() {
+      try {
+        const rawV4 = localStorage.getItem(STORAGE_KEY_V4);
+        if (rawV4) {
+          const parsed = JSON.parse(rawV4);
+          if (Array.isArray(parsed)) return parsed.map(withDerivedFields);
+        }
+        const rawV3 = localStorage.getItem(STORAGE_KEY_V3);
+        if (rawV3) {
+          const parsed = JSON.parse(rawV3);
+          if (Array.isArray(parsed)) return parsed.map(withDerivedFields);
+        }
+        return null;
+      } catch (err) {
+        console.error(err);
+        return null;
+      }
+    }
+
+    async function initializeSupabase() {
+      state.supabaseConfigured = isSupabaseConfigured();
+      if (!state.supabaseConfigured) return;
+      try {
+        if (!window.supabase?.createClient) throw new Error('Supabase JS library failed to load.');
+        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      } catch (error) {
+        console.error(error);
+        alert(`Supabase connection error: ${error.message || error}`);
+      }
+    }
+
+    function selectedRecord() {
+      return state.filtered.find(r => r.id === state.selectedId) || null;
+    }
+
+    function currentFilters() {
+      return { vesselName: el('f_vesselName').value.trim().toLowerCase(), type: el('f_type').value };
+    }
+
+    function typeSortRank(type) {
+      const order = { Wreck: 0, Abandoned: 1 };
+      return Object.prototype.hasOwnProperty.call(order, type) ? order[type] : 99;
+    }
+    function statusSortRank(status) {
+      const order = { 'Ready to dispose': 0, WIP: 1, Completed: 2 };
+      return Object.prototype.hasOwnProperty.call(order, status) ? order[status] : 99;
+    }
+    function sortVesselRecords(records) {
+      return [...records].sort((a, b) => {
+        const typeDiff = typeSortRank(a.type) - typeSortRank(b.type);
+        if (typeDiff !== 0) return typeDiff;
+        const statusA = deriveStatus(a); const statusB = deriveStatus(b);
+        const statusDiff = statusSortRank(statusA) - statusSortRank(statusB);
+        if (statusDiff !== 0) return statusDiff;
+        if (statusA === statusB) { const av=statusA==='Completed'?a.deletedAt:a.mtaIssued; const bv=statusB==='Completed'?b.deletedAt:b.mtaIssued; const ad=av?new Date(av).getTime():0; const bd=bv?new Date(bv).getTime():0; if(ad!==bd)return bd-ad; }
+        return String(a.vesselName || '').localeCompare(String(b.vesselName || ''), 'en', { sensitivity: 'base', numeric: true });
+      });
+    }
+    function applyFilters() {
+      const f = currentFilters();
+      state.filtered = sortVesselRecords(state.records.filter(r => {
+        if (f.vesselName && !r.vesselName.toLowerCase().includes(f.vesselName)) return false;
+        if (f.type && r.type !== f.type) return false;
+        return true;
+      }));
+      if (!state.filtered.some(r => r.id === state.selectedId)) state.selectedId = state.filtered[0]?.id || null;
+    }
+
+    function localDateKey(value) {
+      if (!value) return '';
+      const d = new Date(value);
+      if (Number.isNaN(d.getTime())) return '';
+      const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+      return local.toISOString().slice(0, 10);
+    }
+    function renderCompletedRangeSummary() {
+      const fromEl = el('completedFromDate');
+      const toEl = el('completedToDate');
+      const messageEl = el('completedRangeMessage');
+      if (!fromEl || !toEl || !messageEl) return;
+      const from = fromEl.value;
+      const to = toEl.value;
+      let wreckCount = 0;
+      let abandonedCount = 0;
+      messageEl.classList.remove('error');
+      if (!from || !to) {
+        messageEl.textContent = 'Select both dates to calculate the completed counts.';
+      } else if (from > to) {
+        messageEl.textContent = 'The From date must be on or before the To date.';
+        messageEl.classList.add('error');
+      } else {
+        state.records.forEach((record) => {
+          if (!record.deletedAt) return;
+          const completedDate = localDateKey(record.deletedAt);
+          if (!completedDate || completedDate < from || completedDate > to) return;
+          if (record.type === 'Wreck') wreckCount += 1;
+          if (record.type === 'Abandoned') abandonedCount += 1;
+        });
+        const fromText = formatDate(from);
+        const toText = formatDate(to);
+        messageEl.textContent = `Completed from ${fromText} to ${toText}, inclusive. Counts use the saved Completion Date.`;
+      }
+      el('completedRangeWreck').textContent = wreckCount;
+      el('completedRangeAbandoned').textContent = abandonedCount;
+      el('completedRangeTotal').textContent = wreckCount + abandonedCount;
+    }
+    function renderStats() {
+      const source = state.filtered.length ? state.filtered : state.records;
+      const activeSource = source.filter(r => !r.deletedAt);
+      const completedSource = source.filter(r => !!r.deletedAt);
+      const wreckCompleted = completedSource.filter(r => r.type === 'Wreck').length;
+      const abandonedCompleted = completedSource.filter(r => r.type === 'Abandoned').length;
+      const totalCompleted = completedSource.length;
+
+      el('statWreck').textContent = activeSource.filter(r => r.type === 'Wreck').length;
+      el('statAbandoned').textContent = activeSource.filter(r => r.type === 'Abandoned').length;
+      el('statAbandonedWip').textContent = activeSource.filter(r => r.type === 'Abandoned' && deriveStatus(r) === 'WIP').length;
+      el('statAbandonedReady').textContent = activeSource.filter(r => r.type === 'Abandoned' && deriveStatus(r) === 'Ready to dispose').length;
+      const now = Date.now();
+      const days30Ms = 30 * 24 * 60 * 60 * 1000;
+      const months12Start = new Date();
+      months12Start.setMonth(months12Start.getMonth() - 12);
+      const completed30Days = completedSource.filter(r => { const t = new Date(r.deletedAt).getTime(); return Number.isFinite(t) && t >= now - days30Ms && t <= now; }).length;
+      const completed12Months = completedSource.filter(r => { const t = new Date(r.deletedAt).getTime(); return Number.isFinite(t) && t >= months12Start.getTime() && t <= now; }).length;
+      el('statCompleted').textContent = totalCompleted;
+      el('statCompletedBreakdown').textContent = `Wreck ${wreckCompleted} / Abandoned ${abandonedCompleted}`;
+      el('statCompleted30Days').textContent = completed30Days;
+      el('statCompleted12Months').textContent = completed12Months;
+      renderCompletedRangeSummary();
+    }
+
+    function popupHtml(r) {
+      const expiry = isExpired(r.mtaExpiry) ? `<span class="alert-text">${escapeHtml(formatDate(r.mtaExpiry))}</span>` : escapeHtml(formatDate(r.mtaExpiry));
+      const latVal = hasCoordinates(r) ? `${Number(r.lat).toFixed(6)}<br><span style="color:#64748b">${escapeHtml(formatDMM(Number(r.lat), 'lat'))}</span>` : '-';
+      const lonVal = hasCoordinates(r) ? `${Number(r.lon).toFixed(6)}<br><span style="color:#64748b">${escapeHtml(formatDMM(Number(r.lon), 'lon'))}</span>` : '-';
+      return `
+        <div style="font-family:ui-sans-serif,-apple-system,Segoe UI,sans-serif;min-width:260px;">
+          <div style="font-size:15px;font-weight:800;color:#0f172a;">${escapeHtml(r.vesselName)}</div>
+          <div style="margin-top:6px;"><strong>Type:</strong> ${escapeHtml(r.type)}</div>
+          <div style="margin-top:4px;"><strong>Status:</strong> ${escapeHtml(deriveStatus(r))}</div>
+          <div style="margin-top:4px;"><strong>Owner:</strong> ${escapeHtml(r.owner || '-')}</div>
+          <div style="margin-top:6px;"><strong>Lat:</strong><br>${latVal}</div>
+          <div style="margin-top:6px;"><strong>Long:</strong><br>${lonVal}</div>
+          <div style="margin-top:6px;"><strong>MTA Notice expiry:</strong> ${expiry}</div>
+        </div>`;
+    }
+
+    function renderMap(resetBounds=false) {
+      if (state.layerGroup) map.removeLayer(state.layerGroup);
+      state.markers = {};
+      state.layerGroup = L.layerGroup();
+      const bounds = [];
+      state.filtered.filter(hasCoordinates).forEach(r => {
+        const marker = L.circleMarker([r.lat, r.lon], {
+          radius: state.selectedId === r.id ? 8 : 6,
+          color:'#ffffff',
+          weight: state.selectedId === r.id ? 2.5 : 1.5,
+          fillColor: pinColor(r),
+          fillOpacity:.95
+        });
+        marker.bindPopup(popupHtml(r));
+        marker.on('click', () => { state.selectedId = r.id; renderAll(false, false, false); });
+        state.markers[r.id] = marker;
+        state.layerGroup.addLayer(marker);
+        bounds.push([r.lat, r.lon]);
+      });
+      state.layerGroup.addTo(map);
+      if (bounds.length && resetBounds) map.fitBounds(bounds, { padding:[24,24] });
+    }
+
+    function renderTable() {
+      const wreckBody = el('tableBodyWreck');
+      const abandonedBody = el('tableBodyAbandoned');
+      const mobileHost = el('mobileTableHost');
+
+      const renderEmptyRow = (label) => `<tr><td colspan="4" style="text-align:center;color:#64748b;padding:28px 14px;">No ${label} vessels match the current filter.</td></tr>`;
+
+      const renderDesktopRows = (list, label) => {
+        if (!list.length) return renderEmptyRow(label);
+        return list.map(r => {
+          const active = state.selectedId === r.id ? 'active' : '';
+          const completedClass = deriveStatus(r) === 'Completed' ? 'completed-row' : '';
+          const status = deriveStatus(r);
+          const statusPill = status !== '-' ? `<span class="status-pill ${statusClass(status)}">${escapeHtml(status)}</span>` : '-';
+          const actionsHtml = status === 'Completed' ? `<button type="button" class="small danger table-action-btn" data-remove-id="${escapeHtml(r.id)}">Remove</button>` : '-';
+          const relevantDate=status==='Completed'?r.deletedAt:r.mtaIssued; const dateHtml=relevantDate?escapeHtml(formatDate(relevantDate)):'-';
+          return `
+            <tr class="${active} ${completedClass}" data-id="${escapeHtml(r.id)}" title="${escapeHtml(r.vesselName)}">
+              <td><strong>${escapeHtml(r.vesselName)}</strong></td>
+              <td>${statusPill}</td>
+              <td>${dateHtml}</td>
+              <td>${actionsHtml}</td>
+            </tr>`;
+        }).join('');
+      };
+
+      const wreckList = state.filtered.filter(r => r.type === 'Wreck');
+      const abandonedList = state.filtered.filter(r => r.type === 'Abandoned');
+
+      if (wreckBody) wreckBody.innerHTML = renderDesktopRows(wreckList, 'Wreck');
+      if (abandonedBody) abandonedBody.innerHTML = renderDesktopRows(abandonedList, 'Abandoned');
+
+      if (mobileHost) {
+        if (!state.filtered.length) {
+          mobileHost.innerHTML = `<div class="mobile-list-empty">No vessels match the current filter.</div>`;
+        } else {
+          const renderMobileSection = (title, list) => {
+            const rows = list.length ? list.map(r => {
+              const active = state.selectedId === r.id ? 'active' : '';
+              const typeClass = r.type === 'Wreck' ? 'wreck' : 'abandoned';
+              const status = deriveStatus(r);
+              const statusPill = status !== '-' ? `<span class="status-pill ${statusClass(status)}">${escapeHtml(status)}</span>` : '';
+              const typePill = `<span class="badge ${typeClass}">${escapeHtml(r.type)}</span>`;
+              const removeBtn = status === 'Completed' ? `<button type="button" class="small danger table-action-btn" data-mobile-remove-id="${escapeHtml(r.id)}">Remove</button>` : '';
+              const ownerText = escapeHtml(r.owner || '-');
+              const expiryText = isExpired(r.mtaExpiry) ? `<span class="alert-text">${escapeHtml(formatDate(r.mtaExpiry))}</span>` : escapeHtml(formatDate(r.mtaExpiry));
+              return `
+                <div class="mobile-vessel-card ${active}" data-mobile-id="${escapeHtml(r.id)}">
+                  <div class="mobile-vessel-head">
+                    <div class="mobile-vessel-title">${escapeHtml(r.vesselName)}</div>
+                    ${removeBtn ? `<div class="mobile-vessel-actions">${removeBtn}</div>` : ''}
+                  </div>
+                  <div class="mobile-vessel-meta">${typePill}${statusPill}</div>
+                  <div class="mobile-vessel-row"><div class="mobile-vessel-key">Owner</div><div class="mobile-vessel-value">${ownerText}</div></div>
+                  <div class="mobile-vessel-row"><div class="mobile-vessel-key">Notified to HM</div><div class="mobile-vessel-value">${escapeHtml(formatDate(r.notifiedToHm))}</div></div>
+                  <div class="mobile-vessel-row"><div class="mobile-vessel-key">MTA expiry</div><div class="mobile-vessel-value">${expiryText}</div></div>
+                </div>`;
+            }).join('') : `<div class="mobile-list-empty">No ${title} vessels match the current filter.</div>`;
+            return `
+              <section class="mobile-vessel-section" aria-label="${escapeHtml(title)} vessel list">
+                <div class="mobile-vessel-section-head">
+                  <h3 class="mobile-vessel-section-title">${escapeHtml(title)}</h3>
+                  <span class="mobile-vessel-section-count">${list.length}</span>
+                </div>
+                <div class="mobile-vessel-section-list">${rows}</div>
+              </section>`;
+          };
+          mobileHost.innerHTML = renderMobileSection('Wreck', wreckList) + renderMobileSection('Abandoned', abandonedList);
+        }
+      }
+
+      document.querySelectorAll('tr[data-id]').forEach(tr => tr.addEventListener('click', () => { state.selectedId = tr.dataset.id; renderAll(false, false, true); }));
+      document.querySelectorAll('[data-remove-id]').forEach(btn => {
+        btn.addEventListener('click', async (event) => {
+          event.stopPropagation();
+          await permanentlyDeleteVessel(btn.dataset.removeId);
+        });
+      });
+      if (mobileHost) {
+        mobileHost.querySelectorAll('[data-mobile-id]').forEach(card => card.addEventListener('click', () => { state.selectedId = card.dataset.mobileId; renderAll(false, false, true); }));
+        mobileHost.querySelectorAll('[data-mobile-remove-id]').forEach(btn => {
+          btn.addEventListener('click', async (event) => {
+            event.stopPropagation();
+            await permanentlyDeleteVessel(btn.dataset.mobileRemoveId);
+          });
+        });
+      }
+    }
+    function detailItem(label, value, sub = '', isAlert = false) {
+      return `
+        <div class="detail-item">
+          <div class="detail-key">${escapeHtml(label)}</div>
+          <div class="detail-val ${isAlert ? 'alert-text' : ''}">${value}</div>
+          ${sub ? `<div class="detail-sub ${isAlert ? 'alert-text' : ''}">${escapeHtml(sub)}</div>` : ''}
+        </div>`;
+    }
+
+    function renderPhotoGallery(rec) {
+      const photos = rec.photos && rec.photos.length ? rec.photos : [svgPlaceholder(rec.vesselName, rec.type === 'Wreck' ? '#92400e' : '#1d4ed8')];
+      const selectedIndex = Math.min(state.detailPhotoIndex, photos.length - 1);
+      state.detailPhotoIndex = selectedIndex;
+      const thumbHtml = photos.map((src, index) => `
+        <div class="thumb-item ${index === selectedIndex ? 'active' : ''}" data-photo-index="${index}" title="Open photo ${index + 1}">
+          <img src="${src}" alt="${escapeHtml(rec.vesselName)} photo ${index + 1}" />
+        </div>`).join('');
+      return `
+        <div class="photo-wrap">
+          <div class="photo-card">
+            <img src="${photos[selectedIndex]}" id="detailMainPhoto" class="photo-main" alt="${escapeHtml(rec.vesselName)} main photo" />
+            <div class="photo-caption">Uploaded photos (${photos.length}) • Click image to open zoom viewer</div>
+            <div class="thumb-strip" id="detailThumbStrip">${thumbHtml}</div>
+          </div>
+        </div>`;
+    }
+
+    function renderNotes(rec) {
+      const notes = Array.isArray(rec.notes) ? [...rec.notes].sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt)) : [];
+      const notesHtml = notes.length ? notes.map(note => `
+        <div class="note-item">
+          <div class="note-item-meta"><span>${escapeHtml(formatDateTime(note.createdAt))}</span></div>
+          <div class="note-text">${escapeHtml(note.text)}</div>
+        </div>`).join('') : `<div class="notes-empty">No notes yet for this vessel.</div>`;
+      return `
+        <div class="notes-section">
+          <div class="notes-header">
+            <strong>Notes</strong>
+            <span style="font-size:12px;color:var(--muted)">${notes.length} entr${notes.length === 1 ? 'y' : 'ies'}</span>
+          </div>
+          <div class="notes-add">
+            <div class="notes-add-row">
+              <textarea id="noteInput" class="field" placeholder="Add a note for this vessel..."></textarea>
+              <button id="addNoteBtn" class="primary" type="button">Add Note</button>
+            </div>
+          </div>
+          <div class="notes-list" id="notesList">${notesHtml}</div>
+        </div>`;
+    }
+
+    function bindDetailPhotoEvents(rec) {
+      const mainPhoto = el('detailMainPhoto');
+      if (mainPhoto) mainPhoto.addEventListener('click', () => openLightbox(rec.id, state.detailPhotoIndex));
+      const strip = el('detailThumbStrip');
+      if (strip) {
+        strip.querySelectorAll('[data-photo-index]').forEach(node => {
+          node.addEventListener('click', () => {
+            state.detailPhotoIndex = Number(node.dataset.photoIndex);
+            renderDetail();
+          });
+        });
+      }
+    }
+
+    function renderDetail() {
+      const rec = selectedRecord();
+      const empty = el('detailEmpty');
+      const content = el('detailContent');
+      if (!rec) {
+        empty.textContent = 'Select a pin or a table row to view the vessel details.';
+        empty.classList.remove('hidden');
+        content.classList.add('hidden');
+        return;
+      }
+      empty.classList.add('hidden');
+      content.classList.remove('hidden');
+      const status = deriveStatus(rec);
+      const badges = [`<span class="badge ${rec.type === 'Wreck' ? 'wreck' : 'abandoned'}">${escapeHtml(rec.type)}</span>`];
+      if (status !== '-') badges.push(`<span class="badge ${statusClass(status)}">${escapeHtml(status)}</span>`);
+      if (isExpired(rec.mtaExpiry) && !rec.deletedAt) badges.push('<span class="badge alert">MTA Notice expired</span>');
+      if (rec.deletedAt) badges.push('<span class="badge completed">Hidden from map</span>');
+      el('detailBadges').innerHTML = badges.join('');
+      el('detailTitle').textContent = rec.vesselName;
+      if (rec.deletedAt) {
+        el('detailStatus').textContent = `Completed on ${formatDateTime(rec.deletedAt)}. Coordinates cleared from map.`;
+      } else if (rec.type === 'Abandoned') {
+        el('detailStatus').textContent = rec.finalNotice ? 'Abandoned vessel ready to dispose.' : 'Abandoned vessel still in process (WIP).';
+      } else {
+        el('detailStatus').textContent = status === 'Ready to dispose' ? 'Wreck vessel with expired MTA Notice.' : 'Wreck vessel currently in progress (WIP).';
+      }
+      const expiryHtml = isExpired(rec.mtaExpiry) ? `<span class="alert-text">${escapeHtml(formatDate(rec.mtaExpiry))}</span>` : escapeHtml(formatDate(rec.mtaExpiry));
+      let html = '';
+      html += renderPhotoGallery(rec);
+      html += detailItem('Vessel name', escapeHtml(rec.vesselName));
+      html += detailItem('Classification', escapeHtml(rec.type));
+      html += detailItem('Status', escapeHtml(status));
+      html += detailItem('Owner details', escapeHtml(rec.owner || '-'));
+      html += detailItem('Lat', hasCoordinates(rec) ? `<div class="gps-dmm">${escapeHtml(formatDMM(Number(rec.lat), 'lat'))}</div><div class="gps-dd">${escapeHtml(Number(rec.lat).toFixed(6))}</div>` : '-', rec.deletedAt && !hasCoordinates(rec) ? 'Cleared after deletion / completion' : '');
+      html += detailItem('Long', hasCoordinates(rec) ? `<div class="gps-dmm">${escapeHtml(formatDMM(Number(rec.lon), 'lon'))}</div><div class="gps-dd">${escapeHtml(Number(rec.lon).toFixed(6))}</div>` : '-', rec.deletedAt && !hasCoordinates(rec) ? 'Cleared after deletion / completion' : '');
+      html += detailItem('Notified to HM', escapeHtml(formatDate(rec.notifiedToHm)));
+      html += detailItem('MTA Notice issued', escapeHtml(formatDate(rec.mtaIssued)));
+      html += detailItem('MTA Notice expiry', expiryHtml, isExpired(rec.mtaExpiry) && !rec.deletedAt ? 'Expired based on today' : '', isExpired(rec.mtaExpiry) && !rec.deletedAt);
+      if (rec.type === 'Abandoned') {
+        html += detailItem('Police Notification', escapeHtml(formatDate(rec.policeNotification)));
+        html += detailItem('1st Newspaper listing', escapeHtml(formatDate(rec.newspaper1)));
+        html += detailItem('2nd Newspaper listing', escapeHtml(formatDate(rec.newspaper2)));
+        html += detailItem('Final Notice', escapeHtml(formatDate(rec.finalNotice)));
+      }
+      if (rec.deletedAt) html += detailItem('Completed / Delete timestamp', escapeHtml(formatDateTime(rec.deletedAt)));
+      html += renderNotes(rec);
+      el('detailGrid').innerHTML = html;
+      bindDetailPhotoEvents(rec);
+      const addNoteBtn = el('addNoteBtn');
+      if (addNoteBtn) addNoteBtn.addEventListener('click', addNoteToSelectedRecord);
+      const noteInput = el('noteInput');
+      if (noteInput) noteInput.addEventListener('keydown', (event) => {
+        if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+          event.preventDefault();
+          addNoteToSelectedRecord();
+        }
+      });
+      Object.entries(state.markers).forEach(([id, marker]) => {
+        const record = state.filtered.find(r => r.id === id);
+        if (!record) return;
+        marker.setStyle({ radius: rec.id === id ? 8 : 6, color: rec.id === id ? '#0f172a' : '#ffffff', weight: rec.id === id ? 2.5 : 1.5, fillColor: pinColor(record), fillOpacity: .95 });
+      });
+    }
+
+    function focusSelectedMarker(openPopup=true) {
+      const rec = selectedRecord();
+      if (!rec || !state.markers[rec.id] || !hasCoordinates(rec)) return;
+      map.setView([rec.lat, rec.lon], Math.max(map.getZoom(), SEARCH_FOCUS_ZOOM), { animate:true });
+      if (openPopup) state.markers[rec.id].openPopup();
+    }
+
+    function renderAll(reapplyFilters=true, resetBounds=false, autoFocus=false) {
+      if (reapplyFilters) applyFilters();
+      state.records = state.records.map(withDerivedFields);
+      renderStats();
+      renderMap(resetBounds);
+      renderTable();
+      renderDetail();
+      arrangeResponsiveLayout();
+      if (autoFocus) focusSelectedMarker(true);
+    }
+
+    function resetFilters() {
+      el('f_vesselName').value = '';
+      el('f_type').value = '';
+      renderAll(true, false, false);
+    }
+
+    function fitAllPins() {
+      const mappable = state.filtered.filter(hasCoordinates);
+      if (!mappable.length) return;
+      map.fitBounds(mappable.map(r => [r.lat, r.lon]), { padding:[24,24] });
+    }
+
+    function scheduleMapResize() {
+      [0, 120, 320, 700].forEach(delay => {
+        window.setTimeout(() => {
+          try {
+            map.invalidateSize();
+            map.setView(map.getCenter(), map.getZoom(), { animate:false });
+          } catch (error) {
+            console.warn('Map resize skipped:', error);
+          }
+        }, delay);
+      });
+    }
+
+    function arrangeResponsiveLayout() {
+      const desktopHost = el('desktopTableHost');
+      const mobileHost = el('mobileTableHost');
+      const mobileCard = el('mobileListCard');
+      if (!desktopHost || !mobileHost || !mobileCard) return;
+      const isMobile = window.matchMedia('(max-width: 760px)').matches;
+      desktopHost.style.display = isMobile ? 'none' : '';
+      mobileCard.classList.toggle('hidden', !isMobile);
+      mobileHost.style.display = isMobile ? '' : 'none';
+      scheduleMapResize();
+    }
+
+    function renderPreviewStrip() {
+      const strip = el('photoPreviewStrip');
+      const empty = el('photoPreviewEmpty');
+      strip.innerHTML = state.pendingPhotos.map((item, index) => `
+        <div class="preview-thumb" title="Photo ${index + 1}">
+          <img src="${item.src}" alt="Preview photo ${index + 1}" />
+          <button type="button" class="preview-thumb-remove" data-remove-photo-id="${escapeHtml(item.id)}" aria-label="Delete photo ${index + 1}">×</button>
+          <div class="preview-thumb-badge">${item.file ? 'New' : 'Saved'}</div>
+        </div>
+      `).join('');
+      empty.style.display = state.pendingPhotos.length ? 'none' : 'block';
+      strip.querySelectorAll('[data-remove-photo-id]').forEach((btn) => {
+        btn.addEventListener('click', () => removePendingPhoto(btn.dataset.removePhotoId));
+      });
+    }
+
+    function removePendingPhoto(photoId) {
+      state.pendingPhotos = state.pendingPhotos.filter(item => String(item.id) !== String(photoId));
+      renderPreviewStrip();
+    }
+
+    function decimalToDmm(v){const n=Number(v);if(!Number.isFinite(n))return{degrees:0,minutes:0};const a=Math.abs(n),degrees=Math.floor(a);return{degrees,minutes:Number(((a-degrees)*60).toFixed(4))}}
+    function dmmToDecimal(d,m,h){d=Number(d);m=Number(m);if(!Number.isFinite(d)||!Number.isFinite(m)||d<0||m<0||m>=60)return null;const a=d+m/60;return h==='S'||h==='W'?-a:a}
+    function setDmmInputs(r){const a=decimalToDmm(r?.lat),b=decimalToDmm(r?.lon);el('latDegreesInput').value=a.degrees;el('latMinutesInput').value=a.minutes;el('lonDegreesInput').value=b.degrees;el('lonMinutesInput').value=b.minutes}
+    function todayForDateInput(){const n=new Date(),l=new Date(n.getTime()-n.getTimezoneOffset()*60000);return l.toISOString().slice(0,10)}
+    function completionDateToIso(v){const d=new Date(`${v}T12:00:00`);return Number.isNaN(d.getTime())?new Date().toISOString():d.toISOString()}
+    function dateInputValue(v){if(!v)return todayForDateInput();const d=new Date(v);if(Number.isNaN(d.getTime()))return String(v).slice(0,10)||todayForDateInput();const l=new Date(d.getTime()-d.getTimezoneOffset()*60000);return l.toISOString().slice(0,10)}
+    function prepareCompletion(){if(state.modalMode!=='edit'||!state.editingId)return;const r=state.records.find(x=>x.id===state.editingId);if(r?.deletedAt){permanentlyDeleteVessel(state.editingId);return}state.completionRequested=true;el('completionDateInput').value=el('completionDateInput').value||todayForDateInput();el('completionDateSection').classList.remove('hidden');el('deleteVesselBtn').classList.add('hidden');el('completionDateInput').focus();el('completionDateInput').showPicker?.()}
+    function openModal(mode, record = null) {
+      state.modalMode = mode;
+      state.editingId = record?.id || null;
+      state.pendingPhotos = record ? (Array.isArray(record.photoMeta) && record.photoMeta.length ? record.photoMeta.map((photo, index) => ({ id: photo.id || `existing-${index}`, src: photo.url, existingPath: photo.path, existingId: photo.id || null })) : normalizePhotos(record).map((src, index) => ({ id: `existing-${index}`, src, existingPath: null, existingId: null }))) : [];
+      el('vesselModalTitle').textContent = mode === 'edit' ? 'Edit Vessel' : 'Insert New Vessel';
+      const isCompletedRecord=mode==='edit'&&!!record?.deletedAt;state.completionRequested=isCompletedRecord;el('deleteVesselBtn').classList.toggle('hidden',mode!=='edit');el('deleteVesselBtn').textContent=record?.deletedAt?'Remove from List':'Complete Process';el('completionDateSection').classList.toggle('hidden',!isCompletedRecord);el('vesselForm').reset();el('completionDateInput').value=isCompletedRecord?dateInputValue(record.deletedAt):todayForDateInput();
+      el('typeInput').value = record?.type || 'Wreck';
+      el('vesselNameInput').value = record?.vesselName || '';
+      setDmmInputs(hasCoordinates(record || {}) ? record : null);
+      el('ownerInput').value = record?.owner || '';
+      el('notifiedHmInput').value = record?.notifiedToHm || '';
+      el('mtaIssuedInput').value = record?.mtaIssued || '';
+      el('mtaExpiryInput').value = record?.mtaExpiry || '';
+      el('policeInput').value = record?.policeNotification || '';
+      el('news1Input').value = record?.newspaper1 || '';
+      el('news2Input').value = record?.newspaper2 || '';
+      el('finalNoticeInput').value = record?.finalNotice || '';
+      renderPreviewStrip();
+      toggleAbandonedFields();
+      el('vesselModalBackdrop').classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+      setTimeout(() => el('vesselNameInput').focus(), 10);
+    }
+
+    function closeModal() {
+      el('vesselModalBackdrop').classList.add('hidden');
+      document.body.style.overflow = '';
+      state.pendingPhotos = [];state.completionRequested=false;
+      state.editingId = null;
+    }
+
+    function toggleAbandonedFields() {
+      const isAbandoned = el('typeInput').value === 'Abandoned';
+      document.querySelectorAll('.abandoned-only').forEach(node => node.classList.toggle('hidden', !isAbandoned));
+      if (!isAbandoned) {
+        el('policeInput').value = '';
+        el('news1Input').value = '';
+        el('news2Input').value = '';
+        el('finalNoticeInput').value = '';
+      }
+    }
+
+    function makeRandomId() {
+      if (window.crypto?.randomUUID) return window.crypto.randomUUID();
+      return `id-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    }
+
+    function sanitizeFileName(name) {
+      return String(name || 'photo').replace(/[^a-zA-Z0-9._-]/g, '-');
+    }
+
+    function buildPendingPhotoItems(files) {
+      return Promise.all(Array.from(files || []).map(file => new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve({ id: makeRandomId(), src: reader.result, file });
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      })));
+    }
+
+    function buildDbPayload(type) {
+      const lat=dmmToDecimal(el('latDegreesInput').value,el('latMinutesInput').value,'S');const lon=dmmToDecimal(el('lonDegreesInput').value,el('lonMinutesInput').value,'E');
+      return {
+        vessel_name: el('vesselNameInput').value.trim(),
+        type,
+        lat, lon,
+        owner: el('ownerInput').value.trim() || null,
+        notified_to_hm: el('notifiedHmInput').value || null,
+        mta_issued: el('mtaIssuedInput').value || null,
+        mta_expiry: el('mtaExpiryInput').value || null,
+        police_notification: type === 'Abandoned' ? (el('policeInput').value || null) : null,
+        newspaper1: type === 'Abandoned' ? (el('news1Input').value || null) : null,
+        newspaper2: type === 'Abandoned' ? (el('news2Input').value || null) : null,
+        final_notice: type === 'Abandoned' ? (el('finalNoticeInput').value || null) : null
+      };
+    }
+
+    function mapDbRowToRecord(row, notes = [], photoMeta = []) {
+      const signedPhotos = photoMeta.filter(photo => photo.url).sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0));
+      return withDerivedFields({
+        id: row.id,
+        vesselName: row.vessel_name,
+        type: row.type,
+        lat: row.lat,
+        lon: row.lon,
+        owner: row.owner,
+        notifiedToHm: row.notified_to_hm,
+        mtaIssued: row.mta_issued,
+        mtaExpiry: row.mta_expiry,
+        policeNotification: row.police_notification,
+        newspaper1: row.newspaper1,
+        newspaper2: row.newspaper2,
+        finalNotice: row.final_notice,
+        deletedAt: row.deleted_at,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+        notes,
+        photoMeta: signedPhotos,
+        photos: signedPhotos.map(photo => photo.url)
+      });
+    }
+
+    async function createSignedUrlMap(paths) {
+      const unique=[...new Set((paths||[]).filter(Boolean))], result={};
+      for(let i=0;i<unique.length;i+=100){const batch=unique.slice(i,i+100);const {data,error}=await supabaseClient.storage.from(SUPABASE_BUCKET).createSignedUrls(batch,21600);if(error){console.error(error);continue;}(data||[]).forEach((x,j)=>{const p=x.path||batch[j],u=x.signedUrl;if(p&&u)result[p]=/^https?:/i.test(u)?u:`${SUPABASE_URL}${u.startsWith('/')?'':'/'}${u}`;});}return result;
+    }
+
+    async function loadDataFromSupabase() {
+      if (!isSupabaseActive()) {
+        state.records = [];
+        state.selectedId = null;
+        return;
+      }
+      const [{ data: vesselRows, error: vesselError }, { data: noteRows, error: noteError }, { data: photoRows, error: photoError }] = await Promise.all([
+        supabaseClient.from('wreck_abandoned_vessels').select('*').order('created_at', { ascending: false }),
+        supabaseClient.from('wreck_abandoned_notes').select('*').order('created_at', { ascending: false }),
+        supabaseClient.from('wreck_abandoned_photos').select('*').order('created_at', { ascending: true })
+      ]);
+      if (vesselError) throw vesselError;
+      if (noteError) throw noteError;
+      if (photoError) throw photoError;
+      const signedUrlMap = await createSignedUrlMap((photoRows || []).map(row => row.storage_path));
+      const notesByVessel = {};
+      const photosByVessel = {};
+      (noteRows || []).forEach(row => {
+        if (!notesByVessel[row.vessel_id]) notesByVessel[row.vessel_id] = [];
+        notesByVessel[row.vessel_id].push({ id: row.id, text: row.note_text, createdAt: row.created_at, createdBy: row.created_by });
+      });
+      (photoRows || []).forEach(row => {
+        if (!photosByVessel[row.vessel_id]) photosByVessel[row.vessel_id] = [];
+        photosByVessel[row.vessel_id].push({ id: row.id, path: row.storage_path, url: signedUrlMap[row.storage_path], originalFilename: row.original_filename, mimeType: row.mime_type, fileSize: row.file_size, createdAt: row.created_at });
+      });
+      state.records = (vesselRows || []).map(row => mapDbRowToRecord(row, notesByVessel[row.id] || [], photosByVessel[row.id] || []));
+      state.selectedId = state.records.find(r => r.id === state.selectedId)?.id || state.records[0]?.id || null;
+    }
+
+    function resetToSampleData() {
+      if (state.supabaseConfigured) {
+        alert('Reset to Sample Data is disabled in Supabase mode to avoid overwriting shared records. Use this button only in local preview mode.');
+        return;
+      }
+      state.records = SAMPLE_DATA.map(withDerivedFields);
+      state.selectedId = state.records[0]?.id || null;
+      localPersistRecords();
+      renderAll(true, true, false);
+    }
+
+    async function initializeData() {
+      try {
+        if (state.supabaseConfigured) {
+          await loadDataFromSupabase();
+          if (!state.records.length) {
+            console.warn('Supabase returned 0 rows. Falling back to embedded Book1 data.');
+            state.records = SAMPLE_DATA.map(withDerivedFields);
+            state.selectedId = state.records[0]?.id || null;
+          }
+        } else {
+          const stored = loadDataFromLocalStorage();
+          if (stored && stored.length) state.records = stored;
+          else {
+            state.records = SAMPLE_DATA.map(withDerivedFields);
+            localPersistRecords();
+          }
+          state.selectedId = state.records[0]?.id || null;
+        }
+        renderAll(true, true, false);
+      } catch (error) {
+        console.error(error);
+        console.warn('Falling back to embedded Book1 data after load error.');
+        state.records = SAMPLE_DATA.map(withDerivedFields);
+        state.selectedId = state.records[0]?.id || null;
+        renderAll(true, true, false);
+      }
+    }
+
+    async function deleteRemovedExistingPhotos(record, keptExistingIds) {
+      if (!isSupabaseActive() || !record) return;
+      const existingPhotos = Array.isArray(record.photoMeta) ? record.photoMeta.filter(Boolean) : [];
+      const removedPhotos = existingPhotos.filter(photo => photo.id && !keptExistingIds.has(photo.id));
+      if (!removedPhotos.length) return;
+      const storagePaths = removedPhotos.map(photo => photo.path).filter(Boolean);
+      if (storagePaths.length) {
+        const { error: storageError } = await supabaseClient.storage.from(SUPABASE_BUCKET).remove(storagePaths);
+        if (storageError) throw storageError;
+      }
+      const removedIds = removedPhotos.map(photo => photo.id).filter(Boolean);
+      if (removedIds.length) {
+        const { error: deleteError } = await supabaseClient.from('wreck_abandoned_photos').delete().in('id', removedIds);
+        if (deleteError) throw deleteError;
+      }
+    }
+
+    async function uploadPendingPhotos(vesselId, pendingItems) {
+      const rows = [];
+      for (const item of pendingItems) {
+        if (!item.file) continue;
+        const safeName = sanitizeFileName(item.file.name || 'photo.jpg');
+        const path = `vessels/${vesselId}/${Date.now()}-${makeRandomId()}-${safeName}`;
+        const { error } = await supabaseClient.storage.from(SUPABASE_BUCKET).upload(path, item.file, { cacheControl: '3600', upsert: false, contentType: item.file.type || undefined });
+        if (error) throw error;
+        rows.push({ vessel_id: vesselId, storage_path: path, original_filename: item.file.name || safeName, mime_type: item.file.type || null, file_size: item.file.size || null, created_by: null });
+      }
+      if (rows.length) {
+        const { error } = await supabaseClient.from('wreck_abandoned_photos').insert(rows);
+        if (error) throw error;
+      }
+    }
+
+    async function saveVessel(event) {
+      event.preventDefault();
+      const type = el('typeInput').value;
+      const payload=buildDbPayload(type);const completingNow=state.modalMode==='edit'&&state.completionRequested;const completionDate=completingNow?el('completionDateInput').value:'';if(completingNow&&!completionDate){alert('Please select a Completion Date.');return}const completionAt=completingNow?completionDateToIso(completionDate):null;const wasAlreadyCompleted=state.modalMode==='edit'&&!!state.records.find(r=>r.id===state.editingId)?.deletedAt;const completionNote=completingNow?(wasAlreadyCompleted?`Completion Date updated to ${formatDate(completionDate)}.`:`Completion Date: ${formatDate(completionDate)} — Vessel marked Completed. Coordinates cleared from map.`):'';if(completingNow){payload.lat=null;payload.lon=null;payload.deleted_at=completionAt}
+      if (!payload.vessel_name) return;
+      if(!completingNow&&(payload.lat===null||payload.lon===null)){alert('Please enter valid GPS degrees and decimal minutes. Minutes must be from 0 to less than 60.');return}
+      if (isSupabaseActive()) {
+        try {
+          const editingRecord = state.modalMode === 'edit' ? (state.records.find(r => r.id === state.editingId) || null) : null;
+          let savedRow = null;
+          if (state.modalMode === 'edit') {
+            payload.updated_by = null;
+            const { data, error } = await supabaseClient.from('wreck_abandoned_vessels').update(payload).eq('id', state.editingId).select('*').single();
+            if (error) throw error;
+            savedRow = data;
+          } else {
+            payload.created_by = null;
+            payload.updated_by = null;
+            const { data, error } = await supabaseClient.from('wreck_abandoned_vessels').insert(payload).select('*').single();
+            if (error) throw error;
+            savedRow = data;
+          }
+          const keptExistingIds = new Set(state.pendingPhotos.filter(item => item.existingId).map(item => item.existingId).filter(Boolean));
+          if (state.modalMode === 'edit' && editingRecord) await deleteRemovedExistingPhotos(editingRecord, keptExistingIds);
+          const newPhotoItems = state.pendingPhotos.filter(item => item.file);
+          if (newPhotoItems.length) await uploadPendingPhotos(savedRow.id, newPhotoItems);if(completingNow){const {error}=await supabaseClient.from('wreck_abandoned_notes').insert({vessel_id:savedRow.id,note_text:completionNote,created_by:null});if(error)throw error}
+          state.selectedId = savedRow.id;
+          state.detailPhotoIndex = 0;
+          closeModal();
+          await loadDataFromSupabase();
+          renderAll(true, true, true);
+          return;
+        } catch (error) {
+          console.error(error);
+          alert(`Save failed: ${error.message || error}`);
+          return;
+        }
+      }
+      const existing = state.modalMode === 'edit' ? (state.records.find(r => r.id === state.editingId) || {}) : {};
+      const photos = state.pendingPhotos.length ? state.pendingPhotos.map(item => item.src).filter(Boolean) : normalizePhotos(existing);
+      const record = withDerivedFields({ id: state.modalMode === 'edit' ? state.editingId : makeRandomId(), vesselName: payload.vessel_name, type, lat: payload.lat, lon: payload.lon, owner: payload.owner, notifiedToHm: payload.notified_to_hm, mtaIssued: payload.mta_issued, mtaExpiry: payload.mta_expiry, policeNotification: payload.police_notification, newspaper1: payload.newspaper1, newspaper2: payload.newspaper2, finalNotice: payload.final_notice, photos: photos.length ? photos : [svgPlaceholder(payload.vessel_name || 'Vessel', type === 'Wreck' ? '#92400e' : '#1d4ed8')], notes: completingNow?[{text:completionNote,createdAt:completionAt},...(Array.isArray(existing.notes)?existing.notes:[]) ]:(Array.isArray(existing.notes)?existing.notes:[]), deletedAt: completingNow?completionAt:(existing.deletedAt || null) });
+      if (state.modalMode === 'edit') {
+        const idx = state.records.findIndex(r => r.id === state.editingId);
+        if (idx !== -1) state.records[idx] = record;
+        state.selectedId = record.id;
+      } else {
+        state.records.unshift(record);
+        state.selectedId = record.id;
+      }
+      state.detailPhotoIndex = 0;
+      localPersistRecords();
+      closeModal();
+      renderAll(true, true, true);
+    }
+
+    async function addNoteToSelectedRecord() {
+      const rec = selectedRecord();
+      const input = el('noteInput');
+      if (!rec || !input) return;
+      const text = input.value.trim();
+      if (!text) {
+        input.focus();
+        return;
+      }
+      if (isSupabaseActive()) {
+        try {
+          const { error } = await supabaseClient.from('wreck_abandoned_notes').insert({ vessel_id: rec.id, note_text: text, created_by: null });
+          if (error) throw error;
+          await loadDataFromSupabase();
+          renderAll(true, false, false);
+          return;
+        } catch (error) {
+          console.error(error);
+          alert(`Failed to add note: ${error.message || error}`);
+          return;
+        }
+      }
+      const idx = state.records.findIndex(item => item.id === rec.id);
+      if (idx === -1) return;
+      const notes = Array.isArray(state.records[idx].notes) ? [...state.records[idx].notes] : [];
+      notes.unshift({ text, createdAt: new Date().toISOString() });
+      state.records[idx] = withDerivedFields({ ...state.records[idx], notes });
+      localPersistRecords();
+      renderAll(true, false, false);
+    }
+
+    async function permanentlyDeleteVessel(vesselId) {
+      const record = state.records.find(r => r.id === vesselId);
+      if (!record) return;
+      const confirmed = window.confirm(`Permanently remove "${record.vesselName}" from the completed list? This cannot be undone.`);
+      if (!confirmed) return;
+      try {
+        if (isSupabaseActive()) {
+          const photoMeta = Array.isArray(record.photoMeta) ? record.photoMeta.filter(Boolean) : [];
+          const storagePaths = photoMeta.map(photo => photo.path).filter(Boolean);
+          if (storagePaths.length) {
+            const { error: storageError } = await supabaseClient.storage.from(SUPABASE_BUCKET).remove(storagePaths);
+            if (storageError) throw storageError;
+          }
+          const photoIds = photoMeta.map(photo => photo.id).filter(Boolean);
+          if (photoIds.length) {
+            const { error: photoDeleteError } = await supabaseClient.from('wreck_abandoned_photos').delete().in('id', photoIds);
+            if (photoDeleteError) throw photoDeleteError;
+          }
+          const { error: noteDeleteError } = await supabaseClient.from('wreck_abandoned_notes').delete().eq('vessel_id', vesselId);
+          if (noteDeleteError) throw noteDeleteError;
+          const { error: vesselDeleteError } = await supabaseClient.from('wreck_abandoned_vessels').delete().eq('id', vesselId);
+          if (vesselDeleteError) throw vesselDeleteError;
+          if (state.selectedId === vesselId) state.selectedId = null;
+          if (state.editingId === vesselId) closeModal();
+          await loadDataFromSupabase();
+          renderAll(true, false, false);
+          return;
+        }
+        state.records = state.records.filter(r => r.id !== vesselId);
+        if (state.selectedId === vesselId) state.selectedId = null;
+        if (state.editingId === vesselId) closeModal();
+        localPersistRecords();
+        renderAll(true, false, false);
+      } catch (error) {
+        console.error(error);
+        alert(`Permanent delete failed: ${error.message || error}`);
+      }
+    }
+
+    async function handleModalDeleteAction() {
+      if (state.modalMode !== 'edit' || !state.editingId) return;
+      const record = state.records.find(r => r.id === state.editingId);
+      if (record?.deletedAt) {
+        await permanentlyDeleteVessel(state.editingId);
+        return;
+      }
+      await softDeleteCurrentVessel();
+    }
+
+    async function softDeleteCurrentVessel() {
+      if (state.modalMode !== 'edit' || !state.editingId) return;
+      const now = new Date().toISOString();
+      const noteText = `Delete Timestamp: ${formatDateTime(now)} — Vessel marked Completed. Coordinates cleared from map.`;
+      if (isSupabaseActive()) {
+        try {
+          const { error: vesselError } = await supabaseClient.from('wreck_abandoned_vessels').update({ lat: null, lon: null, deleted_at: now, updated_by: null }).eq('id', state.editingId);
+          if (vesselError) throw vesselError;
+          const { error: noteError } = await supabaseClient.from('wreck_abandoned_notes').insert({ vessel_id: state.editingId, note_text: noteText, created_by: null });
+          if (noteError) throw noteError;
+          state.selectedId = state.editingId;
+          closeModal();
+          await loadDataFromSupabase();
+          renderAll(true, false, false);
+          return;
+        } catch (error) {
+          console.error(error);
+          alert(`Delete failed: ${error.message || error}`);
+          return;
+        }
+      }
+      const idx = state.records.findIndex(r => r.id === state.editingId);
+      if (idx === -1) return;
+      const existing = state.records[idx];
+      const notes = Array.isArray(existing.notes) ? [...existing.notes] : [];
+      notes.unshift({ text: noteText, createdAt: now });
+      state.records[idx] = withDerivedFields({ ...existing, lat: null, lon: null, deletedAt: now, notes });
+      state.selectedId = existing.id;
+      localPersistRecords();
+      closeModal();
+      renderAll(true, false, false);
+    }
+
+    function openLightbox(recordId, photoIndex = 0) {
+      const record = state.records.find(r => r.id === recordId);
+      if (!record) return;
+      const photos = normalizePhotos(record);
+      if (!photos.length) return;
+      state.lightbox.recordId = recordId;
+      state.lightbox.photos = photos;
+      state.lightbox.index = Math.max(0, Math.min(photoIndex, photos.length - 1));
+      state.lightbox.zoom = 1;
+      state.lightbox.panX = 0;
+      state.lightbox.panY = 0;
+      el('lightboxBackdrop').classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+      updateLightbox();
+    }
+
+    function closeLightbox() {
+      el('lightboxBackdrop').classList.add('hidden');
+      if (el('vesselModalBackdrop').classList.contains('hidden')) document.body.style.overflow = '';
+      state.lightbox.dragging = false;
+    }
+
+    function updateLightbox() {
+      const lb = state.lightbox;
+      const record = state.records.find(r => r.id === lb.recordId);
+      if (!record || !lb.photos.length) return;
+      el('lightboxImage').src = lb.photos[lb.index];
+      el('lightboxTitle').textContent = `${record.vesselName} — Photo ${lb.index + 1}`;
+      el('lightboxMeta').textContent = `Photo ${lb.index + 1} / ${lb.photos.length} • Zoom ${Math.round(lb.zoom * 100)}%`;
+      applyLightboxTransform();
+      el('prevPhotoBtn').disabled = lb.photos.length <= 1;
+      el('nextPhotoBtn').disabled = lb.photos.length <= 1;
+    }
+
+    function applyLightboxTransform() {
+      const img = el('lightboxImage');
+      img.style.transform = `translate(${state.lightbox.panX}px, ${state.lightbox.panY}px) scale(${state.lightbox.zoom})`;
+    }
+
+    function changeLightboxZoom(delta) {
+      state.lightbox.zoom = Math.max(0.5, Math.min(5, Number((state.lightbox.zoom + delta).toFixed(2))));
+      applyLightboxTransform();
+      updateLightbox();
+    }
+
+    function resetLightboxZoom() {
+      state.lightbox.zoom = 1;
+      state.lightbox.panX = 0;
+      state.lightbox.panY = 0;
+      applyLightboxTransform();
+      updateLightbox();
+    }
+
+    function moveLightboxPhoto(step) {
+      const lb = state.lightbox;
+      if (!lb.photos.length) return;
+      lb.index = (lb.index + step + lb.photos.length) % lb.photos.length;
+      resetLightboxZoom();
+      updateLightbox();
+    }
+
+    function initLightboxDrag() {
+      const stage = el('lightboxStage');
+      const img = el('lightboxImage');
+      img.addEventListener('mousedown', (event) => {
+        if (state.lightbox.zoom <= 1) return;
+        state.lightbox.dragging = true;
+        state.lightbox.dragStartX = event.clientX;
+        state.lightbox.dragStartY = event.clientY;
+        state.lightbox.startPanX = state.lightbox.panX;
+        state.lightbox.startPanY = state.lightbox.panY;
+        img.style.cursor = 'grabbing';
+      });
+      window.addEventListener('mousemove', (event) => {
+        if (!state.lightbox.dragging) return;
+        state.lightbox.panX = state.lightbox.startPanX + (event.clientX - state.lightbox.dragStartX);
+        state.lightbox.panY = state.lightbox.startPanY + (event.clientY - state.lightbox.dragStartY);
+        applyLightboxTransform();
+      });
+      window.addEventListener('mouseup', () => {
+        state.lightbox.dragging = false;
+        img.style.cursor = 'grab';
+      });
+      stage.addEventListener('wheel', (event) => {
+        if (el('lightboxBackdrop').classList.contains('hidden')) return;
+        event.preventDefault();
+        changeLightboxZoom(event.deltaY < 0 ? 0.15 : -0.15);
+      }, { passive: false });
+    }
+
+    function initMapResizeObserver() {
+      if (!window.ResizeObserver) return;
+      const mapElement = el('map');
+      if (!mapElement) return;
+      const observer = new ResizeObserver(() => scheduleMapResize());
+      observer.observe(mapElement);
+    }
+
+    function initEvents() {
+      el('f_vesselName').addEventListener('input', () => renderAll(true, false, true));
+      el('f_type').addEventListener('change', () => renderAll(true, false, false));
+      el('completedFromDate').addEventListener('change', renderCompletedRangeSummary);
+      el('completedToDate').addEventListener('change', renderCompletedRangeSummary);
+      el('clearCompletedRangeBtn').addEventListener('click', () => {
+        el('completedFromDate').value = '';
+        el('completedToDate').value = '';
+        renderCompletedRangeSummary();
+      });
+      el('resetFiltersBtn').addEventListener('click', resetFilters);
+      el('fitAllBtn').addEventListener('click', fitAllPins);
+      el('insertVesselBtn').addEventListener('click', () => openModal('insert'));
+      el('sharepointBtn').addEventListener('click', () => {
+        if (SHAREPOINT_URL && SHAREPOINT_URL !== 'https://YOUR-SHAREPOINT-SITE-URL-HERE') {
+          window.open(SHAREPOINT_URL, '_blank', 'noopener,noreferrer');
+        } else {
+          alert('Please set the SHAREPOINT_URL in the HTML file.');
+        }
+      });
+      el('editVesselBtn').addEventListener('click', () => { const rec = selectedRecord(); if (rec) openModal('edit', rec); });
+      el('vesselModalClose').addEventListener('click', closeModal);
+      el('cancelVesselBtn').addEventListener('click', closeModal);
+      el('deleteVesselBtn').addEventListener('click', prepareCompletion);
+      el('typeInput').addEventListener('change', toggleAbandonedFields);
+      el('vesselForm').addEventListener('submit', saveVessel);
+      el('photoFileInput').addEventListener('change', async (event) => {
+        const files = event.target.files;
+        if (!files || !files.length) return;
+        try {
+          const newItems = await buildPendingPhotoItems(files);
+          state.pendingPhotos = [...state.pendingPhotos, ...newItems.filter(Boolean)];
+          renderPreviewStrip();
+          event.target.value = '';
+        } catch (error) {
+          console.error(error);
+          alert(`Photo preview failed: ${error.message || error}`);
+        }
+      });
+      el('vesselModalBackdrop').addEventListener('click', (event) => { if (event.target === el('vesselModalBackdrop')) closeModal(); });
+      el('lightboxBackdrop').addEventListener('click', (event) => { if (event.target === el('lightboxBackdrop')) closeLightbox(); });
+      el('lightboxCloseBtn').addEventListener('click', closeLightbox);
+      el('zoomInBtn').addEventListener('click', () => changeLightboxZoom(0.2));
+      el('zoomOutBtn').addEventListener('click', () => changeLightboxZoom(-0.2));
+      el('resetZoomBtn').addEventListener('click', resetLightboxZoom);
+      el('prevPhotoBtn').addEventListener('click', () => moveLightboxPhoto(-1));
+      el('nextPhotoBtn').addEventListener('click', () => moveLightboxPhoto(1));
+      window.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && !el('lightboxBackdrop').classList.contains('hidden')) { closeLightbox(); return; }
+        if (event.key === 'Escape' && !el('vesselModalBackdrop').classList.contains('hidden')) { closeModal(); return; }
+        if (!el('lightboxBackdrop').classList.contains('hidden')) {
+          if (event.key === 'ArrowRight') moveLightboxPhoto(1);
+          if (event.key === 'ArrowLeft') moveLightboxPhoto(-1);
+          if (event.key === '+' || event.key === '=') changeLightboxZoom(0.2);
+          if (event.key === '-' || event.key === '_') changeLightboxZoom(-0.2);
+        }
+      });
+      window.addEventListener('resize', () => arrangeResponsiveLayout());
+      window.addEventListener('orientationchange', () => arrangeResponsiveLayout());
+      window.addEventListener('load', () => scheduleMapResize());
+      initLightboxDrag();
+    }
+
+    const OA='wreck_abandoned_owner_approved',OAP='wreck_abandoned_owner_approved_photos',OAN='wreck_abandoned_owner_approved_notes',oas={rows:[],id:null,edit:null};
+    const oad=v=>v?String(v).slice(0,10):''; const oast=r=>r.disposed_date?'Completed':'Ready to dispose';
+    async function oaLoad(){const [{data:r,error:a},{data:p,error:b},{data:n,error:c}]=await Promise.all([supabaseClient.from(OA).select('*').order('owner_approval_date',{ascending:false}),supabaseClient.from(OAP).select('*').order('created_at'),supabaseClient.from(OAN).select('*').order('created_at',{ascending:false})]);if(a||b||c)throw(a||b||c);const u=await createSignedUrlMap((p||[]).map(x=>x.storage_path)),pm={},nm={};(p||[]).forEach(x=>(pm[x.owner_approved_id]??=[]).push({...x,url:u[x.storage_path]}));(n||[]).forEach(x=>(nm[x.owner_approved_id]??=[]).push(x));oas.rows=(r||[]).map(x=>({...x,photos:pm[x.id]||[],notes:nm[x.id]||[]}));if(!oas.rows.some(x=>x.id===oas.id))oas.id=oas.rows[0]?.id||null;oaRender()}
+    function oaFiltered(){
+      const f=el('oaFrom').value,t=el('oaTo').value;
+      return oas.rows
+        .filter(x=>(!f||oad(x.owner_approval_date)>=f)&&(!t||oad(x.owner_approval_date)<=t))
+        .sort((a,b)=>{
+          const aCompleted=Boolean(a.disposed_date), bCompleted=Boolean(b.disposed_date);
+          if(aCompleted!==bCompleted) return aCompleted?1:-1;
+          const aDate=aCompleted?oad(a.disposed_date):oad(a.owner_approval_date);
+          const bDate=bCompleted?oad(b.disposed_date):oad(b.owner_approval_date);
+          const dateOrder=String(bDate||'').localeCompare(String(aDate||''));
+          if(dateOrder!==0) return dateOrder;
+          return String(a.vessel_name||'').localeCompare(String(b.vessel_name||''),'en',{sensitivity:'base',numeric:true});
+        });
+    }
+    function oaRender(){const q=oaFiltered(),w=q.filter(x=>x.type==='Wreck'),a=q.filter(x=>x.type==='Abandoned');el('oaWC').textContent=w.length;el('oaAC').textContent=a.length;el('oaTC').textContent=q.length;const sec=(t,z)=>`<h3 class="oa-section"><span>${t}</span><span>${z.length}</span></h3><div class="oa-list">${z.map(x=>`<div class="oa-row ${x.id===oas.id?'active':''}" data-id="${x.id}"><b>${escapeHtml(x.vessel_name)}</b><div class="oa-meta"><span class="oa-status ${x.disposed_date?'completed':'ready'}">${oast(x)}</span> · Approval ${formatDate(x.owner_approval_date)}${x.disposed_date?' · Disposed '+formatDate(x.disposed_date):''}</div></div>`).join('')||'<div class="muted-box">No records</div>'}</div>`;el('oaList').innerHTML=sec('Wreck',w)+sec('Abandoned',a);el('oaList').querySelectorAll('[data-id]').forEach(x=>x.onclick=()=>{oas.id=x.dataset.id;oaRender()});oaDetail()}
+    function oaDetail(){const r=oas.rows.find(x=>x.id===oas.id),h=el('oaDetail');if(!r){h.innerHTML='<div class="muted-box">Select a record.</div>';return}const it=(k,v,f='')=>`<div class="oa-item ${f}"><div class="oa-k">${k}</div><div class="oa-v">${escapeHtml(v||'-')}</div></div>`;h.innerHTML=`<div class="detail-top-row"><div><span class="oa-status ${r.disposed_date?'completed':'ready'}">${oast(r)}</span><div class="oa-detail-title">${escapeHtml(r.vessel_name)}</div></div><button id="oaEdit">Edit</button></div><div class="oa-grid">${it('Classification',r.type)}${it('Status',oast(r))}${it('Owner Details',r.owner,'full')}${it('Latitude',r.lat)}${it('Longitude',r.lon)}${it('Notified to HM',formatDate(r.notified_to_hm))}${it('Owner Approval Date',formatDate(r.owner_approval_date))}${it('Date Disposed of',formatDate(r.disposed_date))}<div class="oa-item full"><div class="oa-k">Photos</div>${r.photos.map(p=>`<img class="oa-photo" src="${p.url||''}" data-url="${p.url||''}">`).join('')||'<div class="oa-v">No photos</div>'}</div><div class="oa-item full"><div class="oa-k">Add Note</div><textarea id="oaNote" class="field"></textarea><button id="oaNoteAdd" class="primary">Add Note</button></div><div class="oa-item full"><div class="oa-k">Notes</div>${r.notes.map(n=>`<div class="note-item"><div class="note-item-meta">${formatDateTime(n.created_at)}</div>${escapeHtml(n.note_text)}</div>`).join('')||'<div class="oa-v">No notes</div>'}</div></div>`;el('oaEdit').onclick=()=>oaOpen(r);el('oaNoteAdd').onclick=()=>oaAddNote(r.id);h.querySelectorAll('[data-url]').forEach(x=>x.onclick=()=>window.open(x.dataset.url,'_blank','noopener'))}
+    function oaOpen(r=null){oas.edit=r?.id||null;el('oaFormTitle').textContent=r?'Edit Owner Approved Record':'Add Owner Approved Record';el('oaName').value=r?.vessel_name||'';el('oaType').value=r?.type||'Abandoned';el('oaOwner').value=r?.owner||'';el('oaLat').value=r?.lat??'';el('oaLon').value=r?.lon??'';el('oaNotified').value=oad(r?.notified_to_hm);el('oaApproval').value=oad(r?.owner_approval_date)||todayForDateInput();el('oaDisposed').value=oad(r?.disposed_date);el('oaStatusView').value=r&&r.disposed_date?'Completed':'Ready to dispose';el('oaFiles').value='';el('oaDelete').classList.toggle('hidden',!r);el('oaFormBg').classList.remove('hidden')}
+    async function oaSave(e){e.preventDefault();const disp=el('oaDisposed').value||null,p={vessel_name:el('oaName').value.trim(),type:el('oaType').value,owner:el('oaOwner').value.trim()||null,lat:el('oaLat').value===''?null:Number(el('oaLat').value),lon:el('oaLon').value===''?null:Number(el('oaLon').value),notified_to_hm:el('oaNotified').value||null,owner_approval_date:el('oaApproval').value,disposed_date:disp,status:disp?'completed':'ready_to_dispose'},q=oas.edit?await supabaseClient.from(OA).update(p).eq('id',oas.edit).select().single():await supabaseClient.from(OA).insert(p).select().single();if(q.error)throw q.error;for(const f of el('oaFiles').files){const path=`owner-approved/${q.data.id}/${Date.now()}-${makeRandomId()}-${sanitizeFileName(f.name)}`;const up=await supabaseClient.storage.from(SUPABASE_BUCKET).upload(path,f,{contentType:f.type,upsert:false});if(up.error)throw up.error;const db=await supabaseClient.from(OAP).insert({owner_approved_id:q.data.id,storage_path:path,original_filename:f.name,mime_type:f.type||null,file_size:f.size||null});if(db.error)throw db.error}oas.id=q.data.id;el('oaFormBg').classList.add('hidden');await oaLoad()}
+    async function oaAddNote(id){const x=el('oaNote'),t=x.value.trim();if(!t)return;const q=await supabaseClient.from(OAN).insert({owner_approved_id:id,note_text:t,created_by:null});if(q.error)return alert(q.error.message);await oaLoad()}
+    async function oaDelete(){const r=oas.rows.find(x=>x.id===oas.edit);if(!r||!confirm(`Delete ${r.vessel_name}?`))return;const ps=r.photos.map(x=>x.storage_path);if(ps.length){const q=await supabaseClient.storage.from(SUPABASE_BUCKET).remove(ps);if(q.error)return alert(q.error.message)}const q=await supabaseClient.from(OA).delete().eq('id',r.id);if(q.error)return alert(q.error.message);el('oaFormBg').classList.add('hidden');oas.id=null;await oaLoad()}
+    function oaInit(){el('ownerApprovedBtn').onclick=async()=>{el('oaBg').classList.remove('hidden');document.body.style.overflow='hidden';try{await oaLoad()}catch(e){alert(e.message)}};el('oaClose').onclick=()=>{el('oaBg').classList.add('hidden');document.body.style.overflow=''};el('oaNew').onclick=()=>oaOpen();el('oaFormClose').onclick=()=>el('oaFormBg').classList.add('hidden');el('oaForm').onsubmit=e=>oaSave(e).catch(x=>alert(x.message));el('oaDelete').onclick=oaDelete;el('oaFrom').onchange=oaRender;el('oaTo').onchange=oaRender;el('oaClear').onclick=()=>{el('oaFrom').value='';el('oaTo').value='';oaRender()};el('oaDisposed').onchange=()=>el('oaStatusView').value=el('oaDisposed').value?'Completed':'Ready to dispose'}
+    window.addEventListener('DOMContentLoaded',oaInit);
+
+    (async function bootstrap() {
+      initEvents();
+      initMapResizeObserver();
+      await initializeSupabase();
+      await initializeData();
+      arrangeResponsiveLayout();
+      scheduleMapResize();
+    })();
+  </script>
+</body>
+</html>
