@@ -377,12 +377,12 @@
     <div class="nav-label">OPERATIONS</div>
     <a class="card" href="./emergency/" target="_blank" rel="noopener noreferrer"><h2>Emergency Moorings</h2><span></span></a>
     <a class="card" href="./pinksticker/" target="_blank" rel="noopener noreferrer"><h2>Pink Sticker Register</h2><span></span></a>
-    <a class="card" href="https://gooktolove-debug.github.io/HM-wreck-abandoned/" target="_blank" rel="noopener noreferrer"><h2>Wreck / Abandoned</h2><span></span></a>
+    <a class="card" href="./wreck/" target="_blank" rel="noopener noreferrer"><h2>Wreck / Abandoned</h2><span></span></a>
     <a class="card" href="./do/" target="_blank" rel="noopener noreferrer"><h2>DO Log</h2><span></span></a>
 
     <div class="nav-label nav-break">ASSETS &amp; MONITORING</div>
     <a class="card" href="./navaid/" target="_blank" rel="noopener noreferrer"><h2>Nav Aid</h2><span></span></a>
-    <a class="card" href="https://gooktolove-debug.github.io/hm-sign/" target="_blank" rel="noopener noreferrer"><h2>Land-based Signs</h2><span></span></a>
+    <a class="card" href="./sign/" target="_blank" rel="noopener noreferrer"><h2>Land-based Signs</h2><span></span></a>
 
     <div class="nav-label nav-break">INTELLIGENCE</div>
     <a class="card" href="./vesselsearch/" target="_blank" rel="noopener noreferrer"><h2>Vessel Search</h2><span></span></a>
@@ -390,7 +390,7 @@
     <a class="card" href="./accident/" target="_blank" rel="noopener noreferrer"><h2>Marine Accident Analysis</h2><span></span></a>
     <a class="card" href="./tsunami/" target="_blank" rel="noopener noreferrer"><h2>Tsunami Modelling</h2><span></span></a>
     <a class="card" href="./tier2/" target="_blank" rel="noopener noreferrer"><h2>Tier 2 Planning</h2><span></span></a>
-    <a class="card" href="https://gooktolove-debug.github.io/HM-fleet-fuel/" target="_blank" rel="noopener noreferrer"><h2>Vessel Fuel Usage</h2><span></span></a>
+    <a class="card" href="./fuel/" target="_blank" rel="noopener noreferrer"><h2>Vessel Fuel Usage</h2><span></span></a>
   </div>
   <div class="nav-foot"><span class="pulse"></span><span>Operational workspace</span><b>v2.0</b></div>
 </section>
@@ -897,6 +897,10 @@ document.addEventListener('click', function (event) {
     else if (/^Save failed:/i.test(text)) showError(text.replace(/^Save failed:\s*/i, ''));
   }).observe(status, { childList: true, characterData: true, subtree: true });
 })();
+</script>
+
+<script id="integratedLocalPageLinks">
+function openWreckPage(){window.open('./wreck/','_blank','noopener,noreferrer');}
 </script>
 </body>
 </html>
