@@ -1557,6 +1557,27 @@
       }
     }
 
+    const MOORING_LOCATION_CACHE_KEY='hm_mooring_locations_v1';
+    const MOORING_LOCATION_CACHE_TTL=6*60*60*1000;
+    function saveMooringLocationCache(rows){
+      try{
+        const compact=(rows||[]).map(r=>({id:r.id,mooringCode:r.mooringCode,mooringLength:r.mooringLength,mooringDepth:r.mooringDepth,tagNumber:r.tagNumber,boatName:r.boatName,zoneName:r.zoneName,lat:r.lat,lon:r.lon,latDmm:r.latDmm,lonDmm:r.lonDmm,raw:r.raw||{}}));
+        localStorage.setItem(MOORING_LOCATION_CACHE_KEY,JSON.stringify({savedAt:Date.now(),rows:compact}));
+      }catch(err){console.warn('Mooring location cache save skipped:',err);}
+    }
+    function restoreMooringLocationCache(){
+      try{
+        const cached=JSON.parse(localStorage.getItem(MOORING_LOCATION_CACHE_KEY)||'null');
+        if(!cached||!Array.isArray(cached.rows)||!cached.rows.length)return false;
+        if(Date.now()-Number(cached.savedAt||0)>MOORING_LOCATION_CACHE_TTL)return false;
+        state.records=cached.rows.filter(r=>Number.isFinite(Number(r.lat))&&Number.isFinite(Number(r.lon)));
+        if(!state.records.length)return false;
+        state.selectedId=state.records[0]?.id||null;
+        renderLocationFirstPaint(true);
+        return true;
+      }catch(err){console.warn('Mooring location cache restore skipped:',err);return false;}
+    }
+
     function normalizeFeature(feature){
       const p = feature.properties || {};
       const coords = feature.geometry?.coordinates || [];
@@ -1649,6 +1670,7 @@
         state.records = rows;
         state.selectedId = rows[0]?.id || null;
         state.fetchedAt = new Date();
+        saveMooringLocationCache(rows);
         if(initialDataReady) renderAll(true,true,false); else renderLocationFirstPaint(true);
       } catch(err){
         console.error(err);
@@ -2256,9 +2278,32 @@
         initEvents();
         el('noteAddBtn').addEventListener('click', addNote);
         el('noteInput').addEventListener('keydown', (e) => { if(e.ctrlKey && e.key === 'Enter'){ e.preventDefault(); addNote(); } });
+
+        // Let Leaflet start downloading visible tiles immediately after OTP instead
+        // of waiting for all Supabase registry pages to finish.
+        requestAnimationFrame(()=>{
+          map.invalidateSize();
+          setTimeout(()=>map.invalidateSize(),80);
+        });
+
+        // Repeat visits paint the last successful location set immediately, then
+        // load fresh Supabase/ArcGIS data in the background (six-hour cache max).
+        const restored=restoreMooringLocationCache();
+        if(restored){
+          requestAnimationFrame(()=>{
+            map.invalidateSize();
+            if(state.filtered.length) fitAllPins();
+          });
+        }
+
         await loadAllData();
       }
-      setTimeout(()=>map.invalidateSize(),80);
+
+      // Fresh data has now replaced the cache. Fit once after the layout settles.
+      setTimeout(()=>{
+        map.invalidateSize();
+        if(state.filtered.length) fitAllPins();
+      },160);
     }
     function showSignedOutScreen(){
       el('appShell').classList.add('hidden');
