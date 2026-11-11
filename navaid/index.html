@@ -482,6 +482,87 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.20;ba
     font-size:10px;
   }
 }
+
+/* Distance measurement control: keep it below the fullscreen status filters. */
+.leaflet-bottom.leaflet-left .measure-control{
+  margin-left:12px!important;
+  margin-bottom:12px!important;
+  align-items:flex-start!important;
+}
+.map-fullscreen-active .leaflet-bottom.leaflet-left .measure-control{
+  margin-left:12px!important;
+  margin-bottom:14px!important;
+}
+@media(max-width:700px){
+  .leaflet-bottom.leaflet-left .measure-control{
+    margin-left:10px!important;
+    margin-bottom:54px!important;
+  }
+  .map-fullscreen-active .leaflet-bottom.leaflet-left .measure-control{
+    margin-left:10px!important;
+    margin-bottom:56px!important;
+  }
+  .leaflet-bottom.leaflet-left .measure-readout{
+    max-width:min(165px,calc(100vw - 82px))!important;
+  }
+}
+
+/* Final fullscreen layout: move the complete status/filter panel to the map bottom. */
+.map-fullscreen-active .fullscreen-status-filters{
+  top:auto!important;
+  bottom:12px!important;
+  left:50%!important;
+  right:auto!important;
+  transform:translateX(-50%)!important;
+  max-width:calc(100% - 190px)!important;
+}
+.map-fullscreen-active .map-fullscreen-btn{
+  top:auto!important;
+  bottom:12px!important;
+  right:12px!important;
+}
+/* Keep the distance measurement control and readout above the bottom filter panel. */
+.map-fullscreen-active .leaflet-bottom.leaflet-left .measure-control,
+.leaflet-bottom.leaflet-left .measure-control{
+  margin-left:12px!important;
+  margin-bottom:78px!important;
+}
+@media(max-width:700px){
+  .map-fullscreen-active .fullscreen-status-filters{
+    top:auto!important;
+    bottom:12px!important;
+    left:10px!important;
+    right:58px!important;
+    transform:none!important;
+    max-width:none!important;
+  }
+  .map-fullscreen-active .map-fullscreen-btn{
+    top:auto!important;
+    bottom:12px!important;
+    right:10px!important;
+  }
+  .map-fullscreen-active .leaflet-bottom.leaflet-left .measure-control,
+  .leaflet-bottom.leaflet-left .measure-control{
+    margin-left:10px!important;
+    margin-bottom:82px!important;
+  }
+}
+@media(max-width:380px){
+  .map-fullscreen-active .fullscreen-status-filters{
+    left:8px!important;
+    right:50px!important;
+    bottom:8px!important;
+  }
+  .map-fullscreen-active .map-fullscreen-btn{
+    right:8px!important;
+    bottom:8px!important;
+  }
+  .map-fullscreen-active .leaflet-bottom.leaflet-left .measure-control,
+  .leaflet-bottom.leaflet-left .measure-control{
+    margin-left:8px!important;
+    margin-bottom:76px!important;
+  }
+}
 </style></head><body><a href="../" class="dashboard-back" title="Return to Auckland Harbour Operations Monitoring Page">← Dashboard</a><div class="user-gate" id="userGate">
   <div class="user-gate-card">
     <div class="user-gate-logo" aria-label="Lighthouse">
@@ -744,7 +825,7 @@ function clearMeasurement(close=true){
   measureState.points=[];measureState.finished=false;if(close)measureState.active=false;clearMeasureLayers();setMeasureUi();
 }
 const MeasureControl=L.Control.extend({
-  options:{position:'topleft'},
+  options:{position:'bottomleft'},
   onAdd(){
     const wrap=L.DomUtil.create('div','leaflet-control measure-control');
     const btn=L.DomUtil.create('button','',wrap);btn.type='button';btn.innerHTML='↔';btn.setAttribute('aria-label','Measure distance in m or nautical miles');btn.setAttribute('aria-pressed','false');btn.title='Measure distance in m / NM';
