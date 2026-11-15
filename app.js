@@ -518,7 +518,7 @@ async function fetchOpenDoCases(){
   catch(e2){return{available:false,rows:[],error:e2?.message||String(e2)}}
  }
 }
-function openDoLogPage(){window.open('https://gooktolove-debug.github.io/HM-DO/','_blank','noopener')}
+function openDoLogPage(){window.open('./do/','_blank','noopener,noreferrer')}
 function renderDoLogCondition(data){const v=document.getElementById('condDoCases'),sub=document.getElementById('condDoSub');if(!v||!sub)return;if(!data.available){v.textContent='—';sub.textContent='Unavailable';return}v.textContent=String(data.rows.length);sub.textContent=data.rows.length===1?'Open case':'Open cases'}
 async function refreshDoLogCondition(){renderDoLogCondition(await fetchOpenDoCases())}
 
