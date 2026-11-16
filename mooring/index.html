@@ -351,7 +351,13 @@
     #signOutBtn{background:rgba(220,38,38,.16);border-color:rgba(248,113,113,.38);color:#fecaca}
     #signOutBtn:hover{background:rgba(220,38,38,.28)}
     @media(max-width:760px){.auth-card{padding:24px 20px}.auth-user{grid-column:1/-1;max-width:none;justify-content:center}.header .actions{grid-template-columns:repeat(2,minmax(0,1fr))}}
-  </style></head>
+  
+    .note-initial-badge{text-transform:none;min-width:auto;padding:2px 7px}
+    @media(max-width:700px){.notes-add-row{display:grid;grid-template-columns:1fr auto}.notes-textarea{grid-column:1}.notes-add-btn{width:auto}}
+  
+    .small.audit{background:#dcfce7;color:#166534;border:1px solid #86efac}.small.audit:hover{background:#bbf7d0}
+    .audit-modal-card{width:min(760px,96vw);max-height:92vh}.audit-section{border:1px solid var(--line);border-radius:16px;overflow:hidden;margin-bottom:16px;background:#fff}.audit-section-head{padding:12px 14px;background:#f0fdf4;border-bottom:1px solid #bbf7d0;font-weight:800;color:#166534}.audit-section-body{padding:14px}.audit-upload-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.audit-upload-label{display:inline-flex;align-items:center;justify-content:center;padding:10px 14px;border-radius:11px;background:#166534;color:#fff;font-weight:700;cursor:pointer}.audit-upload-label input{display:none}.audit-photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-top:12px}.audit-photo-card{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}.audit-photo-card img{width:100%;height:120px;object-fit:cover;display:block}.audit-photo-meta{padding:8px;font-size:11px;color:var(--muted)}.audit-tag{display:inline-flex;padding:2px 7px;border-radius:999px;background:#dcfce7;color:#166534;border:1px solid #86efac;font-size:10px;font-weight:800;margin-left:6px}.audit-note-list{display:flex;flex-direction:column;gap:8px;margin-top:12px;max-height:260px;overflow:auto}.audit-note-row{border:1px solid var(--line);border-radius:12px;padding:10px}.audit-status{font-size:12px;color:var(--muted);margin-top:8px}
+</style></head>
 <body>
 
   <div id="authScreen" class="auth-screen" aria-live="polite">
@@ -453,6 +459,7 @@
                   <button class="small ghost" id="customerDetailsBtn">Customer Details</button>
                   <button class="small ghost" id="historyBtn">History</button>
                   <button class="small primary" id="editDetailsBtn" type="button">Edit</button>
+                  <button class="small audit" id="auditBtn" type="button">Audit</button>
                 </div>
               </div>
               <div id="detailGrid" class="detail-grid"></div>
@@ -466,7 +473,6 @@
                 <div class="notes-add">
                   <div class="notes-add-row">
                     <textarea id="noteInput" class="notes-textarea" placeholder="Enter note..."></textarea>
-                    <input id="noteInitial" class="notes-initial" maxlength="6" placeholder="Init." title="Your initials" />
                     <button class="notes-add-btn" id="noteAddBtn" type="button">Add</button>
                   </div>
                 </div>
@@ -493,6 +499,32 @@
   </div>
 
   <!-- Lightbox removed: photos now link to SharePoint -->
+
+
+  <div id="auditModalBackdrop" class="modal-backdrop hidden" aria-hidden="true">
+    <div class="modal-card audit-modal-card" role="dialog" aria-modal="true" aria-labelledby="auditModalTitle">
+      <div class="modal-head"><h3 id="auditModalTitle" class="modal-title">Mooring Audit</h3><button id="auditModalClose" class="small danger" type="button">Close</button></div>
+      <div class="modal-body">
+        <section class="audit-section">
+          <div class="audit-section-head">Audit Photos</div>
+          <div class="audit-section-body">
+            <div class="audit-upload-row">
+              <label class="audit-upload-label">Upload<input id="auditPhotoInput" type="file" accept="image/*" multiple></label>
+              <label class="audit-upload-label">Take photo<input id="auditCameraInput" type="file" accept="image/*" capture="environment"></label>
+            </div>
+            <div id="auditPhotoStatus" class="audit-status"></div><div id="auditPhotoGrid" class="audit-photo-grid"></div>
+          </div>
+        </section>
+        <section class="audit-section">
+          <div class="audit-section-head">Notes <span class="audit-tag">Audit</span></div>
+          <div class="audit-section-body">
+            <div class="notes-add-row"><textarea id="auditNoteInput" class="notes-textarea" placeholder="Enter audit note..."></textarea><button id="auditNoteAddBtn" class="notes-add-btn" type="button">Add</button></div>
+            <div id="auditNoteList" class="audit-note-list"></div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
 
   <div id="customerModalBackdrop" class="modal-backdrop hidden" aria-hidden="true">
     <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="customerModalTitle">
@@ -702,6 +734,7 @@
     let tempUserAccessGranted = false;
     let editAccessGranted = false;
     let sharedAccessGranted = false;
+    let currentNoteAuthor = 'user';
     let supabaseClient = null;
     let userLocationMarker = null;
     let userAccuracyCircle = null;
@@ -712,6 +745,10 @@
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap contributors' }).addTo(map);
 
     function normalizeCode(value){ return String(value || '').trim().toUpperCase(); }
+    function noteAuthorFromEmail(email){
+      const localPart = String(email || '').trim().split('@')[0] || 'user';
+      return (localPart.split('.')[0] || localPart).trim().toLowerCase() || 'user';
+    }
     function showError(text=''){ const box = el('errorBox'); if(!text){ box.textContent=''; box.classList.add('hidden'); return; } box.textContent=text; box.classList.remove('hidden'); }
     function zoneColor(zone){ const z = zone || 'Unknown'; let hash=0; for(let i=0;i<z.length;i++) hash=((hash<<5)-hash)+z.charCodeAt(i); return ZONE_COLORS[Math.abs(hash)%ZONE_COLORS.length]; }
     function formatDMM(value, kind){ if(typeof value !== 'number' || Number.isNaN(value)) return '-'; const abs=Math.abs(value); const degrees=Math.floor(abs); const minutes=(abs-degrees)*60; const hemisphere = kind==='lat' ? (value>=0?'N':'S') : (value>=0?'E':'W'); const degPad = kind==='lat'?2:3; return `${String(degrees).padStart(degPad,'0')}°${minutes.toFixed(4)}' ${hemisphere}`; }
@@ -1346,6 +1383,52 @@
     }
 
 
+      function coordinateDmmInput(value, kind){
+        if(!Number.isFinite(Number(value))) return '';
+        const n=Number(value), abs=Math.abs(n), deg=Math.floor(abs), mins=(abs-deg)*60;
+        const hemi=kind==='lat'?(n<0?'S':'N'):(n<0?'W':'E');
+        return `${deg} ${mins.toFixed(4)} ${hemi}`;
+      }
+      function parseCoordinateInput(raw, kind, format){
+        const text=String(raw||'').trim().toUpperCase().replace(/[°º]/g,' ').replace(/[′’']/g,' ').replace(/,/g,' ');
+        if(!text) throw new Error(`${kind==='lat'?'Latitude':'Longitude'} is required.`);
+        if(format==='dd'){
+          const n=Number(text.replace(/[^0-9+\-.]/g,''));
+          if(!Number.isFinite(n)) throw new Error(`Invalid ${kind==='lat'?'latitude':'longitude'} decimal degrees.`);
+          const signed=Math.abs(n)*(kind==='lat'?-1:1); // Auckland default: South / East
+          if(kind==='lat' && (signed < -90 || signed > 90)) throw new Error('Latitude must be between 0 and 90 degrees South.');
+          if(kind==='lon' && (signed < -180 || signed > 180)) throw new Error('Longitude must be between 0 and 180 degrees East.');
+          return signed;
+        }
+        const hemi=(text.match(/[NSEW]/)||[kind==='lat'?'S':'E'])[0];
+        const nums=text.replace(/[NSEW]/g,' ').trim().split(/\s+/).filter(Boolean).map(Number);
+        if(nums.length<2 || nums.some(n=>!Number.isFinite(n))) throw new Error(`Use degrees and decimal minutes, for example ${kind==='lat'?"36 38.1060 S":"174 43.3040 E"}.`);
+        const max=kind==='lat'?90:180;
+        if(nums[0]<0 || nums[0]>max || nums[1]<0 || nums[1]>=60) throw new Error(`Invalid ${kind==='lat'?'latitude':'longitude'} degrees/minutes.`);
+        let dd=nums[0]+nums[1]/60;
+        if(hemi==='S'||hemi==='W') dd=-dd;
+        return dd;
+      }
+      function setCoordinateEditFormat(format){
+        const rec=selectedRecord(); if(!rec) return;
+        const select=el('edit_coordinate_format'); if(select) select.value=format;
+        const lat=el('edit_latitude'), lon=el('edit_longitude');
+        if(!lat||!lon) return;
+        if(format==='dd'){
+          lat.value=Number(rec.lat).toFixed(7); lon.value=Number(rec.lon).toFixed(7);
+          lat.placeholder='36.6351000 (South assumed)'; lon.placeholder='174.7217333 (East assumed)';
+        }else{
+          lat.value=coordinateDmmInput(rec.lat,'lat'); lon.value=coordinateDmmInput(rec.lon,'lon');
+          lat.placeholder='36 38.1060 S'; lon.placeholder='174 43.3040 E';
+        }
+      }
+      async function writeEditAuditNote(code, changes){
+        const list=changes.length?changes.join('; '):'Saved with no detected value difference';
+        const text=`Mooring details updated: ${list}`;
+        const {data,error}=await supabaseClient.from(NOTES_TABLE).insert({mooring_code:normalizeCode(code),note_text:text,initial:currentNoteAuthor,tag:'Edit'}).select().single();
+        if(error) throw error;
+        const key=normalizeCode(code); (notesCache[key]||(notesCache[key]=[])).unshift(data);
+      }
     // ─────────────────────────────────────────────
     // EDIT MODAL — access gate + Supabase update
     // ─────────────────────────────────────────────
@@ -1390,42 +1473,55 @@
         setEditStatus('Customer details could not be prefilled: ' + (err?.message || err), 'error');
       }
     }
-    function openEditModal(){
-      const rec = selectedRecord(); if(!rec) return; const row = buildEditRowFromRecord(rec);
-      el('editModalTitle').textContent = `Edit Mooring Details — ${row.mooring_code || rec.mooringCode || ''}`;
-      el('editModalIntro').textContent = row._original_issue_date ? `Editing latest row only. Original issue date filter: ${row._original_issue_date}` : 'Editing selected row only.';
-      el('editFormGrid').innerHTML = EDIT_FIELDS.map((field) => { const value = row[field.key] ?? ''; const type = field.type || 'text'; const step = field.step ? ` step="${escapeHtml(field.step)}"` : ''; const required = field.required ? ' required' : ''; return `<div><label class="field-label" for="edit_${escapeHtml(field.key)}">${escapeHtml(field.label)}</label><input class="edit-field" id="edit_${escapeHtml(field.key)}" name="${escapeHtml(field.key)}" type="${escapeHtml(type)}"${step}${required} value="${escapeHtml(value)}" /></div>`; }).join('');
-      setEditStatus(''); el('editModalBackdrop').classList.remove('hidden'); lockBodyScroll(); setTimeout(() => el('edit_mooring_code')?.focus(), 0); hydrateEditCustomerFields(rec);
-    }
-    function closeEditModal(){ el('editModalBackdrop').classList.add('hidden'); unlockBodyScroll(); }
-    async function saveEditForm(event){
-      event.preventDefault();
-      const rec = selectedRecord();
-      if(!rec || !supabaseClient){ setEditStatus('Supabase is not ready yet. Please reload live moorings and try again.', 'error'); return; }
-      const originalRow = buildEditRowFromRecord(rec);
-      const originalCodeExact = String(originalRow._original_mooring_code || rec.mooringCode || '').trim();
-      const originalCodeNormalised = normalizeCode(originalCodeExact || rec.mooringCode);
-      const originalIssueDate = String(originalRow._original_issue_date || '').trim();
-      const payload = {};
-      EDIT_FIELDS.forEach((field) => { const input = el(`edit_${field.key}`); let value = input ? input.value.trim() : ''; if(field.type === 'number') value = value === '' ? null : Number(value); payload[field.key] = value === '' ? null : value; });
-      if(!payload.mooring_code){ setEditStatus('Mooring Code is required.', 'error'); return; }
-      if(Number.isNaN(payload.mooring_length)){ setEditStatus('Mooring Length must be a valid number.', 'error'); return; }
-      if(!originalIssueDate){ setEditStatus('Cannot safely update: original Mooring Permit Date Of Issue is missing. This value is needed to avoid changing older history rows.', 'error'); return; }
-      el('editSaveBtn').disabled = true; el('editSaveBtn').textContent = 'Saving…'; setEditStatus('Saving latest row only...', '');
-      try {
-        let result = await supabaseClient.from(SUPABASE_PUBLIC_TABLE).update(payload).eq('mooring_code', originalCodeExact || originalCodeNormalised).eq('mooring_permit_date_of_issue', originalIssueDate);
-        if(result.error) throw result.error;
-        if(result.count === 0 && originalCodeNormalised){ result = await supabaseClient.from(SUPABASE_PUBLIC_TABLE).update(payload).ilike('mooring_code', originalCodeNormalised).eq('mooring_permit_date_of_issue', originalIssueDate); if(result.error) throw result.error; }
-        const updated = normaliseRegistryRow(payload);
-        registryByCode.delete(normalizeCode(originalCodeExact)); registryByCode.delete(originalCodeNormalised); registryByCode.set(normalizeCode(updated.mooring_code), updated);
-        rec.mooringCode = updated.mooring_code || rec.mooringCode; rec.mooringLength = updated.mooring_length || rec.mooringLength; rec.boatName = updated.boat_vessel_name || rec.boatName;
-        customerDetailsCache.set(normalizeCode(updated.mooring_code), { customer_name: updated.customer_name || payload.customer_name || '', customer_phone_mob: updated.customer_phone_mob || payload.customer_phone_mob || '', customer_phoneah: updated.customer_phoneah || payload.customer_phoneah || '', customer_phonewk: updated.customer_phonewk || payload.customer_phonewk || '', customer_email: updated.customer_email || payload.customer_email || '' });
-        setEditStatus('Saved latest row only. Reload to confirm Supabase persisted the selected row.', 'success'); renderAll(true,false,false); setTimeout(closeEditModal, 900);
-      } catch(err){ console.error('saveEditForm error:', err); setEditStatus('Failed to save changes: ' + (err.message || err), 'error'); }
-      finally { el('editSaveBtn').disabled = false; el('editSaveBtn').textContent = 'Save Changes'; }
-    }
-
-    function featureToLocationCacheRow(feature){
+      function openEditModal(){
+        const rec = selectedRecord(); if(!rec) return; const row = buildEditRowFromRecord(rec);
+        el('editModalTitle').textContent = `Edit Mooring Details — ${row.mooring_code || rec.mooringCode || ''}`;
+        el('editModalIntro').textContent = row._original_issue_date ? `Editing latest row only. Original issue date filter: ${row._original_issue_date}` : 'Editing selected row only.';
+        const normalFields=EDIT_FIELDS.map((field) => { const value=row[field.key]??''; const type=field.type||'text'; const step=field.step?` step="${escapeHtml(field.step)}"`:''; const required=field.required?' required':''; return `<div><label class="field-label" for="edit_${escapeHtml(field.key)}">${escapeHtml(field.label)}</label><input class="edit-field" id="edit_${escapeHtml(field.key)}" name="${escapeHtml(field.key)}" type="${escapeHtml(type)}"${step}${required} value="${escapeHtml(value)}" /></div>`; }).join('');
+        const gps=`<div class="coordinate-editor"><div class="coordinate-editor-head"><div class="coordinate-editor-title">GPS Position</div><select id="edit_coordinate_format" class="edit-field coordinate-format-select" aria-label="Coordinate input format"><option value="dmm">Degrees & Decimal Minutes (DMM)</option><option value="dd">Decimal Degrees (DD)</option></select></div><div class="coordinate-editor-grid"><div><label class="field-label" for="edit_latitude">Latitude</label><input id="edit_latitude" class="edit-field" inputmode="decimal" /><div class="coordinate-help">Default hemisphere: South</div></div><div><label class="field-label" for="edit_longitude">Longitude</label><input id="edit_longitude" class="edit-field" inputmode="decimal" /><div class="coordinate-help">Default hemisphere: East</div></div></div></div>`;
+        el('editFormGrid').innerHTML=normalFields+gps;
+        el('edit_coordinate_format').addEventListener('change',e=>setCoordinateEditFormat(e.target.value));
+        setCoordinateEditFormat('dmm');
+        setEditStatus(''); el('editModalBackdrop').classList.remove('hidden'); lockBodyScroll(); setTimeout(()=>el('edit_mooring_code')?.focus(),0); hydrateEditCustomerFields(rec);
+      }
+      function closeEditModal(){ el('editModalBackdrop').classList.add('hidden'); unlockBodyScroll(); }
+      async function saveEditForm(event){
+        event.preventDefault();
+        const rec=selectedRecord();
+        if(!rec||!supabaseClient){setEditStatus('Supabase is not ready yet. Please reload and try again.','error');return;}
+        const originalRow=buildEditRowFromRecord(rec);
+        const originalCodeExact=String(originalRow._original_mooring_code||rec.mooringCode||'').trim();
+        const originalCodeNormalised=normalizeCode(originalCodeExact||rec.mooringCode);
+        const originalIssueDate=String(originalRow._original_issue_date||'').trim();
+        const payload={},changes=[];
+        EDIT_FIELDS.forEach(field=>{const input=el(`edit_${field.key}`);let value=input?input.value.trim():'';if(field.type==='number')value=value===''?null:Number(value);payload[field.key]=value===''?null:value;const before=originalRow[field.key]??'';if(String(before)!==String(payload[field.key]??''))changes.push(`${field.label}: ${before||'-'} → ${payload[field.key]??'-'}`);});
+        if(!payload.mooring_code){setEditStatus('Mooring Code is required.','error');return;}
+        if(Number.isNaN(payload.mooring_length)){setEditStatus('Mooring Length must be a valid number.','error');return;}
+        if(!originalIssueDate){setEditStatus('Cannot safely update: original Mooring Permit Date Of Issue is missing.','error');return;}
+        let newLat,newLon;
+        try{const format=el('edit_coordinate_format').value;newLat=parseCoordinateInput(el('edit_latitude').value,'lat',format);newLon=parseCoordinateInput(el('edit_longitude').value,'lon',format);}catch(err){setEditStatus(err.message,'error');return;}
+        if(Math.abs(newLat-rec.lat)>1e-9)changes.push(`Latitude: ${rec.latDmm} → ${formatDMM(newLat,'lat')}`);
+        if(Math.abs(newLon-rec.lon)>1e-9)changes.push(`Longitude: ${rec.lonDmm} → ${formatDMM(newLon,'lon')}`);
+        el('editSaveBtn').disabled=true;el('editSaveBtn').textContent='Saving…';setEditStatus('Saving registry, GPS position, and edit history...','');
+        try{
+          let result=await supabaseClient.from(SUPABASE_PUBLIC_TABLE).update(payload).eq('mooring_code',originalCodeExact||originalCodeNormalised).eq('mooring_permit_date_of_issue',originalIssueDate);
+          if(result.error)throw result.error;
+          if(result.count===0&&originalCodeNormalised){result=await supabaseClient.from(SUPABASE_PUBLIC_TABLE).update(payload).ilike('mooring_code',originalCodeNormalised).eq('mooring_permit_date_of_issue',originalIssueDate);if(result.error)throw result.error;}
+          const locationPayload={latitude:newLat,longitude:newLon,updated_at:new Date().toISOString()};
+          let locationResult=await supabaseClient.from(SUPABASE_LOCATION_TABLE).update(locationPayload).eq('source_objectid',String(rec.id));
+          if(locationResult.error)throw locationResult.error;
+          if(locationResult.count===0)locationResult=await supabaseClient.from(SUPABASE_LOCATION_TABLE).update(locationPayload).ilike('mooring_code',originalCodeNormalised);
+          if(locationResult.error)throw locationResult.error;
+          await writeEditAuditNote(payload.mooring_code,changes);
+          const updated=normaliseRegistryRow(payload);
+          registryByCode.delete(normalizeCode(originalCodeExact));registryByCode.delete(originalCodeNormalised);registryByCode.set(normalizeCode(updated.mooring_code),updated);
+          rec.mooringCode=updated.mooring_code||rec.mooringCode;rec.mooringLength=updated.mooring_length||rec.mooringLength;rec.boatName=updated.boat_vessel_name||rec.boatName;rec.lat=newLat;rec.lon=newLon;rec.latDmm=formatDMM(newLat,'lat');rec.lonDmm=formatDMM(newLon,'lon');
+          saveMooringLocationCache(state.records);
+          setEditStatus('Saved. The newest edit record is now at the top of Notes.','success');renderAll(true,false,false);renderNotes();setTimeout(closeEditModal,1100);
+        }catch(err){console.error('saveEditForm error:',err);setEditStatus('Failed to save changes: '+(err.message||err),'error');}
+        finally{el('editSaveBtn').disabled=false;el('editSaveBtn').textContent='Save Changes';}
+      }
+      function featureToLocationCacheRow(feature){
       const p = feature.properties || {};
       const coords = feature.geometry?.coordinates || [];
       const lat = typeof coords[1] === 'number' ? coords[1] : null;
@@ -1518,7 +1614,7 @@
       console.info(`Fetched ${allFeatures.length} ArcGIS mooring location features via pagination.`);
       return allFeatures;
     }
-    function openVesselSearch(){ window.open('https://gooktolove-debug.github.io/HM-vessel-search/', '_blank', 'noopener'); }
+    function openVesselSearch(){ window.open('https://gooktolove-debug.github.io/HM-Launch-page/vesselsearch/', '_blank', 'noopener'); }
 
     async function refreshLocationCacheFromArcGIS(){
       const btn = el('refreshLocationCacheBtn');
@@ -1750,8 +1846,8 @@
         <div style="margin-top:6px;color:#334155;"><strong>Boat:</strong> ${escapeHtml(extra?.boat_vessel_name || r.boatName || '-')}</div>
         <div style="margin-top:4px;color:#334155;"><strong>Length:</strong> ${escapeHtml(extra?.mooring_length || r.mooringLength || '-')} m</div>
         <div style="margin-top:4px;color:#334155;"><strong>Last Inspection:</strong> ${isRecordInspectionStale(r) ? `<span class="alert-text">${escapeHtml(inspectionDate)}</span>` : escapeHtml(inspectionDate)}</div>
-        <div style="margin-top:8px;color:#334155;"><strong>Lat:</strong> ${typeof r.lat==='number' ? r.lat.toFixed(7) : '-'}<br/><span style="color:#64748b;">${escapeHtml(r.latDmm)}</span></div>
-        <div style="margin-top:4px;color:#334155;"><strong>Lon:</strong> ${typeof r.lon==='number' ? r.lon.toFixed(7) : '-'}<br/><span style="color:#64748b;">${escapeHtml(r.lonDmm)}</span></div>
+        <div style="margin-top:8px;color:#334155;"><strong>Lat:</strong> ${escapeHtml(r.latDmm || '-')}<br/><span style="color:#64748b;">${typeof r.lat==='number' ? r.lat.toFixed(7) + '°' : '-'}</span></div>
+        <div style="margin-top:4px;color:#334155;"><strong>Lon:</strong> ${escapeHtml(r.lonDmm || '-')}<br/><span style="color:#64748b;">${typeof r.lon==='number' ? r.lon.toFixed(7) + '°' : '-'}</span></div>
       </div>`;
     }
     function focusSelectedMarker(openPopup=true){
@@ -1877,7 +1973,7 @@
       el('detailBadges').innerHTML = [`<span class="badge">${escapeHtml(rec.mooringCode || 'No Code')}</span>`, facilityBadge, terminated ? `<span class="badge terminated">⛔ Terminated</span>` : '', (!terminated && inspectionStale) ? `<span class="badge alert">Inspection overdue</span>` : ''].join('');
       el('detailTitle').textContent = extra?.boat_vessel_name || rec.boatName || 'No vessel name recorded';
       el('detailStatus').textContent = terminated ? `Permit terminated on ${terminationDate}` : (ageText || '');
-      const detailItems = [ ['Mooring Code', rec.mooringCode || '-', ''], ...(facilityLabel ? [['Facility Type', facilityLabel, facilityCode ? `Code: ${facilityCode}` : '', false]] : []), ['Boat Name', extra?.boat_vessel_name || rec.boatName || '-', extra ? '' : 'Fallback to public ArcGIS field'], ['Licence Length Max', extra?.mooring_length || rec.mooringLength || '-', 'meters'], ...(terminated ? [['Permit Status', '⛔ Terminated', `Termination date: ${terminationDate}`, false]] : []), ...(ageText ? [['Overdue Age', ageText, 'Measured from the 3-year inspection due date', false]] : []), ['Last Inspection Date', inspectionDate || '-', inspectionStale ? 'More than 3 years old from today' : (extra ? '' : 'No inspection row found in Supabase'), inspectionStale], ['Latitude', typeof rec.lat==='number' ? rec.lat.toFixed(7) : '-', rec.latDmm], ['Longitude', typeof rec.lon==='number' ? rec.lon.toFixed(7) : '-', rec.lonDmm] ];
+      const detailItems = [ ['Mooring Code', rec.mooringCode || '-', ''], ...(facilityLabel ? [['Facility Type', facilityLabel, facilityCode ? `Code: ${facilityCode}` : '', false]] : []), ['Boat Name', extra?.boat_vessel_name || rec.boatName || '-', extra ? '' : 'Fallback to public ArcGIS field'], ['Licence Length Max', extra?.mooring_length || rec.mooringLength || '-', 'meters'], ...(terminated ? [['Permit Status', '⛔ Terminated', `Termination date: ${terminationDate}`, false]] : []), ...(ageText ? [['Overdue Age', ageText, 'Measured from the 3-year inspection due date', false]] : []), ['Last Inspection Date', inspectionDate || '-', inspectionStale ? 'More than 3 years old from today' : (extra ? '' : 'No inspection row found in Supabase'), inspectionStale], ['Latitude', rec.latDmm || '-', typeof rec.lat==='number' ? rec.lat.toFixed(7) + '°' : '-'], ['Longitude', rec.lonDmm || '-', typeof rec.lon==='number' ? rec.lon.toFixed(7) + '°' : '-'] ];
       el('detailGrid').innerHTML = detailItems.map((item) => { const [k,v,sub,isAlert] = item; return `<div class="detail-item"><div class="detail-key">${escapeHtml(k)}</div><div class="detail-val ${isAlert ? 'alert-text' : ''}">${escapeHtml(v)}</div>${sub ? `<div class="detail-sub ${isAlert ? 'alert-note' : ''}">${escapeHtml(sub)}</div>` : ''}</div>`; }).join('');
       if(state.markers[rec.id]){ Object.entries(state.markers).forEach(([id,marker])=>{ const record = state.filtered.find(r => String(r.id)===String(id)); updateMarkerSelection(marker, record, String(rec.id)===String(id)); }); }
     }
@@ -2017,6 +2113,12 @@
       el('customerDetailsBtn').addEventListener('click',openCustomerModal);
       el('historyBtn').addEventListener('click',openHistoryModal);
       el('editDetailsBtn').addEventListener('click',openEditAccessModal);
+      el('auditBtn').addEventListener('click',openAuditModal);
+      el('auditModalClose').addEventListener('click',closeAuditModal);
+      el('auditModalBackdrop').addEventListener('click',e=>{if(e.target===el('auditModalBackdrop'))closeAuditModal();});
+      el('auditPhotoInput').addEventListener('change',uploadAuditPhotos);
+      el('auditCameraInput').addEventListener('change',uploadAuditPhotos);
+      el('auditNoteAddBtn').addEventListener('click',addAuditNote);
       el('tempUserEditBtn').addEventListener('click',() => setTempUserEditMode(true));
       el('tempUserSaveBtn').addEventListener('click',saveTempUserEdits);
       el('tempUserCancelBtn').addEventListener('click',() => { if(tempUserAddMode){ closeTempUserModal(); } else { setTempUserEditStatus(''); setTempUserEditMode(false); } });
@@ -2063,6 +2165,8 @@
     // Bucket : mooring-photos
     // ─────────────────────────────────────────────
     const NOTES_TABLE  = 'mooring_app_notes';
+    const AUDIT_PHOTOS_TABLE = 'mooring_app_audit_photos';
+    const AUDIT_PHOTOS_BUCKET = 'mooring-audit';
     // SharePoint — 알파벳 대분류별 폴더 매핑
     const SP_ROOT = 'https://aucklandtransport.sharepoint.com/sites/ahmfs';
     function spFolderUrl(mooringCode){
@@ -2078,7 +2182,8 @@
     }
 
     // Local cache: avoid re-fetching on every panel render
-    const notesCache  = {};   // { [mooringCode]: Note[] }
+    const notesCache  = {};
+    const auditPhotosCache = {};   // { [mooringCode]: Note[] }
 
     function noteKey(rec)  { return normalizeCode(rec?.mooringCode || '_NO_CODE'); }
 
@@ -2093,7 +2198,7 @@
       try {
         const { data, error } = await supabaseClient
           .from(NOTES_TABLE)
-          .select('id, mooring_code, note_text, initial, created_at')
+          .select('id, mooring_code, note_text, initial, tag, created_at')
           .eq('mooring_code', key)
           .order('created_at', { ascending: false });
         if(error) throw error;
@@ -2125,7 +2230,7 @@
         <div class="note-item" data-note-id="${escapeHtml(n.id)}">
           <button class="note-delete" data-note-id="${escapeHtml(n.id)}" title="Delete note">&#x2715;</button>
           <div class="note-item-meta">
-            <span class="note-initial-badge">${escapeHtml(n.initial || '?')}</span>
+            <span class="note-initial-badge">${escapeHtml(n.initial || '?')}</span>${n.tag === 'Audit' ? '<span class="audit-tag">Audit</span>' : ''}
             <span class="note-timestamp">${escapeHtml(formatNoteTimestamp(n.created_at))}</span>
           </div>
           <div class="note-text">${escapeHtml(n.note_text)}</div>
@@ -2136,11 +2241,11 @@
     }
 
     // ── NOTES: add ────────────────────────────────
-    async function addNote(){
+    async function addNote(tag = ''){
       const rec = selectedRecord();
       if(!rec) return;
       const text    = el('noteInput').value.trim();
-      const initial = el('noteInitial').value.trim().toUpperCase();
+      const initial = currentNoteAuthor;
       if(!text){ el('noteInput').focus(); return; }
 
       const key = noteKey(rec);
@@ -2149,7 +2254,7 @@
       try {
         const { data, error } = await supabaseClient
           .from(NOTES_TABLE)
-          .insert({ mooring_code: key, note_text: text, initial: initial || '—' })
+          .insert({ mooring_code: key, note_text: text, initial, tag: tag || null })
           .select()
           .single();
         if(error) throw error;
@@ -2171,6 +2276,17 @@
     // ── NOTES: delete ─────────────────────────────
     async function deleteNote(noteId, key){
       try {
+        if(!sharedAccessGranted){
+          const accessCode = window.prompt('Enter the access code to delete this note.');
+          if(accessCode === null) return;
+          const result = await verifyProtectedAccessCode(accessCode);
+          if(!result.valid){
+            alert(result.message || 'Incorrect access code. Please try again.');
+            return;
+          }
+          grantSharedAccess();
+        }
+        if(!window.confirm('Delete this note?')) return;
         const { error } = await supabaseClient
           .from(NOTES_TABLE)
           .delete()
@@ -2178,12 +2294,52 @@
         if(error) throw error;
         notesCache[key] = (notesCache[key] || []).filter(n => n.id !== noteId);
         renderNotes();
+        renderAuditNotes();
       } catch(err){
         console.error('deleteNote error:', err);
         alert('Failed to delete note: ' + (err.message || err));
       }
     }
 
+
+
+    function formatAuditMeta(author, createdAt){ return `${author || 'user'} · ${formatNoteTimestamp(createdAt)}`; }
+    async function openAuditModal(){
+      const rec=selectedRecord(); if(!rec) return;
+      el('auditModalTitle').textContent=`Audit · ${rec.mooringCode || ''}`;
+      el('auditModalBackdrop').classList.remove('hidden'); lockBodyScroll();
+      await Promise.all([fetchNotes(noteKey(rec)), fetchAuditPhotos(noteKey(rec))]);
+      renderNotes(); renderAuditNotes(); renderAuditPhotos();
+    }
+    function closeAuditModal(){ el('auditModalBackdrop').classList.add('hidden'); unlockBodyScroll(); }
+    function renderAuditNotes(){
+      const rec=selectedRecord(), box=el('auditNoteList'); if(!box) return;
+      const notes=rec ? (notesCache[noteKey(rec)]||[]) : [];
+      box.innerHTML=notes.length?notes.map(n=>`<div class="audit-note-row"><div class="note-item-meta"><span class="note-initial-badge">${escapeHtml(n.initial||'?')}</span>${n.tag==='Audit'?'<span class="audit-tag">Audit</span>':''}<span class="note-timestamp">${escapeHtml(formatNoteTimestamp(n.created_at))}</span></div><div class="note-text">${escapeHtml(n.note_text)}</div></div>`).join(''):'<div class="notes-empty">No notes yet.</div>';
+    }
+    async function addAuditNote(){
+      const rec=selectedRecord(), input=el('auditNoteInput'); if(!rec||!input.value.trim()) return;
+      const key=noteKey(rec), btn=el('auditNoteAddBtn'); btn.disabled=true; btn.textContent='Saving...';
+      try{ const {data,error}=await supabaseClient.from(NOTES_TABLE).insert({mooring_code:key,note_text:input.value.trim(),initial:currentNoteAuthor,tag:'Audit'}).select().single(); if(error) throw error; (notesCache[key]||(notesCache[key]=[])).unshift(data); input.value=''; renderNotes(); renderAuditNotes(); }
+      catch(err){ alert('Failed to save audit note: '+(err.message||err)); }
+      finally{ btn.disabled=false; btn.textContent='Add'; }
+    }
+    async function fetchAuditPhotos(key){
+      const {data,error}=await supabaseClient.from(AUDIT_PHOTOS_TABLE).select('id, mooring_code, storage_path, author, created_at').eq('mooring_code',key).order('created_at',{ascending:false});
+      if(error){ console.error(error); auditPhotosCache[key]=[]; return; }
+      const rows=await Promise.all((data||[]).map(async r=>{ const {data:signed}=await supabaseClient.storage.from(AUDIT_PHOTOS_BUCKET).createSignedUrl(r.storage_path,3600); return {...r,url:signed?.signedUrl||''}; })); auditPhotosCache[key]=rows;
+    }
+    function renderAuditPhotos(){
+      const rec=selectedRecord(), grid=el('auditPhotoGrid'); if(!grid) return; const rows=rec?(auditPhotosCache[noteKey(rec)]||[]):[];
+      grid.innerHTML=rows.length?rows.map(r=>`<div class="audit-photo-card">${r.url?`<a href="${escapeHtml(r.url)}" target="_blank" rel="noopener"><img src="${escapeHtml(r.url)}" alt="Audit photo"></a>`:''}<div class="audit-photo-meta">${escapeHtml(formatAuditMeta(r.author,r.created_at))}</div></div>`).join(''):'<div class="notes-empty">No audit photos yet.</div>';
+    }
+    async function uploadAuditPhotos(event){
+      const rec=selectedRecord(), files=[...(event.target.files||[])], status=el('auditPhotoStatus'); if(!rec||!files.length)return;
+      const key=noteKey(rec); status.textContent=`Uploading ${files.length} photo(s)...`;
+      try{ for(const file of files){ if(!file.type.startsWith('image/')) continue; if(file.size>12*1024*1024) throw new Error(`${file.name} is larger than 12 MB`); const ext=(file.name.split('.').pop()||'jpg').replace(/[^a-z0-9]/gi,'').toLowerCase(); const path=`${key}/${Date.now()}-${crypto.randomUUID()}.${ext}`; const {error:upErr}=await supabaseClient.storage.from(AUDIT_PHOTOS_BUCKET).upload(path,file,{contentType:file.type,upsert:false}); if(upErr) throw upErr; const {error:dbErr}=await supabaseClient.from(AUDIT_PHOTOS_TABLE).insert({mooring_code:key,storage_path:path,author:currentNoteAuthor}); if(dbErr){ await supabaseClient.storage.from(AUDIT_PHOTOS_BUCKET).remove([path]); throw dbErr; }} await fetchAuditPhotos(key); renderAuditPhotos(); status.textContent='Upload complete.'; }
+      catch(err){ status.textContent='Upload failed: '+(err.message||err); }
+      finally{ event.target.value=''; }
+    }
 
     // ── PHOTOS: render SharePoint folder link ────
     function renderPhotos(){
@@ -2266,6 +2422,7 @@
       el('authScreen').classList.add('hidden');
       el('appShell').classList.remove('hidden');
       const email=session?.user?.email||'';
+      currentNoteAuthor = noteAuthorFromEmail(email);
       el('authUserEmail').textContent=email;
       el('authUserEmail').classList.toggle('hidden',!email);
       if(!mooringAppStarted){
