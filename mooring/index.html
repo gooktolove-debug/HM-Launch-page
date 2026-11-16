@@ -224,7 +224,7 @@
     .header{align-items:center;margin-bottom:24px;padding:18px 20px;border:1px solid rgba(255,255,255,.12);border-radius:24px;background:rgba(8,24,42,.72);box-shadow:0 22px 52px rgba(0,0,0,.20);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
     .header h1{color:#fff;font-size:clamp(24px,3vw,38px);font-weight:800;letter-spacing:-.04em}
     .header h1:before{content:"HM";display:inline-grid;place-items:center;width:42px;height:42px;margin-right:14px;border-radius:14px;background:linear-gradient(135deg,var(--cyan),#38bdf8);color:#062136;font-size:13px;letter-spacing:.08em;vertical-align:5px;box-shadow:0 0 28px rgba(34,211,238,.25)}
-    .header .subtitle:after{content:"Live mooring intelligence • Auckland Harbour";color:#9fb4c8}
+    .header .subtitle:after{content:"";display:none}
     .header .actions{justify-content:flex-end}
     button{min-height:42px;border-radius:13px;border-color:#d2deea;font-weight:750;box-shadow:none}
     button:hover{transform:translateY(-1px);box-shadow:0 8px 20px rgba(6,17,31,.12)}
@@ -357,6 +357,16 @@
   
     .small.audit{background:#dcfce7;color:#166534;border:1px solid #86efac}.small.audit:hover{background:#bbf7d0}
     .audit-modal-card{width:min(760px,96vw);max-height:92vh}.audit-section{border:1px solid var(--line);border-radius:16px;overflow:hidden;margin-bottom:16px;background:#fff}.audit-section-head{padding:12px 14px;background:#f0fdf4;border-bottom:1px solid #bbf7d0;font-weight:800;color:#166534}.audit-section-body{padding:14px}.audit-upload-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.audit-upload-label{display:inline-flex;align-items:center;justify-content:center;padding:10px 14px;border-radius:11px;background:#166534;color:#fff;font-weight:700;cursor:pointer}.audit-upload-label input{display:none}.audit-photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-top:12px}.audit-photo-card{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}.audit-photo-card img{width:100%;height:120px;object-fit:cover;display:block}.audit-photo-meta{padding:8px;font-size:11px;color:var(--muted)}.audit-tag{display:inline-flex;padding:2px 7px;border-radius:999px;background:#dcfce7;color:#166534;border:1px solid #86efac;font-size:10px;font-weight:800;margin-left:6px}.audit-note-list{display:flex;flex-direction:column;gap:8px;margin-top:12px;max-height:260px;overflow:auto}.audit-note-row{border:1px solid var(--line);border-radius:12px;padding:10px}.audit-status{font-size:12px;color:var(--muted);margin-top:8px}
+
+    /* Desktop remains unchanged. This holder is active on mobile only. */
+    #mobileAfterDetail{display:none}
+    @media(max-width:760px){
+      #mobileAfterDetail{display:flex;flex-direction:column;gap:12px;width:100%;min-width:0;margin-top:12px}
+      #mobileAfterDetail>.stats{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important;width:100%!important;margin:0!important}
+      #mobileAfterDetail>.stats>.card{min-width:0!important;margin:0!important}
+      #mobileAfterDetail>.table-wrap{display:block!important;width:100%!important;height:238px!important;max-height:238px!important;margin:0!important;overflow:auto!important}
+      #mobileAfterDetail>.table-wrap table{min-width:760px!important}
+    }
 </style></head>
 <body>
 
@@ -417,7 +427,7 @@
     <div class="main-grid" style="margin-top:20px;">
       <div class="map-col">
         <div class="card">
-          <div class="panel-head"><h2 class="panel-title">Live Mooring Map</h2><div class="panel-desc"></div></div>
+          <div class="panel-head"><h2 class="panel-title">Mooring Map</h2><div class="panel-desc"></div></div>
           <div class="panel-body">
             <div id="fullScreenSearchBar" class="full-screen-search"><input id="fullMapSearch" class="field" placeholder="Search mooring code or vessel name" autocomplete="off" inputmode="search" /><button id="fullMapSearchClear" class="small" type="button">Clear</button></div>
             <div id="map"></div>
@@ -496,6 +506,7 @@
         </div>
       </div>
     </div>
+    <div id="mobileAfterDetail" aria-label="Mobile pin summary and mooring list"></div>
   </div>
 
   <!-- Lightbox removed: photos now link to SharePoint -->
@@ -1478,7 +1489,7 @@
         el('editModalTitle').textContent = `Edit Mooring Details — ${row.mooring_code || rec.mooringCode || ''}`;
         el('editModalIntro').textContent = row._original_issue_date ? `Editing latest row only. Original issue date filter: ${row._original_issue_date}` : 'Editing selected row only.';
         const normalFields=EDIT_FIELDS.map((field) => { const value=row[field.key]??''; const type=field.type||'text'; const step=field.step?` step="${escapeHtml(field.step)}"`:''; const required=field.required?' required':''; return `<div><label class="field-label" for="edit_${escapeHtml(field.key)}">${escapeHtml(field.label)}</label><input class="edit-field" id="edit_${escapeHtml(field.key)}" name="${escapeHtml(field.key)}" type="${escapeHtml(type)}"${step}${required} value="${escapeHtml(value)}" /></div>`; }).join('');
-        const gps=`<div class="coordinate-editor"><div class="coordinate-editor-head"><div class="coordinate-editor-title">GPS Position</div><select id="edit_coordinate_format" class="edit-field coordinate-format-select" aria-label="Coordinate input format"><option value="dmm">Degrees & Decimal Minutes (DMM)</option><option value="dd">Decimal Degrees (DD)</option></select></div><div class="coordinate-editor-grid"><div><label class="field-label" for="edit_latitude">Latitude</label><input id="edit_latitude" class="edit-field" inputmode="decimal" /><div class="coordinate-help">Default hemisphere: South</div></div><div><label class="field-label" for="edit_longitude">Longitude</label><input id="edit_longitude" class="edit-field" inputmode="decimal" /><div class="coordinate-help">Default hemisphere: East</div></div></div></div>`;
+        const gps=`<div class="coordinate-editor"><div class="coordinate-editor-head"><div class="coordinate-editor-title">GPS Position</div><select id="edit_coordinate_format" class="edit-field coordinate-format-select" aria-label="Coordinate input format"><option value="dmm">Degrees & Decimal Minutes (DMM)</option><option value="dd">Decimal Degrees (DD)</option></select></div><div class="coordinate-editor-grid"><div><label class="field-label" for="edit_latitude">Latitude</label><input id="edit_latitude" class="edit-field" inputmode="decimal" /></div><div><label class="field-label" for="edit_longitude">Longitude</label><input id="edit_longitude" class="edit-field" inputmode="decimal" /></div></div></div>`;
         el('editFormGrid').innerHTML=normalFields+gps;
         el('edit_coordinate_format').addEventListener('change',e=>setCoordinateEditFormat(e.target.value));
         setCoordinateEditFormat('dmm');
@@ -2376,11 +2387,37 @@
       fetchNotes(key).then(renderNotes);
     }
 
+    // Enforce mobile order: Search -> Map -> Detail -> Stats -> All Pins table.
+    const mobileOrderState={stats:null,statsParent:null,statsNext:null,table:null,tableParent:null,tableNext:null};
+    function applyRequiredMobileOrder(){
+      const holder=document.getElementById('mobileAfterDetail');
+      const stats=mobileOrderState.stats||document.querySelector('#appShell > .stats');
+      const table=mobileOrderState.table||document.querySelector('.map-col .table-wrap');
+      if(!holder||!stats||!table) return;
+      mobileOrderState.stats=stats; mobileOrderState.table=table;
+      if(!mobileOrderState.statsParent){
+        mobileOrderState.statsParent=stats.parentNode; mobileOrderState.statsNext=stats.nextSibling;
+        mobileOrderState.tableParent=table.parentNode; mobileOrderState.tableNext=table.nextSibling;
+      }
+      const mobile=window.innerWidth<=760;
+      if(mobile){
+        if(stats.parentNode!==holder) holder.appendChild(stats);
+        if(table.parentNode!==holder) holder.appendChild(table);
+      }else{
+        const sp=mobileOrderState.statsParent, sn=mobileOrderState.statsNext;
+        if(stats.parentNode!==sp) sp.insertBefore(stats,sn&&sn.parentNode===sp?sn:null);
+        const tp=mobileOrderState.tableParent, tn=mobileOrderState.tableNext;
+        if(table.parentNode!==tp) tp.insertBefore(table,tn&&tn.parentNode===tp?tn:null);
+      }
+    }
+    applyRequiredMobileOrder();
+    document.addEventListener('DOMContentLoaded',applyRequiredMobileOrder,{once:true});
+    window.addEventListener('load',()=>{applyRequiredMobileOrder();setTimeout(applyRequiredMobileOrder,250);},{once:true});
     // 모바일에서 Leaflet 지도 크기 강제 재계산
     if(window.innerWidth <= 760){
       setTimeout(() => map.invalidateSize(), 100);
     }
-    window.addEventListener('resize', () => map.invalidateSize());
+    window.addEventListener('resize', () => { applyRequiredMobileOrder(); map.invalidateSize(); });
 
     document.addEventListener('click', (event) => { if(event.target && event.target.id === 'editDetailsBtn') openEditAccessModal(); });
     let mooringAppStarted = false;
