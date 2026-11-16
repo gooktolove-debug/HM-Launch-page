@@ -563,7 +563,31 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.20;ba
     margin-bottom:76px!important;
   }
 }
-</style></head><body><div class="user-gate" id="userGate">
+
+  /* ===== GLOBAL SUPABASE PROCESSING OVERLAY ===== */
+  .processing-overlay{
+    position:fixed;inset:0;z-index:130000;display:none;align-items:center;justify-content:center;
+    padding:20px;background:rgba(2,10,18,.38);backdrop-filter:blur(2px)
+  }
+  .processing-overlay.open{display:flex}
+  .processing-card{
+    min-width:190px;display:flex;align-items:center;gap:14px;padding:16px 18px;
+    border:1px solid rgba(111,229,220,.34);border-radius:18px;
+    background:linear-gradient(145deg,rgba(14,38,61,.98),rgba(8,25,43,.98));
+    color:#eaf5ff;box-shadow:0 22px 65px rgba(0,0,0,.48)
+  }
+  .processing-spinner{
+    width:28px;height:28px;flex:0 0 28px;border:3px solid rgba(143,168,189,.28);
+    border-top-color:#6fe5dc;border-right-color:#3ea6ff;border-radius:50%;
+    animation:processingSpin .75s linear infinite
+  }
+  .processing-title{font-size:14px;font-weight:900;letter-spacing:.01em}
+  .processing-sub{margin-top:3px;color:#8fa8bd;font-size:11px;font-weight:700}
+  @keyframes processingSpin{to{transform:rotate(360deg)}}
+  @media(max-width:560px){.processing-card{min-width:176px;padding:14px 16px;border-radius:16px}}
+  @media(prefers-reduced-motion:reduce){.processing-spinner{animation-duration:1.6s}}
+
+  </style></head><body><div class="user-gate" id="userGate">
   <div class="user-gate-card">
     <div class="user-gate-logo" aria-label="Lighthouse">
       <svg viewBox="0 0 64 64" role="img" aria-hidden="true"><path fill="currentColor" d="M27 7h10l3 12H24L27 7Zm-5 17h20l2 8-4 3 6 22H18l6-22-4-3 2-8Zm7 3v7h6v-7h-6Zm-2 13-3 12h16l-3-12H27ZM13 18l9 3-1 4-9-3 1-4Zm38 0 1 4-9 3-1-4 9-3ZM6 30h14v4H6v-4Zm38 0h14v4H44v-4Z"/></svg>
@@ -622,8 +646,63 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.20;ba
   </div>
 </div>
 
+
+  <div class="processing-overlay" id="processingOverlay" role="status" aria-live="polite" aria-label="Processing" aria-hidden="true">
+    <div class="processing-card">
+      <div class="processing-spinner" aria-hidden="true"></div>
+      <div><div class="processing-title">Processing</div><div class="processing-sub">Please wait...</div></div>
+    </div>
+  </div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script>
-const EMBEDDED_DATA=[];const HEADERS=["Name", "Owner", "Class", "Category", "Type", "Sub type", "Lat (Decimal Degrees)", "Long (Decimal Degrees)", "Visual Inspection Period", "Full Inspection Period", "Last edited", "Light Character", "Note", "Light type", "Reflector", "Transponder", "Top mark", "Top chain length", "Top chain size", "Shackle", "Rope length", "Rope size", "Chain length", "chain size", "Anchor Weight", "Depth"];const CONFIG={SUPABASE_URL:'https://wgwlnutnstrfuiiunlcu.supabase.co',SUPABASE_ANON_KEY:'sb_publishable_iC7kbinoy61_5eQCnrV25Q_OioA7Y1x',SUPABASE_TABLE:'hm_navaids',SUPABASE_LOGS_TABLE:'hm_navaid_logs',SUPABASE_PHOTOS_TABLE:'hm_navaid_photos',SUPABASE_BUCKET:'hm-navaid-images'};const sbClient=supabase.createClient(CONFIG.SUPABASE_URL,CONFIG.SUPABASE_ANON_KEY);
+const EMBEDDED_DATA=[];const HEADERS=["Name", "Owner", "Class", "Category", "Type", "Sub type", "Lat (Decimal Degrees)", "Long (Decimal Degrees)", "Visual Inspection Period", "Full Inspection Period", "Last edited", "Light Character", "Note", "Light type", "Reflector", "Transponder", "Top mark", "Top chain length", "Top chain size", "Shackle", "Rope length", "Rope size", "Chain length", "chain size", "Anchor Weight", "Depth"];const CONFIG={SUPABASE_URL:'https://wgwlnutnstrfuiiunlcu.supabase.co',SUPABASE_ANON_KEY:'sb_publishable_iC7kbinoy61_5eQCnrV25Q_OioA7Y1x',SUPABASE_TABLE:'hm_navaids',SUPABASE_LOGS_TABLE:'hm_navaid_logs',SUPABASE_PHOTOS_TABLE:'hm_navaid_photos',SUPABASE_BUCKET:'hm-navaid-images'};
+  let processingCount=0,processingOpenedAt=0,processingHideTimer=null;
+  function beginProcessing(){
+    processingCount+=1;
+    if(processingHideTimer){clearTimeout(processingHideTimer);processingHideTimer=null}
+    const overlay=document.getElementById('processingOverlay');
+    if(!overlay)return;
+    if(processingCount===1)processingOpenedAt=Date.now();
+    overlay.classList.add('open');overlay.setAttribute('aria-hidden','false');
+  }
+  function endProcessing(){
+    processingCount=Math.max(0,processingCount-1);
+    if(processingCount>0)return;
+    const elapsed=Date.now()-processingOpenedAt;
+    const close=()=>{if(processingCount>0)return;const overlay=document.getElementById('processingOverlay');if(overlay){overlay.classList.remove('open');overlay.setAttribute('aria-hidden','true')}};
+    processingHideTimer=setTimeout(close,Math.max(0,320-elapsed));
+  }
+  function wrapProcessingThenable(target,isMutation){
+    if(!target||typeof target!=='object')return target;
+    return new Proxy(target,{get(obj,prop){
+      if(prop==='then'&&isMutation){return (resolve,reject)=>{beginProcessing();return obj.then(value=>{endProcessing();return resolve?resolve(value):value},error=>{endProcessing();if(reject)return reject(error);throw error})}}
+      const value=Reflect.get(obj,prop,obj);
+      if(typeof value!=='function')return value;
+      return (...args)=>{
+        const next=value.apply(obj,args);
+        const mutation=isMutation||['insert','update','delete','upsert'].includes(String(prop));
+        return wrapProcessingThenable(next,mutation);
+      };
+    }});
+  }
+  function wrapStorageBucket(bucket){
+    return new Proxy(bucket,{get(obj,prop){const value=Reflect.get(obj,prop,obj);if(typeof value!=='function')return value;return(...args)=>{
+      const result=value.apply(obj,args);
+      if(!['upload','remove','update','move','copy'].includes(String(prop)))return result;
+      beginProcessing();return Promise.resolve(result).finally(endProcessing);
+    }}});
+  }
+  function createProcessingSupabaseClient(client){
+    return new Proxy(client,{get(obj,prop){
+      if(prop==='from')return table=>wrapProcessingThenable(obj.from(table),false);
+      if(prop==='storage')return new Proxy(obj.storage,{get(storageObj,storageProp){
+        if(storageProp==='from')return bucket=>wrapStorageBucket(storageObj.from(bucket));
+        const value=Reflect.get(storageObj,storageProp,storageObj);return typeof value==='function'?value.bind(storageObj):value;
+      }});
+      const value=Reflect.get(obj,prop,obj);return typeof value==='function'?value.bind(obj):value;
+    }});
+  }
+  const rawSbClient=supabase.createClient(CONFIG.SUPABASE_URL,CONFIG.SUPABASE_ANON_KEY);
+  const sbClient=createProcessingSupabaseClient(rawSbClient);
 // Shared server-side access verification for all protected NavAid actions.
 // No real access code is stored in this HTML file.
 const ACCESS_FUNCTION_URL='https://wgwlnutnstrfuiiunlcu.supabase.co/functions/v1/hyper-responder';
