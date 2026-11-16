@@ -81,8 +81,8 @@
     .legend-dot{width:12px;height:12px;border-radius:999px;display:inline-block}
     .legend-x{width:14px;height:14px;display:inline-flex;align-items:center;justify-content:center;color:#facc15;font-size:18px;font-weight:900;line-height:1;text-shadow:-1px -1px 0 #0f172a,1px -1px 0 #0f172a,-1px 1px 0 #0f172a,1px 1px 0 #0f172a}
     .terminated-x-icon{background:transparent;border:none}
-    .terminated-x-symbol{width:18px;height:18px;display:flex;align-items:center;justify-content:center;color:#facc15;font-size:24px;font-weight:900;line-height:18px;text-shadow:-1.2px -1.2px 0 #0f172a,1.2px -1.2px 0 #0f172a,-1.2px 1.2px 0 #0f172a,1.2px 1.2px 0 #0f172a;transform:translate(-1px,-1px)}
-    .terminated-x-symbol.selected{font-size:30px;line-height:24px;text-shadow:-1.6px -1.6px 0 #0f172a,1.6px -1.6px 0 #0f172a,-1.6px 1.6px 0 #0f172a,1.6px 1.6px 0 #0f172a,0 0 6px rgba(250,204,21,.75)}
+    .terminated-x-symbol{width:14px;height:14px;display:flex;align-items:center;justify-content:center;color:#facc15;font-size:17px;font-weight:900;line-height:14px;text-shadow:-1px -1px 0 #0f172a,1px -1px 0 #0f172a,-1px 1px 0 #0f172a,1px 1px 0 #0f172a}
+    .terminated-x-symbol.selected{font-size:21px;line-height:18px;text-shadow:-1.2px -1.2px 0 #0f172a,1.2px -1.2px 0 #0f172a,-1.2px 1.2px 0 #0f172a,1.2px 1.2px 0 #0f172a,0 0 4px rgba(250,204,21,.65)}
 
     .table-wrap{overflow:auto;border:1px solid var(--line);border-radius:18px;background:#fff;margin-top:16px}
     table{width:100%;border-collapse:collapse;min-width:900px}
@@ -303,7 +303,6 @@
     body.full-map-open .map-col .panel-body{padding:0;display:flex;flex-direction:column;min-height:0;height:100%}
     body.full-map-open #map{height:100dvh!important;min-height:100dvh!important;max-height:none!important;width:100%!important;border:0;border-radius:0}
     body.full-map-open .map-actions{position:fixed;top:calc(12px + env(safe-area-inset-top));right:12px;z-index:6800;margin:0;display:flex;width:auto}
-    body.full-map-open .map-actions #refreshLocationCacheBtn{display:none}
     body.full-map-open .map-actions #fullMapBtn{background:rgba(6,17,31,.9);color:#fff;border:1px solid rgba(255,255,255,.25);box-shadow:0 10px 30px rgba(0,0,0,.3);backdrop-filter:blur(10px)}
     body.full-map-open .legend,body.full-map-open .table-wrap{display:none}
     body.full-map-open.full-map-detail .detail-col{display:block;position:fixed;inset:0;z-index:7000;padding:0;background:rgba(3,12,23,.72);backdrop-filter:blur(7px)}
@@ -367,7 +366,51 @@
       #mobileAfterDetail>.table-wrap{display:block!important;width:100%!important;height:238px!important;max-height:238px!important;margin:0!important;overflow:auto!important}
       #mobileAfterDetail>.table-wrap table{min-width:760px!important}
     }
-</style></head>
+
+    /* ===== Interactive Mooring map legend filters ===== */
+    .legend-filter-btn{appearance:none;-webkit-appearance:none;width:100%;display:flex;align-items:center;justify-content:flex-start;gap:8px;padding:10px 12px;border:1px solid var(--line);border-radius:14px;background:#f8fbfd;color:#52697d;font:inherit;font-size:12px;font-weight:650;cursor:pointer;text-align:left;transition:.16s ease}
+    .legend-filter-btn:hover{border-color:#38bdf8;background:#eef9ff}
+    .legend-filter-btn:focus-visible{outline:2px solid #0284c7;outline-offset:2px}
+    .legend-filter-btn.active{border-color:#0284c7;background:#e0f2fe;color:#075985;box-shadow:0 0 0 2px rgba(2,132,199,.12) inset}
+    .legend-filter-btn.active::after{content:'✓';margin-left:auto;color:#0284c7;font-weight:900}
+    .legend-filter-btn .legend-dot{flex:0 0 12px}.legend-filter-btn .legend-x{flex:0 0 14px}
+    .fullscreen-map-filters{display:none}
+    body.full-map-open .fullscreen-map-filters{position:fixed;left:50%;bottom:calc(12px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:6800;display:flex;gap:6px;align-items:center;max-width:calc(100vw - 190px);padding:7px;border:1px solid rgba(125,211,252,.28);border-radius:16px;background:rgba(6,24,40,.94);box-shadow:0 10px 30px rgba(0,0,0,.34);backdrop-filter:blur(9px)}
+    .fullscreen-map-filter-btn,.fullscreen-map-all-btn{appearance:none;-webkit-appearance:none;display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:35px;padding:7px 11px;border:1px solid rgba(125,211,252,.25);border-radius:999px;background:#0c2a43;color:#e8f6ff;font-size:11px;font-weight:800;white-space:nowrap;cursor:pointer}
+    .fullscreen-map-filter-btn.active{background:#145477;border-color:#7dd3fc;box-shadow:0 0 0 2px rgba(56,189,248,.2) inset}.fullscreen-map-filter-btn.active::after{content:'✓';font-weight:900;color:#bae6fd}
+    .fullscreen-map-all-btn{background:#0e7490;border-color:#38bdf8;color:#fff;font-weight:900}
+    body.full-map-open .map-actions{top:auto;bottom:calc(12px + env(safe-area-inset-bottom))}
+    @media(max-width:700px){
+      body.full-map-open .fullscreen-map-filters{left:10px;right:62px;bottom:calc(10px + env(safe-area-inset-bottom));transform:none;max-width:none;justify-content:space-between;padding:6px}
+      .fullscreen-map-filter-btn,.fullscreen-map-all-btn{width:38px;min-width:38px;height:36px;min-height:36px;padding:0}
+      .fullscreen-map-filter-label{display:none}.fullscreen-map-filter-btn.active::after{display:none}
+      .fullscreen-map-filter-btn .legend-dot{width:13px;height:13px}.fullscreen-map-filter-btn .legend-x{font-size:18px}
+      body.full-map-open .map-actions{right:10px;bottom:calc(10px + env(safe-area-inset-bottom))}
+      body.full-map-open .map-actions #fullMapBtn{width:44px;height:44px;min-width:44px;padding:0;font-size:0;border-radius:14px}
+      body.full-map-open .map-actions #fullMapBtn::before{content:'✕';font-size:20px;font-weight:900}
+    }
+
+  
+    .customer-modal-head-actions{display:flex;align-items:center;gap:8px}
+    @media(max-width:480px){.customer-modal-head-actions{gap:6px}.customer-modal-head-actions button{padding:8px 10px}}
+
+  
+    /* ===== Nautical chart overlay and distance measurement ===== */
+    #chartOverlayBtn.active{background:linear-gradient(135deg,#178c88,#0d6a71)!important;border-color:#29d3c2!important;color:#fff!important}
+    .leaflet-control.measure-control{display:flex;flex-direction:column;align-items:flex-start;gap:5px;border:0!important;background:transparent!important;box-shadow:none!important}
+    .measure-control button{width:40px;height:40px;padding:0;display:grid;place-items:center;border:1px solid rgba(149,190,219,.34);border-radius:11px;background:#0d263d;color:#eaf5ff;font-size:19px;font-weight:900;box-shadow:0 8px 20px rgba(0,7,16,.28);cursor:pointer}
+    .measure-control button:hover,.measure-control button.active{border-color:#29d3c2;background:#126c70;color:#fff}.measure-control button:focus-visible{outline:3px solid rgba(41,211,194,.3);outline-offset:2px}
+    .measure-readout{display:none;min-width:142px;max-width:220px;padding:9px 11px;border:1px solid rgba(149,190,219,.28);border-radius:10px;background:rgba(7,24,40,.94);color:#eaf5ff;font:750 12px/1.35 "Segoe UI",Arial,sans-serif;box-shadow:0 10px 24px rgba(0,7,16,.34)}
+    .measure-readout.open{display:block}.measure-readout strong{display:block;color:#6fe5dc;font-size:15px}.measure-readout span{display:block;margin-top:2px;color:#9fb8c9;font-size:10px;font-weight:650}
+    .measure-distance-label{background:#071d2d!important;border:1px solid #29d3c2!important;border-radius:999px!important;color:#fff!important;box-shadow:0 5px 16px rgba(0,0,0,.22)!important;font:850 11px/1 "Segoe UI",Arial,sans-serif!important;padding:5px 8px!important;white-space:nowrap!important}.measure-distance-label:before{display:none!important}.measure-start-label{background:#0d6a71!important;border-color:#6fe5dc!important}
+    .measure-crosshair,.measure-crosshair .leaflet-interactive{cursor:crosshair!important}
+    .measure-banner{position:absolute;left:50%;top:12px;z-index:820;transform:translateX(-50%);display:none;align-items:center;gap:9px;max-width:calc(100% - 130px);padding:8px 11px;border:1px solid rgba(41,211,194,.38);border-radius:999px;background:rgba(7,24,40,.94);color:#eaf5ff;box-shadow:0 10px 26px rgba(0,0,0,.3);font-size:11px;font-weight:750}.measure-banner.open{display:flex}.measure-banner button{min-height:28px;padding:5px 9px;border-color:rgba(149,190,219,.28);border-radius:999px;background:#102d46;color:#eaf5ff;font-size:10px}.measure-banner .finish{border-color:#29d3c2;background:#0d6a71}.measure-banner .clear{border-color:#fca5a5;background:#7f1d1d}
+    .leaflet-bottom.leaflet-left .measure-control{margin-left:10px!important;margin-bottom:12px!important}.measure-vertex{filter:drop-shadow(0 2px 4px rgba(0,0,0,.35))}
+    body.full-map-open .leaflet-bottom.leaflet-left .measure-control{margin-bottom:78px!important}
+    body.full-map-open .map-actions #chartOverlayBtn{display:none}
+    @media(max-width:600px){.measure-control button{width:44px;height:44px;font-size:20px}.measure-readout{min-width:124px;max-width:165px;font-size:11px}.measure-banner{left:8px;right:8px;top:8px;transform:none;max-width:none;border-radius:14px;justify-content:center;flex-wrap:wrap}.measure-banner>span{flex:1 1 100%;text-align:center}body.full-map-open .leaflet-bottom.leaflet-left .measure-control{margin-bottom:82px!important}}
+
+  </style></head>
 <body>
 
   <div id="authScreen" class="auth-screen" aria-live="polite">
@@ -431,9 +474,23 @@
           <div class="panel-body">
             <div id="fullScreenSearchBar" class="full-screen-search"><input id="fullMapSearch" class="field" placeholder="Search mooring code or vessel name" autocomplete="off" inputmode="search" /><button id="fullMapSearchClear" class="small" type="button">Clear</button></div>
             <div id="map"></div>
+              <div class="measure-banner" id="measureBanner">
+                <span>Tap or click the map to add measurement points.</span>
+                <button class="finish" id="measureFinishBtn" type="button">Finish</button>
+                <button id="measureUndoBtn" type="button">Undo</button>
+                <button class="clear" id="measureClearBtn" type="button">Clear</button>
+              </div>
+
+            <div class="fullscreen-map-filters" id="fullscreenMapFilters" role="group" aria-label="Filter fullscreen Mooring pins by status">
+              <button class="fullscreen-map-all-btn" id="fullscreenMapAllBtn" type="button" title="Show all Mooring pins">All</button>
+              <button class="fullscreen-map-filter-btn" type="button" data-mooring-status="current" aria-pressed="false" title="Inspection within 3 years"><span class="legend-dot" style="background:#16a34a"></span><span class="fullscreen-map-filter-label">Within 3 years</span></button>
+              <button class="fullscreen-map-filter-btn" type="button" data-mooring-status="stale" aria-pressed="false" title="Inspection older than 3 years"><span class="legend-dot" style="background:#dc2626"></span><span class="fullscreen-map-filter-label">Older than 3 years</span></button>
+              <button class="fullscreen-map-filter-btn" type="button" data-mooring-status="terminated" aria-pressed="false" title="Terminated permit"><span class="legend-x">×</span><span class="fullscreen-map-filter-label">Terminated</span></button>
+              <button class="fullscreen-map-filter-btn" id="fullscreenCurrentLocationBtn" type="button" title="Show current location"><span class="legend-dot" style="background:#2563eb"></span><span class="fullscreen-map-filter-label">Current location</span></button>
+            </div>
             <div class="map-actions">
+              <button id="chartOverlayBtn" type="button" title="Toggle nautical chart overlay on this map">Chart Overlay</button>
               <button class="primary" id="fullMapBtn" type="button" title="Open the map in full-screen mode">Full Screen</button>
-              <button class="primary" id="refreshLocationCacheBtn" type="button" title="Admin: refresh cached pin GPS from ArcGIS into Supabase">Refresh Location Cache</button>
             </div>
             <div class="legend" id="legend"></div>
             <div class="table-wrap">
@@ -467,7 +524,6 @@
                 <div class="detail-toolbar">
                   <button class="small primary hidden" id="tempUserBtn" type="button">Temp User On</button>
                   <button class="small ghost" id="customerDetailsBtn">Customer Details</button>
-                  <button class="small ghost" id="historyBtn">History</button>
                   <button class="small primary" id="editDetailsBtn" type="button">Edit</button>
                   <button class="small audit" id="auditBtn" type="button">Audit</button>
                 </div>
@@ -541,7 +597,10 @@
     <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="customerModalTitle">
       <div class="modal-head">
         <h3 id="customerModalTitle" class="modal-title">Customer Details</h3>
-        <button id="customerModalClose" class="small danger" type="button">Close</button>
+        <div class="customer-modal-head-actions">
+          <button id="customerHistoryBtn" class="small ghost" type="button">History</button>
+          <button id="customerModalClose" class="small danger" type="button">Close</button>
+        </div>
       </div>
       <div class="modal-body">
         <div id="customerGateView">
@@ -727,7 +786,7 @@
       { key: 'mooring_permit_date_of_termination', label: 'Mooring Permit Date Of Termination' },
       { key: 'mooring_faclity_type_code', label: 'Mooring Facility Type Code' }
     ];
-    const state = { records: [], filtered: [], selectedId: null, markers: {}, layerGroup: null, fetchedAt: null, registryLoaded: 0, overdueOnly: false, overdueAgeFilter: 'all', facilityTypeFilter: 'all', tempUserFilter: 'all' };
+    const state = { records: [], filtered: [], selectedId: null, markers: {}, layerGroup: null, fetchedAt: null, registryLoaded: 0, overdueOnly: false, overdueAgeFilter: 'all', facilityTypeFilter: 'all', tempUserFilter: 'all', mapStatusFilter: 'all' };
     const TABLE_FIRST_PAINT_ROWS = 200;
     const TABLE_CHUNK_ROWS = 250;
     let tableRenderToken = 0;
@@ -753,6 +812,83 @@
     const el = (id) => document.getElementById(id);
     const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (m) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
     const map = L.map('map', { preferCanvas: true }).setView(MAP_CENTER, MAP_ZOOM);
+
+    // Nautical chart overlay: Esri Ocean base plus OpenSeaMap seamarks.
+    const MOORING_CHART_OVERLAY_KEY = 'hm_mooring_chart_overlay_on';
+    const marineOceanLayer = L.tileLayer('https://services.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}', {
+      maxNativeZoom: 13, maxZoom: 19, opacity: .72, zIndex: 210,
+      attribution: 'Tiles &copy; Esri &mdash; GEBCO, NOAA and contributors'
+    });
+    const marineSeamarkLayer = L.tileLayer('https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png', {
+      maxZoom: 18, opacity: .95, zIndex: 230,
+      attribution: 'Seamark data &copy; OpenSeaMap contributors'
+    });
+    const marineOverlayGroup = L.layerGroup([marineOceanLayer, marineSeamarkLayer]);
+    function isMarineOverlayOn(){ return map.hasLayer(marineOverlayGroup); }
+    function updateMarineOverlayButton(){
+      const btn=el('chartOverlayBtn'); if(!btn) return;
+      const on=isMarineOverlayOn();
+      btn.classList.toggle('active',on);
+      btn.textContent=on?'Chart Overlay On':'Chart Overlay';
+      btn.setAttribute('aria-pressed',String(on));
+    }
+    function setMarineOverlay(on){
+      if(on && !isMarineOverlayOn()) marineOverlayGroup.addTo(map);
+      if(!on && isMarineOverlayOn()) map.removeLayer(marineOverlayGroup);
+      localStorage.setItem(MOORING_CHART_OVERLAY_KEY,on?'1':'0');
+      updateMarineOverlayButton();
+    }
+    function toggleMarineOverlay(){ setMarineOverlay(!isMarineOverlayOn()); }
+    if(localStorage.getItem(MOORING_CHART_OVERLAY_KEY)==='1') marineOverlayGroup.addTo(map);
+
+    // Multi-point distance measurement in metres and nautical miles.
+    const measureState={active:false,finished:false,points:[],line:null,vertices:[],labels:[],button:null,readout:null};
+    function formatDistance(value){
+      const metres=Math.max(0,Number(value)||0);
+      if(metres<=500) return `${Math.round(metres).toLocaleString('en-NZ')} m`;
+      return `${(metres/1852).toLocaleString('en-NZ',{minimumFractionDigits:2,maximumFractionDigits:2})} NM`;
+    }
+    function measuredTotal(){let total=0;for(let i=1;i<measureState.points.length;i++)total+=map.distance(measureState.points[i-1],measureState.points[i]);return total;}
+    function setMeasureReadout(extra=''){
+      if(!measureState.readout)return;
+      const count=measureState.points.length;
+      measureState.readout.classList.toggle('open',measureState.active||count>0);
+      measureState.readout.innerHTML=`<strong>${formatDistance(measuredTotal())}</strong><span>${extra||(count?`${count} point${count===1?'':'s'} · cumulative distance`:'Select Measure, then tap the map')}</span>`;
+    }
+    function setMeasureUi(){
+      el('map')?.classList.toggle('measure-crosshair',measureState.active);
+      el('measureBanner')?.classList.toggle('open',measureState.active);
+      measureState.button?.classList.toggle('active',measureState.active);
+      measureState.button?.setAttribute('aria-pressed',measureState.active?'true':'false');
+      setMeasureReadout(measureState.finished?'Measurement finished':'');
+    }
+    function clearMeasureLayers(){
+      if(measureState.line)map.removeLayer(measureState.line);
+      measureState.vertices.forEach(x=>map.removeLayer(x));measureState.labels.forEach(x=>map.removeLayer(x));
+      measureState.line=null;measureState.vertices=[];measureState.labels=[];
+    }
+    function rebuildMeasurement(){
+      clearMeasureLayers();const pts=measureState.points;if(!pts.length){setMeasureUi();return;}
+      measureState.line=L.polyline(pts,{color:'#29d3c2',weight:4,opacity:.95,dashArray:'9 7',lineCap:'round',interactive:false}).addTo(map);
+      pts.forEach((p,i)=>{
+        measureState.vertices.push(L.circleMarker(p,{radius:i===0?6:5,color:'#eaf5ff',weight:2,fillColor:i===0?'#29d3c2':'#3ea6ff',fillOpacity:1,interactive:false,className:'measure-vertex'}).addTo(map));
+        let cumulative=0;for(let j=1;j<=i;j++)cumulative+=map.distance(pts[j-1],pts[j]);
+        measureState.labels.push(L.tooltip({permanent:true,direction:'top',offset:[0,-8],className:'measure-distance-label '+(i===0?'measure-start-label':'')}).setLatLng(p).setContent(i===0?'Start':formatDistance(cumulative)).addTo(map));
+      });setMeasureUi();
+    }
+    function startMeasurement(){if(measureState.active){finishMeasurement();return;}if(measureState.finished||measureState.points.length)clearMeasurement(false);measureState.active=true;measureState.finished=false;setMeasureUi();}
+    function addMeasurePoint(latlng){if(!measureState.active)return;measureState.points.push(L.latLng(latlng));rebuildMeasurement();}
+    function undoMeasurePoint(){if(!measureState.points.length)return;measureState.points.pop();measureState.finished=false;rebuildMeasurement();}
+    function finishMeasurement(){if(!measureState.active)return;measureState.active=false;measureState.finished=measureState.points.length>0;setMeasureUi();}
+    function clearMeasurement(close=true){measureState.points=[];measureState.finished=false;if(close)measureState.active=false;clearMeasureLayers();setMeasureUi();}
+    const MeasureControl=L.Control.extend({options:{position:'bottomleft'},onAdd(){
+      const wrap=L.DomUtil.create('div','leaflet-control measure-control');
+      const btn=L.DomUtil.create('button','',wrap);btn.type='button';btn.innerHTML='↔';btn.setAttribute('aria-label','Measure distance in metres or nautical miles');btn.setAttribute('aria-pressed','false');btn.title='Measure distance in m / NM';
+      const readout=L.DomUtil.create('div','measure-readout',wrap);L.DomEvent.disableClickPropagation(wrap);L.DomEvent.disableScrollPropagation(wrap);L.DomEvent.on(btn,'click',L.DomEvent.stop).on(btn,'click',startMeasurement);measureState.button=btn;measureState.readout=readout;setMeasureReadout();return wrap;
+    }});
+    new MeasureControl().addTo(map);
+    map.on('click',e=>{if(measureState.active)addMeasurePoint(e.latlng);});
+    map.on('dblclick',e=>{if(measureState.active){L.DomEvent.stop(e);finishMeasurement();}});
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap contributors' }).addTo(map);
 
     function normalizeCode(value){ return String(value || '').trim().toUpperCase(); }
@@ -1320,10 +1456,17 @@
       el('historyDetailsGrid').innerHTML = '';
     }
 
-    function openHistoryModal(){
+    let historyOpenedFromCustomer = false;
+    function openHistoryModal(fromCustomer=false){
       const rec = selectedRecord();
       if(!rec){ return; }
+      historyOpenedFromCustomer = Boolean(fromCustomer);
+      if(historyOpenedFromCustomer){
+        el('customerModalBackdrop').classList.add('hidden');
+        el('customerModalBackdrop').setAttribute('aria-hidden','true');
+      }
       el('historyModalBackdrop').classList.remove('hidden');
+      el('historyModalBackdrop').setAttribute('aria-hidden','false');
       lockBodyScroll();
       if(sharedAccessGranted || historyAccessGranted){
         showHistoryForRecord(rec, sharedAccessCode);
@@ -1333,7 +1476,19 @@
       }
     }
 
-    function closeHistoryModal(){ el('historyModalBackdrop').classList.add('hidden'); unlockBodyScroll(); }
+    function closeHistoryModal(){
+      el('historyModalBackdrop').classList.add('hidden');
+      el('historyModalBackdrop').setAttribute('aria-hidden','true');
+      if(historyOpenedFromCustomer){
+        historyOpenedFromCustomer = false;
+        el('customerModalBackdrop').classList.remove('hidden');
+        el('customerModalBackdrop').setAttribute('aria-hidden','false');
+        lockBodyScroll();
+        setTimeout(()=>el('customerHistoryBtn')?.focus(),0);
+      } else {
+        unlockBodyScroll();
+      }
+    }
     function lockHistoryModal(){ historyAccessGranted = false; historyDetailsCache.clear(); resetHistoryModalState(); }
 
     async function fetchHistoryByCode(mooringCode, accessCode) {
@@ -1795,6 +1950,7 @@
       const f = currentFilters();
       state.filtered = state.records.filter((r)=>{
         const mergedBoatName = effectiveBoatName(r);
+        if(state.mapStatusFilter !== 'all' && mooringMapStatus(r) !== state.mapStatusFilter) return false;
         if(state.facilityTypeFilter && state.facilityTypeFilter !== 'all' && facilityFilterKey(r) !== state.facilityTypeFilter) return false;
         if(state.tempUserFilter === 'on' && !hasActiveTempUser(r)) return false;
         if(state.overdueAgeFilter !== 'all'){
@@ -1873,13 +2029,43 @@
       if(isRecordTerminated(record)) return TERMINATED_PIN_COLOR;
       return isRecordInspectionStale(record) ? STALE_PIN_COLOR : CURRENT_PIN_COLOR;
     }
+    function mooringMapStatus(record){
+      if(isRecordTerminated(record)) return 'terminated';
+      if(isRecordInspectionStale(record)) return 'stale';
+      return 'current';
+    }
+    function updateMooringMapFilterUi(){
+      document.querySelectorAll('[data-mooring-status]').forEach(btn=>{
+        const active=btn.dataset.mooringStatus===state.mapStatusFilter;
+        btn.classList.toggle('active',active);
+        btn.setAttribute('aria-pressed',String(active));
+      });
+    }
+    function setMooringMapStatusFilter(status){
+      state.mapStatusFilter=state.mapStatusFilter===status?'all':status;
+      renderAll(true,false,false);
+    }
+    function clearMooringMapStatusFilter(){
+      state.mapStatusFilter='all';
+      renderAll(true,false,false);
+    }
+    function isMobileMapDisplay(){
+      return window.matchMedia('(max-width: 768px)').matches;
+    }
+    function mooringMarkerRadius(selected=false){
+      if(isMobileMapDisplay()) return selected ? 9 : 7;
+      return selected ? 7 : 5;
+    }
     function terminatedXIcon(selected=false){
+      const mobile = isMobileMapDisplay();
+      const visualSize = selected ? 18 : 14;
+      const hitSize = mobile ? (selected ? 28 : 24) : visualSize;
       return L.divIcon({
         className: 'terminated-x-icon',
         html: `<div class="terminated-x-symbol ${selected ? 'selected' : ''}">×</div>`,
-        iconSize: selected ? [24, 24] : [18, 18],
-        iconAnchor: selected ? [12, 12] : [9, 9],
-        popupAnchor: [0, -10]
+        iconSize: [hitSize, hitSize],
+        iconAnchor: [hitSize / 2, hitSize / 2],
+        popupAnchor: [0, mobile ? -12 : -8]
       });
     }
 
@@ -1888,7 +2074,7 @@
         return L.marker([record.lat, record.lon], { icon: terminatedXIcon(state.selectedId === record.id) });
       }
       return L.circleMarker([record.lat, record.lon], {
-        radius: state.selectedId === record.id ? 7 : 5,
+        radius: mooringMarkerRadius(state.selectedId === record.id),
         color: '#ffffff',
         weight: 1.5,
         fillColor: markerFillColor(record),
@@ -1904,7 +2090,7 @@
       }
       if(marker.setStyle){
         marker.setStyle({
-          radius: selected ? 7 : 5,
+          radius: mooringMarkerRadius(selected),
           color: selected ? '#0f172a' : '#ffffff',
           weight: selected ? 2 : 1.5,
           fillColor: markerFillColor(record),
@@ -1941,10 +2127,11 @@
         return;
       }
       el('legend').innerHTML = `
-        <div class="legend-item"><span class="legend-dot" style="background:${CURRENT_PIN_COLOR}"></span><span>Inspection within 3 years</span></div>
-        <div class="legend-item"><span class="legend-dot" style="background:${STALE_PIN_COLOR}"></span><span>Inspection older than 3 years</span></div>
-        <div class="legend-item"><span class="legend-x">×</span><span>Terminated permit</span></div>
-        <div class="legend-item"><span class="legend-dot" style="background:${USER_LOCATION_COLOR}"></span><span>Current location</span></div>`;
+        <button class="legend-filter-btn" type="button" data-mooring-status="current" aria-pressed="false"><span class="legend-dot" style="background:${CURRENT_PIN_COLOR}"></span><span>Inspection within 3 years</span></button>
+        <button class="legend-filter-btn" type="button" data-mooring-status="stale" aria-pressed="false"><span class="legend-dot" style="background:${STALE_PIN_COLOR}"></span><span>Inspection older than 3 years</span></button>
+        <button class="legend-filter-btn" type="button" data-mooring-status="terminated" aria-pressed="false"><span class="legend-x">×</span><span>Terminated permit</span></button>
+        <button class="legend-filter-btn current-location-legend-btn" type="button" data-current-location-action="true"><span class="legend-dot" style="background:${USER_LOCATION_COLOR}"></span><span>Current location</span></button>`;
+      updateMooringMapFilterUi();
     }
 
     function tableRowHtml(r){
@@ -2110,10 +2297,21 @@
       el('resetFiltersBtn').addEventListener('click',resetFilters);
       el('fitAllBtn').addEventListener('click',fitAllPins);
       el('currentLocationBtn').addEventListener('click',showCurrentLocation);
+      document.addEventListener('click',(event)=>{
+        const filterBtn=event.target.closest('[data-mooring-status]');
+        if(filterBtn){setMooringMapStatusFilter(filterBtn.dataset.mooringStatus);return;}
+        if(event.target.closest('[data-current-location-action]')) showCurrentLocation();
+      });
+      el('fullscreenMapAllBtn').addEventListener('click',clearMooringMapStatusFilter);
+      el('fullscreenCurrentLocationBtn').addEventListener('click',showCurrentLocation);
       el('vesselSearchBtn').addEventListener('click',openVesselSearch);
       el('fullMapBtn').addEventListener('click',toggleFullMap);
+      el('chartOverlayBtn').addEventListener('click',toggleMarineOverlay);
+      el('measureFinishBtn').addEventListener('click',finishMeasurement);
+      el('measureUndoBtn').addEventListener('click',undoMeasurePoint);
+      el('measureClearBtn').addEventListener('click',()=>clearMeasurement(true));
+      updateMarineOverlayButton();
       el('backToMapBtn').addEventListener('click',backToFullMap);
-      el('refreshLocationCacheBtn').addEventListener('click',refreshLocationCacheFromArcGIS);
       el('overdueOnlyBtn').addEventListener('click',toggleOverdueOnly);
       el('toggleOverdueDetailsBtn').addEventListener('click',toggleOverdueDetails);
       el('toggleMappedDetailsBtn').addEventListener('click',toggleMappedDetails);
@@ -2122,7 +2320,7 @@
       document.querySelectorAll('.overdue-age-btn').forEach(btn => btn.addEventListener('click', () => setOverdueAgeFilter(btn.dataset.overdueAge || 'all')));
       el('tempUserBtn').addEventListener('click',openTempUserProtected);
       el('customerDetailsBtn').addEventListener('click',openCustomerModal);
-      el('historyBtn').addEventListener('click',openHistoryModal);
+      el('customerHistoryBtn').addEventListener('click',()=>openHistoryModal(true));
       el('editDetailsBtn').addEventListener('click',openEditAccessModal);
       el('auditBtn').addEventListener('click',openAuditModal);
       el('auditModalClose').addEventListener('click',closeAuditModal);
