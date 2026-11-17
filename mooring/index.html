@@ -410,6 +410,62 @@
     body.full-map-open .map-actions #chartOverlayBtn{display:none}
     @media(max-width:600px){.measure-control button{width:44px;height:44px;font-size:20px}.measure-readout{min-width:124px;max-width:165px;font-size:11px}.measure-banner{left:8px;right:8px;top:8px;transform:none;max-width:none;border-radius:14px;justify-content:center;flex-wrap:wrap}.measure-banner>span{flex:1 1 100%;text-align:center}body.full-map-open .leaflet-bottom.leaflet-left .measure-control{margin-bottom:82px!important}}
 
+
+      /* ===== Mobile fullscreen map control collision fix ===== */
+      @media(max-width:760px){
+        /* Keep the search bar beside, not underneath, Leaflet's zoom controls. */
+        body.full-map-open .full-screen-search{
+          top:calc(10px + env(safe-area-inset-top))!important;
+          left:62px!important;
+          right:10px!important;
+          width:auto!important;
+          max-width:none!important;
+          transform:none!important;
+          padding:6px!important;
+          gap:6px!important;
+          border-radius:15px!important;
+          z-index:6850!important;
+        }
+        body.full-map-open .full-screen-search .field{
+          height:42px!important;
+          min-width:0!important;
+          padding:9px 11px!important;
+          font-size:12px!important;
+        }
+        body.full-map-open .full-screen-search button{
+          width:auto!important;
+          min-width:50px!important;
+          height:42px!important;
+          min-height:42px!important;
+          padding:8px 10px!important;
+          font-size:11px!important;
+          flex:0 0 auto!important;
+        }
+        /* Keep Leaflet controls in a stable safe-area-aware position. */
+        body.full-map-open .leaflet-top.leaflet-left{
+          top:env(safe-area-inset-top)!important;
+        }
+        body.full-map-open .leaflet-control-zoom{
+          margin-top:10px!important;
+          margin-left:10px!important;
+        }
+        /* Measurement instructions open below the search row. */
+        body.full-map-open .measure-banner{
+          top:calc(70px + env(safe-area-inset-top))!important;
+        }
+      }
+      @media(max-width:380px){
+        body.full-map-open .full-screen-search{
+          left:58px!important;
+          right:8px!important;
+          gap:5px!important;
+        }
+        body.full-map-open .full-screen-search button{
+          min-width:46px!important;
+          padding-left:8px!important;
+          padding-right:8px!important;
+        }
+      }
   </style></head>
 <body>
 
