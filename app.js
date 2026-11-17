@@ -280,35 +280,19 @@ async function loadNextTide(){
   const ico=document.getElementById('condTideIco');if(ico)ico.innerHTML=n.type==='HW'?'\ud83c\udf0a':'\ud83c\udfd6\ufe0f';
  }catch(e){setText('condTide','Unavailable')}
 }
-async function loadConditions(){
- loadNextTide();
- const wxUrl='https://api.open-meteo.com/v1/forecast?latitude='+HARBOUR_LAT+'&longitude='+HARBOUR_LON+'&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m,wind_gusts_10m,wind_direction_10m&daily=sunrise,sunset&wind_speed_unit=kn&timezone=Pacific%2FAuckland&forecast_days=1';
- try{
-  const wxRes=await fetch(wxUrl);
-  if(wxRes.ok){
-   const w=await wxRes.json(),c=w.current||{},d=w.daily||{};
-   const [desc,ico]=WX_CODE[c.weather_code]||['Conditions','\ud83c\udf10'];
-   setText('condTemp',Math.round(c.temperature_2m)+'\u00b0C');
-   setText('condWxDesc',desc+' \u00b7 feels '+Math.round(c.apparent_temperature)+'\u00b0');
-   const wxIco=document.getElementById('condWxIco');if(wxIco)wxIco.innerHTML=ico;
-   setText('condWind',Math.round(c.wind_speed_10m)+' kt');
-   setText('condWindDir',compass(c.wind_direction_10m)+' \u00b7 gust '+Math.round(c.wind_gusts_10m)+' kt');
-   if(d.sunrise&&d.sunset){setText('condSun','\u2191'+hhmm(d.sunrise[0])+' \u00b7 \u2193'+hhmm(d.sunset[0]));
-    const mins=Math.round((new Date(d.sunset[0])-new Date(d.sunrise[0]))/60000);setText('condDaylight',Math.floor(mins/60)+'h '+(mins%60)+'m daylight')}
-  }else{setText('condTemp','WX offline')}
-  setText('condUpdated','\u00b7 updated '+new Intl.DateTimeFormat('en-NZ',{timeZone:'Pacific/Auckland',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date()));
- }catch(e){setText('condTemp','Feed offline');console.error('conditions',e)}
-}
+const WEATHER_CACHE_KEY='hm_live_weather_v2';
+const WEATHER_TIMEOUT_MS=9000;
+function validNumber(v){return typeof v==='number'&&Number.isFinite(v)}
+function weatherEndpoint(params){return 'https://api.open-meteo.com/v1/forecast?'+params.toString()}
+async function fetchWeatherJson(url,attempts=2){let lastError=null;for(let attempt=0;attempt<attempts;attempt++){const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),WEATHER_TIMEOUT_MS+attempt*3000);try{const response=await fetch(url+(url.includes('?')?'&':'?')+'_ts='+Date.now(),{signal:controller.signal,cache:'no-store',headers:{Accept:'application/json'}});if(!response.ok)throw new Error('Open-Meteo HTTP '+response.status);const data=await response.json();if(!data||typeof data!=='object')throw new Error('Open-Meteo returned an invalid response');return data}catch(error){lastError=error?.name==='AbortError'?new Error('Open-Meteo request timed out'):error;if(attempt+1<attempts)await new Promise(resolve=>setTimeout(resolve,700*(attempt+1)))}finally{clearTimeout(timer)}}throw lastError||new Error('Weather request failed')}
+function saveWeatherCache(data){try{localStorage.setItem(WEATHER_CACHE_KEY,JSON.stringify({savedAt:Date.now(),data}))}catch(_){}}
+function readWeatherCache(){try{const cached=JSON.parse(localStorage.getItem(WEATHER_CACHE_KEY)||'null');return cached?.data?cached:null}catch(_){return null}}
+function renderConditionsData(w,stale=false){const c=w?.current||{},d=w?.daily||{};if(!validNumber(c.temperature_2m)||!validNumber(c.wind_speed_10m))throw new Error('Current weather values are missing');const [desc,ico]=WX_CODE[c.weather_code]||['Conditions','🌐'];setText('condTemp',Math.round(c.temperature_2m)+'°C');setText('condWxDesc',desc+(validNumber(c.apparent_temperature)?' · feels '+Math.round(c.apparent_temperature)+'°':''));const wxIco=document.getElementById('condWxIco');if(wxIco)wxIco.innerHTML=ico;setText('condWind',Math.round(c.wind_speed_10m)+' kt');const windBits=[compass(c.wind_direction_10m)];if(validNumber(c.wind_gusts_10m))windBits.push('gust '+Math.round(c.wind_gusts_10m)+' kt');setText('condWindDir',windBits.join(' · '));if(d.sunrise?.[0]&&d.sunset?.[0]){setText('condSun','↑'+hhmm(d.sunrise[0])+' · ↓'+hhmm(d.sunset[0]));const mins=Math.round((new Date(d.sunset[0])-new Date(d.sunrise[0]))/60000);if(Number.isFinite(mins))setText('condDaylight',Math.floor(mins/60)+'h '+(mins%60)+'m daylight')}setText('condUpdated','· '+(stale?'cached weather':'updated '+new Intl.DateTimeFormat('en-NZ',{timeZone:'Pacific/Auckland',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date())))}
+async function loadConditions(){loadNextTide();const params=new URLSearchParams({latitude:String(HARBOUR_LAT),longitude:String(HARBOUR_LON),current:'temperature_2m,apparent_temperature,weather_code,wind_speed_10m,wind_gusts_10m,wind_direction_10m',daily:'sunrise,sunset',wind_speed_unit:'kn',timezone:'Pacific/Auckland',forecast_days:'1'});setText('condTemp','Loading…');setText('condWind','Loading…');try{const weather=await fetchWeatherJson(weatherEndpoint(params),2);renderConditionsData(weather,false);saveWeatherCache(weather)}catch(error){console.error('conditions',error);const cached=readWeatherCache();if(cached){renderConditionsData(cached.data,true);setText('condUpdated','· cached · live feed retrying')}else{setText('condTemp','Unavailable');setText('condWxDesc','Weather feed retrying');setText('condWind','Unavailable');setText('condWindDir','Wind feed retrying');setText('condUpdated','· Open-Meteo unavailable')}}}
 loadConditions();setInterval(loadConditions,600000);
 // ===== Hourly forecast cache =====
 let hourlyCache=null,hourlyCacheAt=0;
-async function getHourly(){
- if(hourlyCache&&Date.now()-hourlyCacheAt<600000)return hourlyCache;
- const wxUrl='https://api.open-meteo.com/v1/forecast?latitude='+HARBOUR_LAT+'&longitude='+HARBOUR_LON+'&hourly=temperature_2m,apparent_temperature,precipitation,precipitation_probability,weather_code,wind_speed_10m,wind_gusts_10m,wind_direction_10m&daily=sunrise,sunset,temperature_2m_max,temperature_2m_min,weather_code&wind_speed_unit=kn&timezone=Pacific%2FAuckland&forecast_days=3';
- const res=await fetch(wxUrl);
- hourlyCache={wx:res.ok?await res.json():null};
- hourlyCacheAt=Date.now();return hourlyCache;
-}
+async function getHourly(){if(hourlyCache&&Date.now()-hourlyCacheAt<600000)return hourlyCache;const params=new URLSearchParams({latitude:String(HARBOUR_LAT),longitude:String(HARBOUR_LON),hourly:'temperature_2m,apparent_temperature,precipitation,precipitation_probability,weather_code,wind_speed_10m,wind_gusts_10m,wind_direction_10m',daily:'sunrise,sunset,temperature_2m_max,temperature_2m_min,weather_code',wind_speed_unit:'kn',timezone:'Pacific/Auckland',forecast_days:'3'});const wx=await fetchWeatherJson(weatherEndpoint(params),2);if(!wx?.hourly?.time?.length)throw new Error('Hourly weather data is unavailable');hourlyCache={wx};hourlyCacheAt=Date.now();return hourlyCache}
 function nowHourIndex(times){const now=new Date();let best=0,diff=Infinity;for(let i=0;i<times.length;i++){const d=Math.abs(new Date(times[i])-now);if(d<diff){diff=d;best=i}}return best}
 function fcHM(iso){try{return new Intl.DateTimeFormat('en-NZ',{timeZone:'Pacific/Auckland',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(iso))}catch(_){return '--'}}
 function fcDay(iso){try{return new Intl.DateTimeFormat('en-NZ',{timeZone:'Pacific/Auckland',weekday:'short'}).format(new Date(iso))}catch(_){return ''}}
