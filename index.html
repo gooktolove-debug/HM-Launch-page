@@ -781,6 +781,11 @@ $(&#x27;quizBtn&#x27;).addEventListener(&#x27;click&#x27;,openSelector);$(&#x27;
 <script id="quizIntegrationScript">
 function openMaritimeQuiz() {
   const shell=document.getElementById('maritimeQuizShell');
+  const frame=document.getElementById('maritimeQuizFrame');
+  if(frame && !frame.srcdoc) {
+    const source=frame.getAttribute('data-srcdoc');
+    if(source) frame.srcdoc=source;
+  }
   shell.classList.add('open');
   shell.setAttribute('aria-hidden','false');
   document.body.classList.add('modal-open');
@@ -804,8 +809,13 @@ document.addEventListener('keydown',function(event) {
 
 <script id="publicQrScript">
 function openPublicQr() {
-  openModal('publicQrModal');
   const modal = document.getElementById('publicQrModal');
+  const image = modal?.querySelector('.public-qr-image');
+  if(image && !image.hasAttribute('src')) {
+    const source = image.getAttribute('data-src');
+    if(source) image.setAttribute('src', source);
+  }
+  openModal('publicQrModal');
   modal?.setAttribute('aria-hidden','false');
   window.setTimeout(() => modal?.querySelector('.modal-close')?.focus(), 50);
 }
