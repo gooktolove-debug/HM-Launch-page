@@ -357,6 +357,20 @@
 .mooring-buoy-launch svg{width:23px;height:23px;display:block}.mooring-buoy-launch .buoy-body{fill:currentColor}.mooring-buoy-launch .buoy-line{fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
 @media(max-width:600px){.mooring-buoy-launch{width:31px;height:31px;bottom:5px}.mooring-buoy-launch svg{width:20px;height:20px}}
 </style>
+
+<style id="converterStyles">
+.converter-modal{position:fixed;inset:0;z-index:10000;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(2,16,28,.76);backdrop-filter:blur(4px)}
+.converter-modal.open{display:flex}.converter-dialog{width:min(440px,100%);overflow:hidden;border:1px solid #1d5068;border-radius:16px;background:#071d2d;color:#eaf8ff;box-shadow:0 24px 70px rgba(0,0,0,.48)}
+.converter-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:17px 18px;border-bottom:1px solid #173b4e}.converter-head h2{margin:0;font-size:17px;letter-spacing:.02em}.converter-close{width:34px;height:34px;border:1px solid #28566c;border-radius:9px;background:#0b2a3d;color:#dff7ff;font-size:22px;line-height:1;cursor:pointer}
+.converter-body{display:grid;gap:16px;padding:18px}.converter-group{padding:14px;border:1px solid #173f54;border-radius:12px;background:#092334}.converter-group h3{margin:0 0 11px;color:#72e5ea;font-size:11px;letter-spacing:.13em;text-transform:uppercase}.converter-row{display:grid;grid-template-columns:1fr 28px 1fr;gap:9px;align-items:end}.converter-field label{display:block;margin-bottom:6px;color:#8baabb;font-size:10px;font-weight:800;text-transform:uppercase}.converter-field input{width:100%;height:42px;border:1px solid #286078;border-radius:9px;background:#061a28;color:#fff;padding:0 10px;font:700 15px inherit;outline:none}.converter-field input:focus{border-color:#50e3e8;box-shadow:0 0 0 3px rgba(80,227,232,.14)}.converter-equals{padding-bottom:10px;text-align:center;color:#5f899d;font-weight:900}.converter-note{margin:0;color:#7292a3;font-size:10px;line-height:1.45}.converter-error{min-height:17px;margin:0;color:#ff8585;font-size:11px;font-weight:700}.converter-modal-open{overflow:hidden}
+.converter-tile-icon{width:40px!important;height:40px!important;min-width:40px!important;border-radius:10px!important;font-size:25px!important;line-height:40px!important;text-align:center!important;display:flex!important;align-items:center!important;justify-content:center!important;color:#dffaff!important;background:#114664!important;border:1px solid #2d7899!important;box-shadow:inset 0 0 0 1px rgba(255,255,255,.05),0 3px 10px rgba(0,0,0,.18)}
+.converter-field label{font-size:12px!important;letter-spacing:.02em!important;margin-bottom:8px!important}
+.converter-field input{height:54px!important;padding:0 14px!important;font-size:21px!important;font-weight:800!important;line-height:1.2!important;border-width:2px!important;border-radius:10px!important}
+.converter-equals{font-size:21px!important;padding-bottom:14px!important}
+.converter-group h3{font-size:13px!important;margin-bottom:14px!important}
+.converter-note{font-size:12px!important}.converter-error{font-size:12px!important}
+@media(max-width:480px){.converter-row{grid-template-columns:1fr}.converter-equals{padding:0}.converter-dialog{border-radius:14px}}
+</style>
 </head>
 <body>
 <div class="container">
@@ -377,6 +391,7 @@
   <div class="cond-cell clickable" role="button" tabindex="0" onclick="openDoLogPage()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openDoLogPage()}" aria-label="Open DO Log"><div class="cond-ico do-log">&#128203;</div><div class="cond-body"><span class="cond-label">DO LOG</span><span class="cond-value" id="condDoCases">&mdash;</span><span class="cond-sub" id="condDoSub">Open cases</span></div></div>
   <div class="cond-cell clickable" role="button" tabindex="0" onclick="openWreckPage()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openWreckPage()}" aria-label="Open Wreck and Abandoned register"><div class="cond-ico wreck" aria-hidden="true"><svg class="wreck-icon sinking-wreck titanic-style" viewBox="0 0 64 64" focusable="false"><defs><linearGradient id="wreckSea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#54d8ef"/><stop offset="1" stop-color="#16789f"/></linearGradient><linearGradient id="wreckBelow" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#334e63" stop-opacity=".78"/><stop offset="1" stop-color="#102b3d" stop-opacity=".25"/></linearGradient></defs><path class="titanic-water back" d="M2 31c5-4 9-4 14 0s9 4 14 0 9-4 14 0 10 4 18 0"/><g class="titanic-ship"><path class="titanic-submerged" d="M27 32l9 1-7 28-13-4z"/><path class="titanic-sub-red" d="M24 34l4 1-6 23-4-1z"/><path class="titanic-hull" d="M28 33L43 5l9 4-12 27z"/><path class="titanic-red-stripe" d="M30 31L44 7l3 2-12 24z"/><path class="titanic-deck" d="M40 8l5-5 10 5-4 5z"/><path class="titanic-windows" d="M42 11l2-3 2 1-2 3zm3 2 2-3 2 1-2 3zm-5 4 2-3 2 1-2 3zm-3 5 2-3 2 1-2 3z"/><path class="titanic-stack" d="M45 7l2-5 5 2-1 6z"/><path class="titanic-mast" d="M48 7l3-6M42 12L38 4"/></g><path class="titanic-water front" d="M1 34c5-4 10-4 15 0s10 4 15 0 10-4 15 0 10 4 17 0"/><path class="titanic-foam" d="M26 29c-4 1-6 4-5 7m8-7c-2 2-2 5 0 7"/><g class="titanic-debris"><rect x="43" y="43" width="5" height="3" rx="1"/><rect x="52" y="50" width="4" height="2.5" rx="1"/><circle cx="39" cy="52" r="1.8"/></g><circle class="titanic-bubble" cx="13" cy="45" r="1.8"/><circle class="titanic-bubble small" cx="9" cy="51" r="1.1"/></svg></div><div class="cond-body"><span class="cond-label">WRECK</span><span class="cond-value" id="condWreckCount">&mdash;</span><span class="cond-sub">Current wreck</span></div></div>
   <div class="cond-cell clickable" role="button" tabindex="0" onclick="openWreckPage()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openWreckPage()}" aria-label="Open Wreck and Abandoned register"><div class="cond-ico abandoned" aria-hidden="true"><svg class="abandoned-icon" viewBox="0 0 64 64" focusable="false"><path class="ab-water back" d="M4 47c6-4 11-4 17 0s11 4 17 0 12-4 22 0"/><path class="ab-hull" d="M10 37h43l-7 13H20z"/><path class="ab-rust" d="M19 40h8l-3 4h-7zM38 39h7l-2 5h-8z"/><path class="ab-cabin" d="M24 26h17l7 11H20z"/><path class="ab-window broken" d="M27 29h6v6h-8zM36 29h5l4 6h-9z"/><path class="ab-mast" d="M33 25V10"/><path class="ab-flag" d="M34 11h12l-4 4 3 3-11-2z"/><path class="ab-rope" d="M51 39c8 4 4 11-2 10-4-1-4-5-1-6"/><path class="ab-seagull" d="M8 18c3-3 6-3 9 0 3-3 6-3 9 0"/><path class="ab-water front" d="M3 51c6-4 12-4 18 0s12 4 18 0 12-4 22 0"/></svg></div><div class="cond-body"><span class="cond-label">ABANDONED</span><span class="cond-value" id="condAbandonedCount">&mdash;</span><span class="cond-sub">Current abandoned</span></div></div>
+  <div class="cond-cell clickable" role="button" tabindex="0" onclick="openUnitConverter()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openUnitConverter()}" aria-label="Open unit converter"><div class="cond-ico blue converter-tile-icon" aria-hidden="true">&#129518;</div><div class="cond-body"><span class="cond-label">Converter</span><span class="cond-value small">ft / m</span><span class="cond-sub">nm / km</span></div></div>
   <div class="cond-updated"><span class="live-dot"></span><span>Live weather feed &middot; Open-Meteo</span><span id="condUpdated"></span></div>
 </section>
 <main class="layout">
@@ -399,7 +414,6 @@
     <a class="card" href="./tsunami/" target="_blank" rel="noopener noreferrer"><h2>Tsunami Modelling</h2><span></span></a>
     <a class="card" href="./tier2/" target="_blank" rel="noopener noreferrer"><h2>Tier 2 Planning</h2><span></span></a>
     <a class="card" href="./fuel/" target="_blank" rel="noopener noreferrer"><h2>Vessel Fuel Usage</h2><span></span></a>
-    <a class="card" href="./mooringcalculator/" target="_blank" rel="noopener noreferrer"><h2>Mooring Calculator</h2><span></span></a>
   </div>
   <div class="nav-foot"><span class="pulse"></span><span>Operational workspace</span><b>v2.0</b></div>
 </section>
@@ -910,6 +924,29 @@ document.addEventListener('click', function (event) {
 
 <script id="integratedLocalPageLinks">
 function openWreckPage(){window.open('./wreck/','_blank','noopener,noreferrer');}
+</script>
+
+<div class="converter-modal" id="unitConverterModal" role="dialog" aria-modal="true" aria-labelledby="unitConverterTitle" aria-hidden="true">
+  <div class="converter-dialog">
+    <div class="converter-head"><h2 id="unitConverterTitle">Unit Converter</h2><button class="converter-close" id="closeUnitConverter" type="button" aria-label="Close converter">&times;</button></div>
+    <div class="converter-body">
+      <section class="converter-group" aria-labelledby="lengthConverterTitle"><h3 id="lengthConverterTitle">Length</h3><div class="converter-row"><div class="converter-field"><label for="converterFt">Feet (ft)</label><input id="converterFt" type="number" step="any" inputmode="decimal" placeholder="0"></div><div class="converter-equals">=</div><div class="converter-field"><label for="converterM">Metres (m)</label><input id="converterM" type="number" step="any" inputmode="decimal" placeholder="0"></div></div></section>
+      <section class="converter-group" aria-labelledby="distanceConverterTitle"><h3 id="distanceConverterTitle">Distance</h3><div class="converter-row"><div class="converter-field"><label for="converterNm">Nautical miles (nm)</label><input id="converterNm" type="number" step="any" inputmode="decimal" placeholder="0"></div><div class="converter-equals">=</div><div class="converter-field"><label for="converterKm">Kilometres (km)</label><input id="converterKm" type="number" step="any" inputmode="decimal" placeholder="0"></div></div></section>
+      <p class="converter-error" id="converterError" aria-live="polite"></p><p class="converter-note">1 ft = 0.3048 m &nbsp;•&nbsp; 1 nm = 1.852 km</p>
+    </div>
+  </div>
+</div>
+<script id="unitConverterScript">
+(function(){
+ const modal=document.getElementById('unitConverterModal'),closeBtn=document.getElementById('closeUnitConverter'),error=document.getElementById('converterError');
+ const ft=document.getElementById('converterFt'),m=document.getElementById('converterM'),nm=document.getElementById('converterNm'),km=document.getElementById('converterKm'); let lastFocus=null,updating=false;
+ const format=n=>Number.isFinite(n)?String(Math.round(n*1000000)/1000000):'';
+ function convert(source,target,factor){if(updating)return; updating=true; const raw=source.value.trim(); if(raw===''){target.value='';error.textContent='';updating=false;return} const value=Number(raw); if(!Number.isFinite(value)){target.value='';error.textContent='Enter a valid number.'}else{target.value=format(value*factor);error.textContent=''} updating=false}
+ ft.addEventListener('input',()=>convert(ft,m,0.3048)); m.addEventListener('input',()=>convert(m,ft,1/0.3048)); nm.addEventListener('input',()=>convert(nm,km,1.852)); km.addEventListener('input',()=>convert(km,nm,1/1.852));
+ window.openUnitConverter=function(){lastFocus=document.activeElement;modal.classList.add('open');modal.setAttribute('aria-hidden','false');document.body.classList.add('converter-modal-open');setTimeout(()=>ft.focus(),0)};
+ function close(){modal.classList.remove('open');modal.setAttribute('aria-hidden','true');document.body.classList.remove('converter-modal-open');if(lastFocus)lastFocus.focus()}
+ closeBtn.addEventListener('click',close);modal.addEventListener('click',e=>{if(e.target===modal)close()});document.addEventListener('keydown',e=>{if(e.key==='Escape'&&modal.classList.contains('open'))close()});
+})();
 </script>
 </body>
 </html>
