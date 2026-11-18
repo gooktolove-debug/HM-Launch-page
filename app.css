@@ -487,3 +487,8 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.20;ba
 .cond-cell:hover .titanic-style .titanic-ship{animation:titanicSink 1.2s ease-in-out infinite alternate}.cond-cell:hover .titanic-style .titanic-debris{animation:debrisDrift 1.6s ease-in-out infinite alternate}
 @keyframes titanicSink{from{transform:translateY(-1px) rotate(-1deg)}to{transform:translateY(2px) rotate(2deg)}}@keyframes debrisDrift{from{transform:translateX(-1px)}to{transform:translateX(2px)}}
 @media(prefers-reduced-motion:reduce){.cond-cell:hover .titanic-style .titanic-ship,.cond-cell:hover .titanic-style .titanic-debris{animation:none}}
+
+/* Performance: defer below-fold rendering without changing layout. */
+@supports (content-visibility:auto){
+  .tide-panel,.map-panel,.weather-viewers{content-visibility:auto;contain-intrinsic-size:auto 720px}
+}
