@@ -45,9 +45,111 @@
     .refund-status{display:inline-block;padding:3px 7px;border-radius:999px;font-size:11px;font-weight:800}
     .refund-status.ready{background:#dcfce7;color:#166534}.refund-status.duplicate{background:#fef3c7;color:#92400e}.refund-status.saved{background:#dbeafe;color:#1d4ed8}.refund-status.failed{background:#fee2e2;color:#991b1b}
     .refund-error{max-width:240px;margin-top:4px;color:var(--red);white-space:normal;line-height:1.25}.refund-empty{text-align:center;color:var(--muted);padding:22px!important}
-  </style></head>
+  
+      /* Access-code gate, matched to the Accident & Incident Register */
+      .access-gate,
+      #accessGate {
+        position:fixed;
+        inset:0;
+        z-index:9999;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        padding:20px;
+        background:linear-gradient(135deg,#0b4450 0%,#0c5961 100%);
+      }
+      body.access-locked #accessGate { display:flex; }
+      .access-card {
+        width:min(448px,100%);
+        background:#fff;
+        border:0;
+        border-radius:20px;
+        box-shadow:0 24px 70px rgba(0,0,0,.26);
+        padding:28px 26px 26px;
+        color:#10213d;
+      }
+      .access-card h2,
+      .access-title {
+        margin:0 0 7px;
+        color:#10213d;
+        font-size:24px;
+        line-height:1.2;
+        font-weight:800;
+      }
+      .access-card p,
+      .access-sub {
+        margin:0 0 18px;
+        color:#566785;
+        font-size:15px;
+        line-height:1.5;
+      }
+      .access-card label {
+        display:block;
+        margin:0 0 7px;
+        color:#10213d;
+        font-size:13px;
+        font-weight:750;
+      }
+      .access-actions { display:block; }
+      .access-input,
+      .access-actions input {
+        width:100%;
+        min-height:44px;
+        padding:10px 12px;
+        border:2px solid #151c27;
+        border-radius:9px;
+        outline:none;
+        background:#fff;
+        color:#10213d;
+        font-size:16px;
+      }
+      .access-input:focus,
+      .access-actions input:focus {
+        border-color:#2f66ed;
+        box-shadow:0 0 0 3px rgba(47,102,237,.16);
+      }
+      .access-submit,
+      .access-actions button {
+        width:100%;
+        min-height:36px;
+        margin-top:14px;
+        padding:9px 14px;
+        border:0;
+        border-radius:8px;
+        background:#2f66ed;
+        color:#fff;
+        font-size:13px;
+        font-weight:750;
+        cursor:pointer;
+      }
+      .access-submit:hover,
+      .access-actions button:hover { background:#2558d7; }
+      .access-submit:disabled,
+      .access-actions button:disabled { opacity:.62; cursor:wait; }
+      .access-error {
+        min-height:20px;
+        margin-top:10px;
+        color:#c71111;
+        font-size:13px;
+        font-weight:700;
+      }
+      .access-logo,.access-mark,.access-note { display:none!important; }
+      @media(max-width:520px){
+        .access-card{padding:24px 20px;border-radius:17px}
+        .access-card h2,.access-title{font-size:22px}
+      }
+</style></head>
 <body style="visibility:hidden">
-<div id="accessGate" class="access-gate"><div class="access-card"><div class="access-logo"><div class="access-mark">HM</div><div><div class="access-title">HM Fuel Usage</div><div class="access-sub">Restricted dashboard access</div></div></div><label for="accessCode">Access code</label><input id="accessCode" class="access-input" type="password" autocomplete="current-password" placeholder="Enter access code" aria-describedby="accessError"><button id="accessSubmit" class="btn primary access-submit">Open dashboard</button><div id="accessError" class="access-error" role="alert" aria-live="polite"></div><div class="access-note">Authorised users only</div></div></div>
+<div id="accessGate" class="access-gate" role="dialog" aria-modal="true" aria-labelledby="accessTitle">
+  <div class="access-card">
+    <h2 id="accessTitle">Access required</h2>
+    <p>Enter the access code to open HM Fuel Usage.</p>
+    <label for="accessCode">Access code</label>
+    <input id="accessCode" class="access-input" type="password" autocomplete="current-password" placeholder="Enter access code" aria-describedby="accessError">
+    <button id="accessSubmit" class="access-submit" type="button">Continue</button>
+    <div id="accessError" class="access-error" role="alert" aria-live="polite"></div>
+  </div>
+</div>
 <header class="top"><div class="brand">HM Fuel Usage</div><div style="display:flex;gap:10px"><button id="openRefund" class="btn light">NZTA Refund Application</button><button id="openRefundImport" class="btn refund-import-btn">Import NZTA Refund</button><button id="openImport" class="btn primary">Import Invoice</button></div></header>
 <main class="wrap">
   <div class="filters"><select id="yearFilter"><option value="ALL">All years</option></select><select id="vesselFilter"><option value="ALL">All vessels</option></select><button id="quarterBtn" class="btn light">Quarterly view</button><span class="spacer"></span><span id="status">Loading data...</span></div>

@@ -99,19 +99,112 @@
       .access-actions { flex-direction: column; }
       .access-actions button { width: 100%; }
     }
-  </style></head>
+  
+      /* Access-code gate, matched to the Accident & Incident Register */
+      .access-gate,
+      #accessGate {
+        position:fixed;
+        inset:0;
+        z-index:9999;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        padding:20px;
+        background:linear-gradient(135deg,#0b4450 0%,#0c5961 100%);
+      }
+      body.access-locked #accessGate { display:flex; }
+      .access-card {
+        width:min(448px,100%);
+        background:#fff;
+        border:0;
+        border-radius:20px;
+        box-shadow:0 24px 70px rgba(0,0,0,.26);
+        padding:28px 26px 26px;
+        color:#10213d;
+      }
+      .access-card h2,
+      .access-title {
+        margin:0 0 7px;
+        color:#10213d;
+        font-size:24px;
+        line-height:1.2;
+        font-weight:800;
+      }
+      .access-card p,
+      .access-sub {
+        margin:0 0 18px;
+        color:#566785;
+        font-size:15px;
+        line-height:1.5;
+      }
+      .access-card label {
+        display:block;
+        margin:0 0 7px;
+        color:#10213d;
+        font-size:13px;
+        font-weight:750;
+      }
+      .access-actions { display:block; }
+      .access-input,
+      .access-actions input {
+        width:100%;
+        min-height:44px;
+        padding:10px 12px;
+        border:2px solid #151c27;
+        border-radius:9px;
+        outline:none;
+        background:#fff;
+        color:#10213d;
+        font-size:16px;
+      }
+      .access-input:focus,
+      .access-actions input:focus {
+        border-color:#2f66ed;
+        box-shadow:0 0 0 3px rgba(47,102,237,.16);
+      }
+      .access-submit,
+      .access-actions button {
+        width:100%;
+        min-height:36px;
+        margin-top:14px;
+        padding:9px 14px;
+        border:0;
+        border-radius:8px;
+        background:#2f66ed;
+        color:#fff;
+        font-size:13px;
+        font-weight:750;
+        cursor:pointer;
+      }
+      .access-submit:hover,
+      .access-actions button:hover { background:#2558d7; }
+      .access-submit:disabled,
+      .access-actions button:disabled { opacity:.62; cursor:wait; }
+      .access-error {
+        min-height:20px;
+        margin-top:10px;
+        color:#c71111;
+        font-size:13px;
+        font-weight:700;
+      }
+      .access-logo,.access-mark,.access-note { display:none!important; }
+      @media(max-width:520px){
+        .access-card{padding:24px 20px;border-radius:17px}
+        .access-card h2,.access-title{font-size:22px}
+      }
+</style></head>
 <body class="access-locked" style="visibility:hidden">
-<div id="accessGate" role="dialog" aria-modal="true" aria-labelledby="accessTitle">
+<div id="accessGate" class="access-gate" role="dialog" aria-modal="true" aria-labelledby="accessTitle">
   <div class="access-card">
-    <h2 id="accessTitle">Access Code Required</h2>
-    <p>Please enter the access code to open Vessel Search.</p>
+    <h2 id="accessTitle">Access required</h2>
+    <p>Enter the access code to open Vessel Search.</p>
     <form id="accessForm">
       <label for="accessCodeInput">Access code</label>
       <div class="access-actions">
-        <input id="accessCodeInput" type="password" autocomplete="off" placeholder="Enter access code" />
-        <button type="submit">Unlock</button>
+        <input id="accessCodeInput" type="password" autocomplete="off" placeholder="Enter access code">
+        <button type="submit">Continue</button>
       </div>
-      <div id="accessError" class="access-error"></div>
+      <div id="accessError" class="access-error" role="alert" aria-live="polite"></div>
     </form>
   </div>
 </div>
@@ -189,7 +282,7 @@
         accessError.textContent = error.name==='AbortError' ? 'The request timed out. Please try again.' : 'Unable to verify access. Please try again.';
       } finally {
         accessInput.disabled=false;
-        if(submitButton){ submitButton.disabled=false; submitButton.textContent='Unlock'; }
+        if(submitButton){ submitButton.disabled=false; submitButton.textContent='Continue'; }
         accessInput.focus();
       }
     });
