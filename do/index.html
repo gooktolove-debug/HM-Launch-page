@@ -217,27 +217,7 @@ tbody tr.open-row:hover{background:linear-gradient(90deg,rgba(244,63,94,.22),tra
 @media(max-width:520px){.stats{grid-template-columns:1fr 1fr}.filters{grid-template-columns:1fr}}
 </style></head>
 <body>
-
-<!-- LOGIN GATE -->
-<div class="gate" id="loginGate">
-  <div class="gate-card">
-    <div class="gate-logo">⚓</div>
-    <h2>Who's entering?</h2>
-    <p>Select your Duty Officer initials to start logging</p>
-    <div class="gate-btns">
-      <button data-user="BG">BG</button>
-      <button data-user="GW">GW</button>
-      <button data-user="JS">JS</button>
-      <button data-user="VN">VN</button>
-      <button data-user="MD">MD</button>
-    </div>
-    <div class="gate-visitor">
-      <button data-user="Visitor">👤 Continue as Visitor</button>
-    </div>
-  </div>
-</div>
-
-<div class="wrap">
+  <div class="wrap" id="appShell" style="display:none">
   <div class="topbar">
     <div class="brand">
       <div class="logo">⚓</div>
@@ -247,12 +227,7 @@ tbody tr.open-row:hover{background:linear-gradient(90deg,rgba(244,63,94,.22),tra
       </div>
     </div>
     <div class="topright">
-      <div class="whoami" id="whoami">
-        <span class="avatar" id="waAvatar">–</span>
-        <span>Logging in as <b id="waName">–</b></span>
-        <button class="ghost" id="switchUserBtn" title="Switch Duty Officer">Switch</button>
-      </div>
-      <div class="clock"><div class="t" id="clockT">--:--</div><div class="d" id="clockD"></div><div class="syncdot" id="syncDot">☁ connecting…</div></div>
+      <div class="whoami" id="whoami"><span class="avatar" id="waAvatar">–</span><span>Signed in as <b id="waName">–</b></span></div><div class="clock"><div class="t" id="clockT">--:--</div><div class="d" id="clockD"></div><div class="syncdot" id="syncDot">☁ connecting…</div></div>
     </div>
   </div>
 
@@ -331,7 +306,7 @@ tbody tr.open-row:hover{background:linear-gradient(90deg,rgba(244,63,94,.22),tra
       <div class="form-grid">
         <div><label class="fl">Date</label><input type="date" id="eDate"></div>
         <div><label class="fl">Duty Officer</label>
-          <select id="eOfficer"><option value="">— select —</option><option>BG</option><option>GW</option><option>JS</option><option>VN</option><option>MD</option></select>
+          <input id="eOfficer" readonly aria-readonly="true">
         </div>
         <div class="entry-meta" id="entryMeta"><div class="entry-meta-title">🕒 Activity history</div><div class="audit-list" id="auditList"></div></div>
         <div class="full field-voice">
@@ -443,18 +418,16 @@ async function applySignedAttachmentUrls(items){
   return (items||[]).map(r=>({...r,attachments:(r.attachments||[]).map(a=>({...a,url:a.path?(signedByPath[a.path]||''):(a.url||'')}))}));
 }
 
-/* ============ Login gate ============ */
-function setUser(u){
-  currentUser=u;localStorage.setItem(LS_USER,u);
-  const isV=u==='Visitor';
-  $('waName').textContent=u;
-  $('waAvatar').textContent=isV?'V':u;
-  $('whoami').classList.toggle('visitor',isV);
-  $('loginGate').classList.add('hidden');document.body.style.overflow='';
-}
-function openGate(){$('loginGate').classList.remove('hidden');document.body.style.overflow='hidden'}
-
-/* ============ Filtering ============ */
+/* ============ Shared Supabase authentication ============ */
+  function authNameFromEmail(email){return (String(email||'').trim().split('@')[0].split('.')[0]||'user').trim().toLowerCase()||'user';}
+  function applyAuthenticatedUser(session){
+    currentUser=authNameFromEmail(session?.user?.email||'');
+    $('waName').textContent=currentUser;
+    $('waAvatar').textContent=currentUser.slice(0,1).toUpperCase();
+    $('appShell').style.display='';
+  }
+  function redirectToMainLogin(){location.replace(MAIN_LOGIN_URL);}
+  /* ============ Filtering ============ */
 const flt={search:'',from:'',to:'',status:'all',officer:'all',range:'all'};
 function applyRange(range){
   flt.range=range;const today=new Date();const iso=d=>localISODate(d);
@@ -628,14 +601,14 @@ function openAttachment(a){
 /* ============ Modal ============ */
 let modalStatus='open';
 function setModalStatus(s){modalStatus=s;document.querySelectorAll('#statusToggle button').forEach(b=>{b.classList.remove('act-open','act-closed');if(b.dataset.status===s)b.classList.add(s==='open'?'act-open':'act-closed');});}
-function officerDefault(){return OFFICERS.includes(currentUser)?currentUser:'';}
+function officerDefault(){return currentUser||'user';}
 function openModal(rec){
   editingId=rec?rec.id:null;
   editAttachments=rec&&Array.isArray(rec.attachments)?rec.attachments.map(a=>({...a})):[];
   removedPaths=[];
   $('editTitle').textContent=rec?'Edit Log Entry':'New Log Entry';
   $('eDate').value=rec?rec.date:localISODate();
-  $('eOfficer').value=rec?(rec.officer||''):officerDefault();
+  $('eOfficer').value=rec?(rec.officer||officerDefault()):officerDefault();
   $('eIncident').value=rec?rec.incident||'':'';
   $('eInformant').value=rec?rec.informant||'':'';
   $('eContact').value=rec?rec.contact||'':'';
@@ -760,8 +733,6 @@ function toast(msg,kind){const t=$('toast');t.textContent=msg;t.className='toast
 function tick(){const n=new Date();$('clockT').textContent=n.toLocaleTimeString('en-NZ',{hour:'2-digit',minute:'2-digit',hour12:false});$('clockD').textContent=n.toLocaleDateString('en-NZ',{weekday:'long',day:'numeric',month:'long',year:'numeric'});}
 
 /* ============ Events ============ */
-document.querySelectorAll('#loginGate [data-user]').forEach(b=>b.onclick=()=>setUser(b.dataset.user));
-$('switchUserBtn').onclick=openGate;
 document.addEventListener('click',e=>{
   const card=e.target.closest('.open-card[data-id],tr[data-id],.rec-card[data-id]');
   if(card){const r=records.find(x=>x.id===card.dataset.id);if(r)openModal(r);}
@@ -842,13 +813,19 @@ $('importFile').onchange=e=>{if(e.target.files[0])importFile(e.target.files[0]);
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){if($('lightbox').classList.contains('open'))closeLightbox();else if($('trendModal').classList.contains('open'))closeTrend();else if($('editModal').classList.contains('open'))closeModal();}if((e.ctrlKey||e.metaKey)&&e.key==='Enter'&&$('editModal').classList.contains('open'))saveEntry();});
 
 /* ============ Init ============ */
-function init(){
-  applyRange('all');renderAll();tick();setInterval(tick,1000);
-  if(!window.supabase||!window.supabase.createClient){lastError='The Supabase JS library did not load. If this is opened from a location that blocks CDN scripts (or fully offline), the app cannot reach the database.';setSync('⚠ library failed','err');toast('Supabase library could not load — check your connection.','err');}
-  else{try{sbClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);fetchAll();}catch(e){lastError=String(e&&e.message?e.message:e);setSync('⚠ offline','err');toast('Could not init Supabase: '+lastError,'err');}}
-  openGate();
-}
-init();
+  async function init(){
+    applyRange('all');renderAll();tick();setInterval(tick,1000);
+    if(!window.supabase||!window.supabase.createClient){redirectToMainLogin();return;}
+    try{
+      sbClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+      const {data,error}=await sbClient.auth.getSession();
+      if(error||!data?.session){redirectToMainLogin();return;}
+      applyAuthenticatedUser(data.session);
+      await fetchAll();
+      sbClient.auth.onAuthStateChange((event,session)=>{if(!session&&event==='SIGNED_OUT')redirectToMainLogin();});
+    }catch(e){lastError=String(e&&e.message?e.message:e);redirectToMainLogin();}
+  }
+  init();
 </script>
 </body>
 </html>

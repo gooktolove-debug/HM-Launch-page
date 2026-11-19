@@ -214,7 +214,10 @@ button.bg-gray-900,button.bg-black{background:linear-gradient(135deg,#178c88,#0d
     const SUPABASE_URL = 'https://wgwlnutnstrfuiiunlcu.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_iC7kbinoy61_5eQCnrV25Q_OioA7Y1x';
     const STORAGE_BUCKET = 'pink-sticker-photos';
-    const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+    const MAIN_LOGIN_URL = 'https://gooktolove-debug.github.io/HM-Launch-page/';
+      const sb = createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
+      let authenticatedAuthor = 'user';
+      function authFirstName(email) { return (String(email || '').trim().split('@')[0].split('.')[0] || 'user').trim().toLowerCase() || 'user'; }
 
     const STORAGE_KEY_STICKERED_BY = 'pink_sticker_last_stickered_by';
     const STORAGE_KEY_RESOLVED_BY = 'pink_sticker_last_resolved_by';
@@ -283,7 +286,6 @@ button.bg-gray-900,button.bg-black{background:linear-gradient(135deg,#178c88,#0d
         vesselName: '',
         mooringNumber: '',
         reason: '',
-        stickeredBy: '',
         initialNote: '',
         stickerPhotos: [],
         vesselPhotos: [],
@@ -396,7 +398,6 @@ button.bg-gray-900,button.bg-black{background:linear-gradient(135deg,#178c88,#0d
       if (!form.stickerNo?.trim()) return 'Sticker No. is required.';
       if (!form.vesselName?.trim()) return 'Vessel name is required.';
       if (!form.reason?.trim()) return 'Reason is required.';
-      if (!form.stickeredBy?.trim()) return 'Stickered by is required.';
       if (!form.stickerPhotos || form.stickerPhotos.length < 1) return 'At least 1 sticker photo is required.';
       if (!form.vesselPhotos || form.vesselPhotos.length < 1) return 'At least 1 vessel photo is required.';
       return null;
@@ -446,7 +447,7 @@ button.bg-gray-900,button.bg-black{background:linear-gradient(135deg,#178c88,#0d
           vessel_name: form.vesselName.trim(),
           mooring_number: form.mooringNumber.trim() || null,
           reason: form.reason.trim(),
-          stickered_by: form.stickeredBy.trim(),
+          stickered_by: authenticatedAuthor,
           latitude: form.location?.latitude ?? null,
           longitude: form.location?.longitude ?? null,
           location_accuracy_m: form.location?.accuracy ?? null,
@@ -624,8 +625,6 @@ button.bg-gray-900,button.bg-black{background:linear-gradient(135deg,#178c88,#0d
       const [selectedPhotos, setSelectedPhotos] = useState([]);
       const [selectedNotes, setSelectedNotes] = useState([]);
       const [noteInput, setNoteInput] = useState('');
-      const [noteAuthor, setNoteAuthor] = useState('');
-      const [resolvedBy, setResolvedBy] = useState('');
       const [isResolveModalOpen, setIsResolveModalOpen] = useState(false);
       const [additionalStickerPhotos, setAdditionalStickerPhotos] = useState([]);
       const [additionalVesselPhotos, setAdditionalVesselPhotos] = useState([]);
@@ -996,7 +995,7 @@ button.bg-gray-900,button.bg-black{background:linear-gradient(135deg,#178c88,#0d
           }
 
           await insertPinkStickerPhotoRows(sticker.id, uploadedPhotos);
-          await insertInitialNote(sticker.id, form.initialNote, form.stickeredBy);
+          await insertInitialNote(sticker.id, form.initialNote, authenticatedAuthor);
 
           setSuccessMessage(`Pink sticker ${sticker.sticker_no} saved successfully.`);
           setForm(blankForm());
@@ -1029,10 +1028,8 @@ button.bg-gray-900,button.bg-black{background:linear-gradient(135deg,#178c88,#0d
         setSelectedSticker(sticker);
         setSelectedPhotos(details.photos);
         setSelectedNotes(details.notes);
-        setResolvedBy('');
         setIsResolveModalOpen(false);
         setNoteInput('');
-        setNoteAuthor('');
         setAdditionalStickerPhotos([]);
         setAdditionalVesselPhotos([]);
         setScreen('search');
@@ -1090,14 +1087,10 @@ button.bg-gray-900,button.bg-black{background:linear-gradient(135deg,#178c88,#0d
           setErrorMessage('Please enter a note.');
           return;
         }
-        if (!noteAuthor.trim()) {
-          setErrorMessage('Please enter the note author name.');
-          return;
-        }
 
         try {
           
-          await addNote(selectedSticker.id, noteInput, noteAuthor);
+          await addNote(selectedSticker.id, noteInput, authenticatedAuthor);
           setNoteInput('');
           await handleRefreshDetails(selectedSticker.id, selectedSticker.sticker_no);
           setSuccessMessage('Note added successfully.');
@@ -1110,17 +1103,12 @@ button.bg-gray-900,button.bg-black{background:linear-gradient(135deg,#178c88,#0d
       async function handleResolve() {
         resetMessages();
         if (!selectedSticker) return;
-        if (!resolvedBy.trim()) {
-          setErrorMessage('Please enter who resolved this sticker.');
-          return;
-        }
 
         try {
           
-          await markResolved(selectedSticker.id, resolvedBy);
+          await markResolved(selectedSticker.id, authenticatedAuthor);
           await handleRefreshDetails(selectedSticker.id, selectedSticker.sticker_no);
           setIsResolveModalOpen(false);
-          setResolvedBy('');
           setSuccessMessage('Sticker marked as resolved.');
         } catch (err) {
           console.error(err);
@@ -1341,17 +1329,10 @@ button.bg-gray-900,button.bg-black{background:linear-gradient(135deg,#178c88,#0d
                 <label className="block text-sm font-semibold mb-1">Reason</label>
                 <textarea value={form.reason} onChange={(e) => updateFormField('reason', e.target.value)} className="w-full min-h-24 rounded-xl border border-gray-300 px-3 py-2 outline-none focus:ring-2 focus:ring-pink-500" placeholder="Why was the pink sticker applied?" />
               </div>
-
-              <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <label className="block text-sm font-semibold mb-1">Stickered by</label>
-                  <input value={form.stickeredBy} onChange={(e) => updateFormField('stickeredBy', e.target.value)} className="w-full h-11 rounded-xl border border-gray-300 px-3 outline-none focus:ring-2 focus:ring-pink-500" placeholder="Enter skipper name" />
-                </div>
                 <div>
                   <label className="block text-sm font-semibold mb-1">Initial Note (optional)</label>
                   <input value={form.initialNote} onChange={(e) => updateFormField('initialNote', e.target.value)} className="w-full h-11 rounded-xl border border-gray-300 px-3 outline-none focus:ring-2 focus:ring-pink-500" placeholder="Optional opening note" />
                 </div>
-              </div>
             </div>
 
             <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 space-y-3">
@@ -1640,8 +1621,7 @@ button.bg-gray-900,button.bg-black{background:linear-gradient(135deg,#178c88,#0d
                       type="button"
                       onClick={() => {
                         resetMessages();
-                        setResolvedBy('');
-                        setIsResolveModalOpen(true);
+                                      setIsResolveModalOpen(true);
                       }}
                       className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-green-600 text-white text-sm font-semibold hover:bg-green-700"
                     >
@@ -1822,13 +1802,6 @@ button.bg-gray-900,button.bg-black{background:linear-gradient(135deg,#178c88,#0d
                   placeholder="Add a note"
                   className="h-11 rounded-xl border border-gray-300 px-3 outline-none focus:ring-2 focus:ring-pink-500"
                 />
-                <input
-                  type="text"
-                  value={noteAuthor}
-                  onChange={(e) => setNoteAuthor(e.target.value)}
-                  placeholder="Note author"
-                  className="h-11 rounded-xl border border-gray-300 px-3 outline-none focus:ring-2 focus:ring-pink-500"
-                />
               </div>
 
               <button
@@ -1848,8 +1821,7 @@ button.bg-gray-900,button.bg-black{background:linear-gradient(135deg,#178c88,#0d
                 aria-labelledby="resolve-dialog-title"
                 onMouseDown={(e) => {
                   if (e.target === e.currentTarget) {
-                    setResolvedBy('');
-                    setIsResolveModalOpen(false);
+                              setIsResolveModalOpen(false);
                   }
                 }}
               >
@@ -1857,13 +1829,12 @@ button.bg-gray-900,button.bg-black{background:linear-gradient(135deg,#178c88,#0d
                   <div className="mb-5 flex items-start justify-between gap-4">
                     <div>
                       <h3 id="resolve-dialog-title" className="text-xl font-bold text-gray-900">Resolve Sticker</h3>
-                      <p className="mt-1 text-sm text-gray-500">Who resolved this pink sticker?</p>
+                      <p className="mt-1 text-sm text-gray-500">This action will be recorded as {authenticatedAuthor}.</p>
                     </div>
                     <button
                       type="button"
                       onClick={() => {
-                        setResolvedBy('');
-                        setIsResolveModalOpen(false);
+                                      setIsResolveModalOpen(false);
                       }}
                       className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-gray-100 text-gray-700 hover:bg-gray-200"
                       aria-label="Close resolve dialog"
@@ -1871,28 +1842,11 @@ button.bg-gray-900,button.bg-black{background:linear-gradient(135deg,#178c88,#0d
                       <Icons.X className="h-4 w-4" />
                     </button>
                   </div>
-                  <label className="mb-1 block text-sm font-semibold text-gray-900">Resolved by</label>
-                  <input
-                    type="text"
-                    value={resolvedBy}
-                    onChange={(e) => setResolvedBy(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') handleResolve();
-                      if (e.key === 'Escape') {
-                        setResolvedBy('');
-                        setIsResolveModalOpen(false);
-                      }
-                    }}
-                    autoFocus
-                    placeholder="Enter name"
-                    className="w-full h-11 rounded-xl border border-gray-300 px-3 outline-none focus:ring-2 focus:ring-green-500"
-                  />
                   <div className="mt-5 grid grid-cols-2 gap-3">
                     <button
                       type="button"
                       onClick={() => {
-                        setResolvedBy('');
-                        setIsResolveModalOpen(false);
+                                      setIsResolveModalOpen(false);
                       }}
                       className="h-11 rounded-2xl border border-gray-200 bg-white text-gray-700 font-semibold hover:bg-gray-50"
                     >
@@ -1918,7 +1872,7 @@ button.bg-gray-900,button.bg-black{background:linear-gradient(135deg,#178c88,#0d
         if (screen === 'search') return renderSearch();
         if (screen === 'detail') return renderDetail();
         return renderHome();
-      }, [screen, form, isSaving, isFetchingLocation, searchType, searchStickerNo, searchResults, allStickers, isLoadingAllStickers, isSearching, selectedSticker, selectedPhotos, selectedNotes, noteInput, noteAuthor, resolvedBy, isResolveModalOpen, additionalStickerPhotos, additionalVesselPhotos, isUploadingAdditionalPhotos, isEditingLocation, locationEditor]);
+      }, [screen, form, isSaving, isFetchingLocation, searchType, searchStickerNo, searchResults, allStickers, isLoadingAllStickers, isSearching, selectedSticker, selectedPhotos, selectedNotes, noteInput, isResolveModalOpen, additionalStickerPhotos, additionalVesselPhotos, isUploadingAdditionalPhotos, isEditingLocation, locationEditor]);
 
       return (
         <div className="min-h-screen bg-gray-50">
@@ -1931,8 +1885,15 @@ button.bg-gray-900,button.bg-black{background:linear-gradient(135deg,#178c88,#0d
       );
     }
 
-    const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(<App />);
+    async function bootstrapPinkApp() {
+        const { data, error } = await sb.auth.getSession();
+        if (error || !data?.session) { location.replace(MAIN_LOGIN_URL); return; }
+        authenticatedAuthor = authFirstName(data.session.user?.email || '');
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+        sb.auth.onAuthStateChange((event, session) => { if (!session && event === 'SIGNED_OUT') location.replace(MAIN_LOGIN_URL); });
+      }
+      bootstrapPinkApp();
   </script>
 </body>
 </html>

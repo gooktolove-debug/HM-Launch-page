@@ -46,7 +46,7 @@
     .refund-status.ready{background:#dcfce7;color:#166534}.refund-status.duplicate{background:#fef3c7;color:#92400e}.refund-status.saved{background:#dbeafe;color:#1d4ed8}.refund-status.failed{background:#fee2e2;color:#991b1b}
     .refund-error{max-width:240px;margin-top:4px;color:var(--red);white-space:normal;line-height:1.25}.refund-empty{text-align:center;color:var(--muted);padding:22px!important}
   </style></head>
-<body>
+<body style="visibility:hidden">
 <div id="accessGate" class="access-gate"><div class="access-card"><div class="access-logo"><div class="access-mark">HM</div><div><div class="access-title">HM Fuel Usage</div><div class="access-sub">Restricted dashboard access</div></div></div><label for="accessCode">Access code</label><input id="accessCode" class="access-input" type="password" autocomplete="current-password" placeholder="Enter access code" aria-describedby="accessError"><button id="accessSubmit" class="btn primary access-submit">Open dashboard</button><div id="accessError" class="access-error" role="alert" aria-live="polite"></div><div class="access-note">Authorised users only</div></div></div>
 <header class="top"><div class="brand">HM Fuel Usage</div><div style="display:flex;gap:10px"><button id="openRefund" class="btn light">NZTA Refund Application</button><button id="openRefundImport" class="btn refund-import-btn">Import NZTA Refund</button><button id="openImport" class="btn primary">Import Invoice</button></div></header>
 <main class="wrap">
@@ -74,7 +74,13 @@
 <script type="module">
 import * as pdfjsLib from 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs';
 pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs';
-const sb=window.supabase.createClient('https://wgwlnutnstrfuiiunlcu.supabase.co','sb_publishable_iC7kbinoy61_5eQCnrV25Q_OioA7Y1x');
+const MAIN_LOGIN_URL='https://gooktolove-debug.github.io/HM-Launch-page/';
+const sb=window.supabase.createClient('https://wgwlnutnstrfuiiunlcu.supabase.co','sb_publishable_iC7kbinoy61_5eQCnrV25Q_OioA7Y1x',{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+const {data:sharedAuthData,error:sharedAuthError}=await sb.auth.getSession();
+if(sharedAuthError||!sharedAuthData?.session){location.replace(MAIN_LOGIN_URL);throw new Error('OTP session required');}
+const authenticatedFirstName=((sharedAuthData.session.user?.email||'').trim().split('@')[0].split('.')[0]||'user').toLowerCase();
+document.body.style.visibility='';
+sb.auth.onAuthStateChange((event,session)=>{if(!session&&event==='SIGNED_OUT')location.replace(MAIN_LOGIN_URL);});
 const V=['HM3','HM4','HM5','HM6','HM7','HM8','HM9','HM10'];
 const MARITIME_SAFETY_NO={HM3:'133428',HM4:'132652',HM5:'134930',HM6:'134931',HM7:'142388',HM8:'142389',HM9:'143819',HM10:'143820'};
 const $=x=>document.getElementById(x),num=x=>new Intl.NumberFormat('en-NZ',{maximumFractionDigits:2}).format(x||0),money=x=>new Intl.NumberFormat('en-NZ',{style:'currency',currency:'NZD',maximumFractionDigits:2}).format(x||0);

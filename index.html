@@ -375,8 +375,43 @@
 .converter-note{font-size:12px!important}.converter-error{font-size:12px!important}
 @media(max-width:480px){.converter-row{grid-template-columns:1fr}.converter-equals{padding:0}.converter-dialog{border-radius:14px}}
 </style>
+
+<style id="mainOtpAuthStyles">
+  .auth-app-hidden{display:none!important}
+  .auth-screen{position:fixed;inset:0;z-index:200000;min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:20px;background:linear-gradient(160deg,#071827 0%,#0b2940 55%,#0f3a4d 100%);color:#eaf6ff;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+  .auth-screen.auth-hidden{display:none!important}.auth-card{width:min(430px,100%);padding:30px;border:1px solid rgba(148,163,184,.28);border-radius:20px;background:rgba(8,31,49,.96);box-shadow:0 24px 70px rgba(0,0,0,.38);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+  .auth-kicker{font-size:12px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;color:#5eead4;margin-bottom:12px}.auth-title{margin:0 0 8px;color:#fff;font-size:26px}.auth-copy{margin:0 0 22px;color:#cbd5e1;font-size:14px;line-height:1.55}.auth-label{display:block;font-size:14px;font-weight:700;color:#f1f5f9;margin-top:12px}.auth-input{width:100%;box-sizing:border-box;margin-top:8px;padding:13px 14px;border:1px solid #45657c;border-radius:10px;background:#fff;color:#0f172a;outline:none;font-size:18px;font-weight:700}.auth-input:focus{border-color:#2dd4bf;box-shadow:0 0 0 3px rgba(45,212,191,.2)}
+  .auth-button{width:100%;min-height:48px;margin-top:16px;padding:13px 16px;border:0;border-radius:10px;background:#2dd4bf;color:#05242b;font:800 15px/1.2 inherit;cursor:pointer}.auth-button:hover{background:#5eead4}.auth-button:disabled{opacity:.58;cursor:wait}.auth-secondary{width:100%;min-height:44px;margin-top:10px;padding:10px 14px;border:1px solid #64748b;border-radius:10px;background:transparent;color:#e2e8f0;font:750 14px/1.2 inherit;cursor:pointer}.auth-secondary:hover{background:rgba(255,255,255,.08)}
+  .auth-message{min-height:24px;margin:14px 0 0;color:#e2e8f0;font-size:13px;line-height:1.45}.auth-spinner{width:38px;height:38px;border:4px solid rgba(255,255,255,.25);border-top-color:#5eead4;border-radius:9999px;animation:mainAuthSpin .9s linear infinite}.auth-form-hidden{display:none!important}@keyframes mainAuthSpin{to{transform:rotate(360deg)}}
+  .main-auth-user{display:inline-flex;align-items:center;max-width:220px;min-height:42px;padding:8px 11px;border:1px solid rgba(255,255,255,.15);border-radius:12px;color:#bdf6ff;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.main-signout-button{border-color:rgba(248,113,113,.38)!important;color:#fecaca!important;background:rgba(220,38,38,.16)!important}.main-signout-button:hover{background:rgba(220,38,38,.28)!important}
+  @media(max-width:600px){.auth-card{padding:24px 20px}.main-auth-user{display:none}.main-signout-button{width:44px!important;height:44px!important;min-width:44px!important;padding:0 3px!important;font-size:8px!important;line-height:1.05!important}}
+</style>
 </head>
 <body>
+<div id="mainAuthScreen" class="auth-screen" aria-live="polite">
+  <div id="mainAuthChecking" class="auth-spinner" aria-label="Checking access"></div>
+  <form id="mainAuthForm" class="auth-card auth-form-hidden" novalidate>
+    <div class="auth-kicker">Auckland Harbourmaster</div>
+    <h1 class="auth-title">Operations Monitoring Page access</h1>
+    <div id="mainAuthEmailStep">
+      <p class="auth-copy">Enter your registered email address to receive an 8-digit verification code.</p>
+      <label class="auth-label" for="mainAuthEmail">Email address</label>
+      <input id="mainAuthEmail" class="auth-input" type="email" autocomplete="email" placeholder="name@example.com" required>
+      <button id="mainAuthSendBtn" class="auth-button" type="submit">Send verification code</button>
+    </div>
+    <div id="mainAuthOtpStep" class="auth-form-hidden">
+      <p class="auth-copy">Enter the 8-digit code sent to <strong id="mainAuthEmailDisplay"></strong>.</p>
+      <label class="auth-label" for="mainAuthOtp">Verification code</label>
+      <input id="mainAuthOtp" class="auth-input" type="text" inputmode="numeric" autocomplete="one-time-code" placeholder="00000000" maxlength="8" required>
+      <button id="mainAuthVerifyBtn" class="auth-button" type="submit">Verify and sign in</button>
+      <button id="mainAuthResendBtn" class="auth-secondary" type="button">Resend code</button>
+      <button id="mainAuthChangeEmailBtn" class="auth-secondary" type="button">Use a different email address</button>
+    </div>
+    <p id="mainAuthMessage" class="auth-message" role="status"></p>
+  </form>
+</div>
+<div id="mainAppShell" class="auth-app-hidden">
+
 <div class="container">
 <header class="header">
   <div class="title-roster-row"><div class="title-block">
@@ -384,7 +419,7 @@
     <h1>Operations <span>Monitoring Page</span></h1>
   </div><section class="today-roster" aria-live="polite"><div class="roster-topline"><span class="live-dot"></span><span id="todayRosterDate">TODAY ROSTER</span><button class="button roster-manage-btn" type="button" onclick="openRosterManagement()">Full Roster</button></div><div id="todayRosterContent" class="roster-gridline"><span class="roster-loading">Loading roster...</span></div></section></div>
   <div class="command-actions"><button class="button quiz-open-button" type="button" onclick="openMaritimeQuiz()" aria-haspopup="dialog" aria-controls="maritimeQuizShell">Quiz</button><button class="button public-qr-button" type="button" onclick="openPublicQr()" aria-haspopup="dialog" aria-controls="publicQrModal">Public QR</button><button class="button contact-open-button" type="button" onclick="openContactList()">Contact List</button>
-    <button class="icon-button" type="button" onclick="location.reload()" title="Refresh dashboard" aria-label="Refresh dashboard">&#8635;</button>
+    <button id="mainSignOutBtn" class="button main-signout-button" type="button">Sign out</button><button class="icon-button" type="button" onclick="location.reload()" title="Refresh dashboard" aria-label="Refresh dashboard">&#8635;</button>
   </div>
 </header>
 <section class="conditions-bar" id="conditionsBar" aria-label="Live harbour conditions">
@@ -826,7 +861,7 @@ function closePublicQr() {
   window.setTimeout(() => document.querySelector('.public-qr-button')?.focus(), 0);
 }
 </script>
-<script defer src="./app.js?v=optimized-1"></script>
+
 
 <!-- Contact save progress popup -->
 <div id="contactSaveFeedback" class="contact-save-feedback" hidden aria-hidden="true">
@@ -915,5 +950,75 @@ function openWreckPage(){window.open('./wreck/','_blank','noopener,noreferrer');
  closeBtn.addEventListener('click',close);modal.addEventListener('click',e=>{if(e.target===modal)close()});document.addEventListener('keydown',e=>{if(e.key==='Escape'&&modal.classList.contains('open'))close()});
 })();
 </script>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script id="mainOtpAuthScript">
+(function(){
+  'use strict';
+  const AUTH_URL='https://wgwlnutnstrfuiiunlcu.supabase.co';
+  const AUTH_KEY='sb_publishable_iC7kbinoy61_5eQCnrV25Q_OioA7Y1x';
+  const $=id=>document.getElementById(id);
+  const client=window.supabase.createClient(AUTH_URL,AUTH_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+  let authEmail='';
+  let appScriptPromise=null;
+  function loadMainApplication(){
+    if(appScriptPromise)return appScriptPromise;
+    appScriptPromise=new Promise((resolve,reject)=>{const s=document.createElement('script');s.src='./app.js?v=otp-1';s.onload=resolve;s.onerror=()=>reject(new Error('The main application could not be loaded.'));document.body.appendChild(s)});
+    return appScriptPromise;
+  }
+  function setBusy(busy,message=''){
+    ['mainAuthSendBtn','mainAuthVerifyBtn','mainAuthResendBtn','mainAuthChangeEmailBtn'].forEach(id=>{const node=$(id);if(node)node.disabled=busy});
+    if(message)$('mainAuthMessage').textContent=message;
+  }
+  function showStep(step){
+    const otp=step==='otp';
+    $('mainAuthEmailStep').classList.toggle('auth-form-hidden',otp);
+    $('mainAuthOtpStep').classList.toggle('auth-form-hidden',!otp);
+    $('mainAuthMessage').textContent='';
+    setTimeout(()=>(otp?$('mainAuthOtp'):$('mainAuthEmail'))?.focus(),0);
+  }
+  async function sendOtp(event){
+    event?.preventDefault();
+    const email=String($('mainAuthEmail').value||'').trim().toLowerCase();
+    if(!email){$('mainAuthMessage').textContent='Please enter your registered email address.';return}
+    setBusy(true,'Sending verification code...');
+    const {error}=await client.auth.signInWithOtp({email,options:{shouldCreateUser:false}});
+    setBusy(false);
+    if(error){console.error('Email OTP error:',error);$('mainAuthMessage').textContent='The verification code could not be sent. Check the registered email address and try again.';return}
+    authEmail=email;$('mainAuthEmailDisplay').textContent=email;showStep('otp');$('mainAuthMessage').textContent='An 8-digit verification code has been sent to your email.';
+  }
+  async function verifyOtp(event){
+    event?.preventDefault();
+    const token=String($('mainAuthOtp').value||'').replace(/\D/g,'').slice(0,8);
+    if(!/^\d{8}$/.test(token)){$('mainAuthMessage').textContent='Please enter the 8-digit verification code.';return}
+    setBusy(true,'Verifying code...');
+    const {data,error}=await client.auth.verifyOtp({email:authEmail,token,type:'email'});
+    setBusy(false);
+    if(error||!data?.session){console.error('OTP verification error:',error);$('mainAuthMessage').textContent='The code is incorrect or has expired. Request a new code and try again.';return}
+  }
+  async function showApplication(session){
+    $('mainAuthScreen').classList.add('auth-hidden');
+    $('mainAppShell').classList.remove('auth-app-hidden');
+    
+    try{await loadMainApplication()}catch(error){console.error(error);alert(error.message)}
+  }
+  function showSignedOut(){
+    $('mainAppShell').classList.add('auth-app-hidden');
+    $('mainAuthScreen').classList.remove('auth-hidden');
+    $('mainAuthChecking').classList.add('auth-form-hidden');
+    $('mainAuthForm').classList.remove('auth-form-hidden');
+    $('mainAuthOtp').value='';showStep('email');
+  }
+  $('mainAuthForm').addEventListener('submit',event=>$('mainAuthOtpStep').classList.contains('auth-form-hidden')?sendOtp(event):verifyOtp(event));
+  $('mainAuthOtp').addEventListener('input',event=>{event.target.value=event.target.value.replace(/\D/g,'').slice(0,8)});
+  $('mainAuthResendBtn').addEventListener('click',sendOtp);
+  $('mainAuthChangeEmailBtn').addEventListener('click',()=>showStep('email'));
+  $('mainSignOutBtn').addEventListener('click',async()=>{const {error}=await client.auth.signOut();if(error)alert('Sign out failed: '+error.message)});
+  client.auth.onAuthStateChange((event,session)=>{if(session)showApplication(session);else if(event==='SIGNED_OUT')showSignedOut()});
+  client.auth.getSession().then(({data,error})=>{if(error)console.error('Session check error:',error);if(data?.session)showApplication(data.session);else showSignedOut()});
+})();
+</script>
+
+</div>
 </body>
 </html>

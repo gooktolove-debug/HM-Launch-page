@@ -507,7 +507,7 @@
   
 .oa-bg{position:fixed;inset:0;z-index:8000;background:rgba(2,10,18,.88);padding:16px}.oa-shell{height:calc(100dvh - 32px);max-width:1500px;margin:auto;background:#081b2d;border:1px solid var(--line);border-radius:18px;display:flex;flex-direction:column;overflow:hidden}.oa-head{padding:14px 16px;background:#0d263d;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:10px}.oa-title{font-size:21px;font-weight:850}.oa-tools{padding:12px 16px;border-bottom:1px solid var(--line)}.oa-filter{display:grid;grid-template-columns:1fr 1fr auto;gap:9px;align-items:end}.oa-counts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}.oa-count{padding:9px 11px;background:#0c2940;border:1px solid var(--line);border-radius:11px}.oa-count small{display:block;color:var(--muted)}.oa-count strong{font-size:21px}.oa-body{display:grid;grid-template-columns:minmax(340px,.8fr) minmax(500px,1.2fr);gap:12px;padding:12px;min-height:0;flex:1}.oa-pane{border:1px solid var(--line);border-radius:13px;background:#0b2136;overflow:auto;padding:10px}.oa-section{display:flex;justify-content:space-between;position:sticky;top:-10px;background:#0c2940;padding:9px;z-index:2}.oa-list{display:grid;gap:7px;margin:8px 0 14px}.oa-row{padding:10px;background:#102d46;border:1px solid var(--line);border-radius:10px;cursor:pointer}.oa-row.active,.oa-row:hover{border-color:#29d3c2}.oa-meta{font-size:11px;color:var(--muted);margin-top:4px}.oa-detail-title{font-size:24px;font-weight:850}.oa-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}.oa-item{padding:10px;background:#0c2940;border:1px solid var(--line);border-radius:10px}.oa-item.full{grid-column:1/-1}.oa-k{font-size:10px;color:var(--muted)}.oa-v{margin-top:4px;font-weight:700;white-space:pre-wrap}.oa-photo{width:120px;height:84px;object-fit:cover;border-radius:9px;margin:5px;cursor:pointer}.oa-form-bg{position:fixed;inset:0;z-index:9000;background:rgba(2,10,18,.82);display:flex;align-items:center;justify-content:center;padding:16px}.oa-form{width:min(760px,100%);max-height:94dvh;overflow:auto;background:#0b2136;border:1px solid var(--line);border-radius:16px;padding:16px}.oa-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.oa-form-grid .full{grid-column:1/-1}.oa-status{display:inline-flex;padding:5px 8px;border-radius:999px;font-size:11px;font-weight:800}.oa-status.completed{background:var(--completed-soft);color:#cbd5e1}.oa-status.ready{background:var(--ready-soft);color:#78efaa}#oaFrom,#oaTo,#oaApproval,#oaDisposed{color-scheme:dark} @media(max-width:760px){.oa-bg{padding:0}.oa-shell{height:100dvh;border:0;border-radius:0}.oa-body{grid-template-columns:1fr;overflow:auto}.oa-pane{min-height:410px}.oa-filter{grid-template-columns:1fr 1fr}.oa-filter button{grid-column:1/-1}.oa-form-grid{grid-template-columns:1fr}.oa-form-grid .full{grid-column:auto}.oa-form-bg{padding:0}.oa-form{height:100dvh;max-height:none;border-radius:0}}
 </style></head>
-<body>
+<body style="visibility:hidden">
   <div class="container">
     <div class="header">
       <div class="brand-block">
@@ -787,6 +787,9 @@
     const SUPABASE_URL = 'https://wgwlnutnstrfuiiunlcu.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_iC7kbinoy61_5eQCnrV25Q_OioA7Y1x';
     const SUPABASE_BUCKET = 'wreck-abandoned-photos';
+      const MAIN_LOGIN_URL = 'https://gooktolove-debug.github.io/HM-Launch-page/';
+      let authenticatedFirstName = 'user';
+      function authFirstName(email) { return (String(email || '').trim().split('@')[0].split('.')[0] || 'user').trim().toLowerCase() || 'user'; }
 
     const state = {
       records: [],
@@ -951,7 +954,7 @@
       if (!state.supabaseConfigured) return;
       try {
         if (!window.supabase?.createClient) throw new Error('Supabase JS library failed to load.');
-        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession:true, autoRefreshToken:true, detectSessionInUrl:true } });
       } catch (error) {
         console.error(error);
         alert(`Supabase connection error: ${error.message || error}`);
@@ -1216,7 +1219,7 @@
       const notes = Array.isArray(rec.notes) ? [...rec.notes].sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt)) : [];
       const notesHtml = notes.length ? notes.map(note => `
         <div class="note-item">
-          <div class="note-item-meta"><span>${escapeHtml(formatDateTime(note.createdAt))}</span></div>
+          <div class="note-item-meta"><span>${escapeHtml(formatDateTime(note.createdAt))}</span>${note.createdBy ? `<span>by ${escapeHtml(note.createdBy)}</span>` : ''}</div>
           <div class="note-text">${escapeHtml(note.text)}</div>
         </div>`).join('') : `<div class="notes-empty">No notes yet for this vessel.</div>`;
       return `
@@ -1596,7 +1599,7 @@
         const path = `vessels/${vesselId}/${Date.now()}-${makeRandomId()}-${safeName}`;
         const { error } = await supabaseClient.storage.from(SUPABASE_BUCKET).upload(path, item.file, { cacheControl: '3600', upsert: false, contentType: item.file.type || undefined });
         if (error) throw error;
-        rows.push({ vessel_id: vesselId, storage_path: path, original_filename: item.file.name || safeName, mime_type: item.file.type || null, file_size: item.file.size || null, created_by: null });
+        rows.push({ vessel_id: vesselId, storage_path: path, original_filename: item.file.name || safeName, mime_type: item.file.type || null, file_size: item.file.size || null, created_by: authenticatedFirstName });
       }
       if (rows.length) {
         const { error } = await supabaseClient.from('wreck_abandoned_photos').insert(rows);
@@ -1615,13 +1618,13 @@
           const editingRecord = state.modalMode === 'edit' ? (state.records.find(r => r.id === state.editingId) || null) : null;
           let savedRow = null;
           if (state.modalMode === 'edit') {
-            payload.updated_by = null;
+            payload.updated_by = authenticatedFirstName;
             const { data, error } = await supabaseClient.from('wreck_abandoned_vessels').update(payload).eq('id', state.editingId).select('*').single();
             if (error) throw error;
             savedRow = data;
           } else {
-            payload.created_by = null;
-            payload.updated_by = null;
+            payload.created_by = authenticatedFirstName;
+            payload.updated_by = authenticatedFirstName;
             const { data, error } = await supabaseClient.from('wreck_abandoned_vessels').insert(payload).select('*').single();
             if (error) throw error;
             savedRow = data;
@@ -1670,7 +1673,7 @@
       }
       if (isSupabaseActive()) {
         try {
-          const { error } = await supabaseClient.from('wreck_abandoned_notes').insert({ vessel_id: rec.id, note_text: text, created_by: null });
+          const { error } = await supabaseClient.from('wreck_abandoned_notes').insert({ vessel_id: rec.id, note_text: text, created_by: authenticatedFirstName });
           if (error) throw error;
           await loadDataFromSupabase();
           renderAll(true, false, false);
@@ -1684,7 +1687,7 @@
       const idx = state.records.findIndex(item => item.id === rec.id);
       if (idx === -1) return;
       const notes = Array.isArray(state.records[idx].notes) ? [...state.records[idx].notes] : [];
-      notes.unshift({ text, createdAt: new Date().toISOString() });
+      notes.unshift({ text, createdAt: new Date().toISOString(), createdBy: authenticatedFirstName });
       state.records[idx] = withDerivedFields({ ...state.records[idx], notes });
       localPersistRecords();
       renderAll(true, false, false);
@@ -1745,9 +1748,9 @@
       const noteText = `Delete Timestamp: ${formatDateTime(now)} — Vessel marked Completed. Coordinates cleared from map.`;
       if (isSupabaseActive()) {
         try {
-          const { error: vesselError } = await supabaseClient.from('wreck_abandoned_vessels').update({ lat: null, lon: null, deleted_at: now, updated_by: null }).eq('id', state.editingId);
+          const { error: vesselError } = await supabaseClient.from('wreck_abandoned_vessels').update({ lat: null, lon: null, deleted_at: now, updated_by: authenticatedFirstName }).eq('id', state.editingId);
           if (vesselError) throw vesselError;
-          const { error: noteError } = await supabaseClient.from('wreck_abandoned_notes').insert({ vessel_id: state.editingId, note_text: noteText, created_by: null });
+          const { error: noteError } = await supabaseClient.from('wreck_abandoned_notes').insert({ vessel_id: state.editingId, note_text: noteText, created_by: authenticatedFirstName });
           if (noteError) throw noteError;
           state.selectedId = state.editingId;
           closeModal();
@@ -1764,7 +1767,7 @@
       if (idx === -1) return;
       const existing = state.records[idx];
       const notes = Array.isArray(existing.notes) ? [...existing.notes] : [];
-      notes.unshift({ text: noteText, createdAt: now });
+      notes.unshift({ text: noteText, createdAt: now, createdBy: authenticatedFirstName });
       state.records[idx] = withDerivedFields({ ...existing, lat: null, lon: null, deletedAt: now, notes });
       state.selectedId = existing.id;
       localPersistRecords();
@@ -1954,15 +1957,21 @@
     function oaDetail(){const r=oas.rows.find(x=>x.id===oas.id),h=el('oaDetail');if(!r){h.innerHTML='<div class="muted-box">Select a record.</div>';return}const it=(k,v,f='')=>`<div class="oa-item ${f}"><div class="oa-k">${k}</div><div class="oa-v">${escapeHtml(v||'-')}</div></div>`;h.innerHTML=`<div class="detail-top-row"><div><span class="oa-status ${r.disposed_date?'completed':'ready'}">${oast(r)}</span><div class="oa-detail-title">${escapeHtml(r.vessel_name)}</div></div><button id="oaEdit">Edit</button></div><div class="oa-grid">${it('Classification',r.type)}${it('Status',oast(r))}${it('Owner Details',r.owner,'full')}${it('Latitude',r.lat)}${it('Longitude',r.lon)}${it('Notified to HM',formatDate(r.notified_to_hm))}${it('Owner Approval Date',formatDate(r.owner_approval_date))}${it('Date Disposed of',formatDate(r.disposed_date))}<div class="oa-item full"><div class="oa-k">Photos</div>${r.photos.map(p=>`<img class="oa-photo" src="${p.url||''}" data-url="${p.url||''}">`).join('')||'<div class="oa-v">No photos</div>'}</div><div class="oa-item full"><div class="oa-k">Add Note</div><textarea id="oaNote" class="field"></textarea><button id="oaNoteAdd" class="primary">Add Note</button></div><div class="oa-item full"><div class="oa-k">Notes</div>${r.notes.map(n=>`<div class="note-item"><div class="note-item-meta">${formatDateTime(n.created_at)}</div>${escapeHtml(n.note_text)}</div>`).join('')||'<div class="oa-v">No notes</div>'}</div></div>`;el('oaEdit').onclick=()=>oaOpen(r);el('oaNoteAdd').onclick=()=>oaAddNote(r.id);h.querySelectorAll('[data-url]').forEach(x=>x.onclick=()=>window.open(x.dataset.url,'_blank','noopener'))}
     function oaOpen(r=null){oas.edit=r?.id||null;el('oaFormTitle').textContent=r?'Edit Owner Approved Record':'Add Owner Approved Record';el('oaName').value=r?.vessel_name||'';el('oaType').value=r?.type||'Abandoned';el('oaOwner').value=r?.owner||'';el('oaLat').value=r?.lat??'';el('oaLon').value=r?.lon??'';el('oaNotified').value=oad(r?.notified_to_hm);el('oaApproval').value=oad(r?.owner_approval_date)||todayForDateInput();el('oaDisposed').value=oad(r?.disposed_date);el('oaStatusView').value=r&&r.disposed_date?'Completed':'Ready to dispose';el('oaFiles').value='';el('oaDelete').classList.toggle('hidden',!r);el('oaFormBg').classList.remove('hidden')}
     async function oaSave(e){e.preventDefault();const disp=el('oaDisposed').value||null,p={vessel_name:el('oaName').value.trim(),type:el('oaType').value,owner:el('oaOwner').value.trim()||null,lat:el('oaLat').value===''?null:Number(el('oaLat').value),lon:el('oaLon').value===''?null:Number(el('oaLon').value),notified_to_hm:el('oaNotified').value||null,owner_approval_date:el('oaApproval').value,disposed_date:disp,status:disp?'completed':'ready_to_dispose'},q=oas.edit?await supabaseClient.from(OA).update(p).eq('id',oas.edit).select().single():await supabaseClient.from(OA).insert(p).select().single();if(q.error)throw q.error;for(const f of el('oaFiles').files){const path=`owner-approved/${q.data.id}/${Date.now()}-${makeRandomId()}-${sanitizeFileName(f.name)}`;const up=await supabaseClient.storage.from(SUPABASE_BUCKET).upload(path,f,{contentType:f.type,upsert:false});if(up.error)throw up.error;const db=await supabaseClient.from(OAP).insert({owner_approved_id:q.data.id,storage_path:path,original_filename:f.name,mime_type:f.type||null,file_size:f.size||null});if(db.error)throw db.error}oas.id=q.data.id;el('oaFormBg').classList.add('hidden');await oaLoad()}
-    async function oaAddNote(id){const x=el('oaNote'),t=x.value.trim();if(!t)return;const q=await supabaseClient.from(OAN).insert({owner_approved_id:id,note_text:t,created_by:null});if(q.error)return alert(q.error.message);await oaLoad()}
+    async function oaAddNote(id){const x=el('oaNote'),t=x.value.trim();if(!t)return;const q=await supabaseClient.from(OAN).insert({owner_approved_id:id,note_text:t,created_by:authenticatedFirstName});if(q.error)return alert(q.error.message);await oaLoad()}
     async function oaDelete(){const r=oas.rows.find(x=>x.id===oas.edit);if(!r||!confirm(`Delete ${r.vessel_name}?`))return;const ps=r.photos.map(x=>x.storage_path);if(ps.length){const q=await supabaseClient.storage.from(SUPABASE_BUCKET).remove(ps);if(q.error)return alert(q.error.message)}const q=await supabaseClient.from(OA).delete().eq('id',r.id);if(q.error)return alert(q.error.message);el('oaFormBg').classList.add('hidden');oas.id=null;await oaLoad()}
     function oaInit(){el('ownerApprovedBtn').onclick=async()=>{el('oaBg').classList.remove('hidden');document.body.style.overflow='hidden';try{await oaLoad()}catch(e){alert(e.message)}};el('oaClose').onclick=()=>{el('oaBg').classList.add('hidden');document.body.style.overflow=''};el('oaNew').onclick=()=>oaOpen();el('oaFormClose').onclick=()=>el('oaFormBg').classList.add('hidden');el('oaForm').onsubmit=e=>oaSave(e).catch(x=>alert(x.message));el('oaDelete').onclick=oaDelete;el('oaFrom').onchange=oaRender;el('oaTo').onchange=oaRender;el('oaClear').onclick=()=>{el('oaFrom').value='';el('oaTo').value='';oaRender()};el('oaDisposed').onchange=()=>el('oaStatusView').value=el('oaDisposed').value?'Completed':'Ready to dispose'}
     window.addEventListener('DOMContentLoaded',oaInit);
 
     (async function bootstrap() {
+      await initializeSupabase();
+      if (!supabaseClient) { location.replace(MAIN_LOGIN_URL); return; }
+      const { data: authData, error: authError } = await supabaseClient.auth.getSession();
+      if (authError || !authData?.session) { location.replace(MAIN_LOGIN_URL); return; }
+      authenticatedFirstName = authFirstName(authData.session.user?.email || '');
+      document.body.style.visibility = '';
+      supabaseClient.auth.onAuthStateChange((event, session) => { if (!session && event === 'SIGNED_OUT') location.replace(MAIN_LOGIN_URL); });
       initEvents();
       initMapResizeObserver();
-      await initializeSupabase();
       await initializeData();
       arrangeResponsiveLayout();
       scheduleMapResize();

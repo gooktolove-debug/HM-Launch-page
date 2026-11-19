@@ -100,7 +100,7 @@
       .access-actions button { width: 100%; }
     }
   </style></head>
-<body class="access-locked">
+<body class="access-locked" style="visibility:hidden">
 <div id="accessGate" role="dialog" aria-modal="true" aria-labelledby="accessTitle">
   <div class="access-card">
     <h2 id="accessTitle">Access Code Required</h2>
@@ -194,11 +194,13 @@
       }
     });
   }
-  initAccessGate();
   const SUPABASE_URL = 'https://wgwlnutnstrfuiiunlcu.supabase.co';
   const SUPABASE_ANON_KEY = 'sb_publishable_iC7kbinoy61_5eQCnrV25Q_OioA7Y1x';
   const PHOTO_SEARCH_URL = 'https://aucklandtransport.sharepoint.com/sites/ahmfs/PublishingImages/Forms/AllItems.aspx?id=%2Fsites%2Fahmfs%2FPublishingImages%2FBoat%20image&viewid=64a01bc5%2De980%2D457b%2D8a07%2De269d1c17c4e';
-  const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const MAIN_LOGIN_URL = 'https://gooktolove-debug.github.io/HM-Launch-page/';
+  const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession:true, autoRefreshToken:true, detectSessionInUrl:true } });
+  let authenticatedFirstName = 'user';
+  function authFirstName(email){ return (String(email||'').trim().split('@')[0].split('.')[0]||'user').trim().toLowerCase()||'user'; }
   const PHOTO_BUCKET = 'vessel-photos';
   const IMAGE_EXT = ['jpg','jpeg','png','gif','webp','bmp','heic'];
   const MOORING_RE = /^\s*([A-Za-z]{2}\d{2,3})(?![A-Za-z0-9])/;
@@ -521,6 +523,15 @@
   $('lightbox').addEventListener('click', e=>{ if(e.target.id==='lightbox') closeLightbox(); });
   let unknownFilterTimer=null;
   $('unknownSearch').addEventListener('input', ()=>{ clearTimeout(unknownFilterTimer); unknownFilterTimer=setTimeout(applyUnknownFilter, 180); });
+  async function bootstrapSharedOtp(){
+    const {data,error}=await supabaseClient.auth.getSession();
+    if(error||!data?.session){location.replace(MAIN_LOGIN_URL);return;}
+    authenticatedFirstName=authFirstName(data.session.user?.email||'');
+    document.body.style.visibility='';
+    initAccessGate();
+    supabaseClient.auth.onAuthStateChange((event,session)=>{if(!session&&event==='SIGNED_OUT')location.replace(MAIN_LOGIN_URL);});
+  }
+  bootstrapSharedOtp();
 </script>
 </body>
 </html>
