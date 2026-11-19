@@ -579,7 +579,7 @@ async function initialiseOperatorGate(){
   const authClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
   const {data,error}=await authClient.auth.getSession();
   if(error||!data?.session){location.replace(MAIN_LOGIN_URL);return;}
-  currentOperator=authFirstName(data.session.user?.email||'');updateOperatorUI();const shell=byId('appShell');if(shell)shell.style.display='';
+  currentOperator=authFirstName(data.session.user?.email||'');updateOperatorUI();const shell=byId('appShell');if(shell)shell.style.display='';requestAnimationFrame(()=>{requestAnimationFrame(()=>{if(window.map&&typeof window.map.invalidateSize==='function')window.map.invalidateSize(true);else if(typeof map!=='undefined'&&map&&typeof map.invalidateSize==='function')map.invalidateSize(true);});});
   authClient.auth.onAuthStateChange((event,session)=>{if(!session&&event==='SIGNED_OUT')location.replace(MAIN_LOGIN_URL)});
 }
 
@@ -603,7 +603,7 @@ function uuid(){return crypto.randomUUID?crypto.randomUUID():'xxxxxxxx-xxxx-4xxx
 async function initialiseSupabase(){
  try{
   const {data:ops,error}=await ROS_DB.from('ros_operators').select('initials').eq('is_active',true).order('sort_order');if(error)throw error;
-  if(ops?.length){const sel=$('operatorSelect'),current=sel.value;sel.innerHTML='<option value="" disabled>Select initials</option>'+ops.map(o=>`<option>${escapeHtml(o.initials)}</option>`).join('');if(current)sel.value=current}
+  if(ops?.length){const sel=$('operatorSelect');if(sel){const current=sel.value;sel.innerHTML='<option value="" disabled>Select initials</option>'+ops.map(o=>`<option>${escapeHtml(o.initials)}</option>`).join('');if(current)sel.value=current}}
   const {data:sites}=await ROS_DB.from('ros_sensitive_sites').select('*').eq('is_active',true).order('display_order');if(sites?.length){SENSITIVE_SITES.splice(0,SENSITIVE_SITES.length,...sites.map(x=>({code:x.site_code,name:x.site_name,page:x.pdf_start_page,group:x.site_group})))}
   await Promise.all([loadContactsFromSupabase(),loadDocumentUrls()]);
   rosReady=true;sbState('SUPABASE LIVE',true);subscribeGlobalRealtime();

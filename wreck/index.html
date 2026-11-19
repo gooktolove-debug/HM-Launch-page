@@ -506,8 +506,44 @@
 
   
 .oa-bg{position:fixed;inset:0;z-index:8000;background:rgba(2,10,18,.88);padding:16px}.oa-shell{height:calc(100dvh - 32px);max-width:1500px;margin:auto;background:#081b2d;border:1px solid var(--line);border-radius:18px;display:flex;flex-direction:column;overflow:hidden}.oa-head{padding:14px 16px;background:#0d263d;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:10px}.oa-title{font-size:21px;font-weight:850}.oa-tools{padding:12px 16px;border-bottom:1px solid var(--line)}.oa-filter{display:grid;grid-template-columns:1fr 1fr auto;gap:9px;align-items:end}.oa-counts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}.oa-count{padding:9px 11px;background:#0c2940;border:1px solid var(--line);border-radius:11px}.oa-count small{display:block;color:var(--muted)}.oa-count strong{font-size:21px}.oa-body{display:grid;grid-template-columns:minmax(340px,.8fr) minmax(500px,1.2fr);gap:12px;padding:12px;min-height:0;flex:1}.oa-pane{border:1px solid var(--line);border-radius:13px;background:#0b2136;overflow:auto;padding:10px}.oa-section{display:flex;justify-content:space-between;position:sticky;top:-10px;background:#0c2940;padding:9px;z-index:2}.oa-list{display:grid;gap:7px;margin:8px 0 14px}.oa-row{padding:10px;background:#102d46;border:1px solid var(--line);border-radius:10px;cursor:pointer}.oa-row.active,.oa-row:hover{border-color:#29d3c2}.oa-meta{font-size:11px;color:var(--muted);margin-top:4px}.oa-detail-title{font-size:24px;font-weight:850}.oa-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}.oa-item{padding:10px;background:#0c2940;border:1px solid var(--line);border-radius:10px}.oa-item.full{grid-column:1/-1}.oa-k{font-size:10px;color:var(--muted)}.oa-v{margin-top:4px;font-weight:700;white-space:pre-wrap}.oa-photo{width:120px;height:84px;object-fit:cover;border-radius:9px;margin:5px;cursor:pointer}.oa-form-bg{position:fixed;inset:0;z-index:9000;background:rgba(2,10,18,.82);display:flex;align-items:center;justify-content:center;padding:16px}.oa-form{width:min(760px,100%);max-height:94dvh;overflow:auto;background:#0b2136;border:1px solid var(--line);border-radius:16px;padding:16px}.oa-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.oa-form-grid .full{grid-column:1/-1}.oa-status{display:inline-flex;padding:5px 8px;border-radius:999px;font-size:11px;font-weight:800}.oa-status.completed{background:var(--completed-soft);color:#cbd5e1}.oa-status.ready{background:var(--ready-soft);color:#78efaa}#oaFrom,#oaTo,#oaApproval,#oaDisposed{color-scheme:dark} @media(max-width:760px){.oa-bg{padding:0}.oa-shell{height:100dvh;border:0;border-radius:0}.oa-body{grid-template-columns:1fr;overflow:auto}.oa-pane{min-height:410px}.oa-filter{grid-template-columns:1fr 1fr}.oa-filter button{grid-column:1/-1}.oa-form-grid{grid-template-columns:1fr}.oa-form-grid .full{grid-column:auto}.oa-form-bg{padding:0}.oa-form{height:100dvh;max-height:none;border-radius:0}}
+
+      /* Wreck access-code gate, shown only after shared OTP succeeds */
+      body.access-locked > .container,
+      body.access-locked > #oaBg,
+      body.access-locked > #oaFormBg,
+      body.access-locked > #vesselModalBackdrop,
+      body.access-locked > #lightboxBackdrop { display:none !important; }
+      #wreckAccessGate{position:fixed;inset:0;z-index:12000;display:none;align-items:center;justify-content:center;padding:18px;background:radial-gradient(circle at 75% 0,rgba(31,132,183,.28),transparent 34rem),linear-gradient(135deg,#06111f,#0d263d)}
+      body.access-locked #wreckAccessGate{display:flex}
+      .wreck-access-card{width:min(430px,100%);padding:26px;border:1px solid rgba(149,190,219,.22);border-radius:20px;background:linear-gradient(145deg,#0e263d,#081929);box-shadow:0 28px 80px rgba(0,0,0,.48);color:#eaf5ff}
+      .wreck-access-kicker{color:#61f4e5;font-size:11px;font-weight:850;letter-spacing:.14em;text-transform:uppercase}
+      .wreck-access-card h2{margin:9px 0 7px;font-size:25px;color:#eaf5ff}
+      .wreck-access-card p{margin:0 0 18px;color:#8fa8bd;font-size:14px;line-height:1.5}
+      .wreck-access-card label{display:block;margin-bottom:7px;color:#c7dfec;font-size:12px;font-weight:750}
+      .wreck-access-actions{display:flex;gap:9px;align-items:center}
+      .wreck-access-actions input{flex:1;min-width:0;height:46px;border:1px solid rgba(149,190,219,.28);border-radius:12px;padding:0 13px;background:#071b2d;color:#eaf5ff;font-size:16px;outline:none}
+      .wreck-access-actions input:focus{border-color:#29d3c2;box-shadow:0 0 0 4px rgba(41,211,194,.10)}
+      .wreck-access-actions button{height:46px;min-width:96px;background:linear-gradient(135deg,#178c88,#0d6a71);border-color:#29d3c2;color:#fff}
+      .wreck-access-error{min-height:20px;margin-top:10px;color:#ff827b;font-size:13px;font-weight:700}
+      @media(max-width:520px){.wreck-access-card{padding:21px}.wreck-access-actions{flex-direction:column}.wreck-access-actions input,.wreck-access-actions button{width:100%}}
 </style></head>
-<body style="visibility:hidden">
+<body class="access-locked" style="visibility:hidden">
+    <div id="wreckAccessGate" role="dialog" aria-modal="true" aria-labelledby="wreckAccessTitle">
+      <div class="wreck-access-card">
+        <div class="wreck-access-kicker">Auckland Harbourmaster</div>
+        <h2 id="wreckAccessTitle">Wreck Access</h2>
+        <p>OTP authentication confirmed. Enter the Wreck access code to continue.</p>
+        <form id="wreckAccessForm">
+          <label for="wreckAccessCode">Access code</label>
+          <div class="wreck-access-actions">
+            <input id="wreckAccessCode" type="password" autocomplete="off" placeholder="Enter access code" />
+            <button type="submit">Unlock</button>
+          </div>
+          <div id="wreckAccessError" class="wreck-access-error" aria-live="polite"></div>
+        </form>
+      </div>
+    </div>
+
   <div class="container">
     <div class="header">
       <div class="brand-block">
@@ -790,6 +826,36 @@
       const MAIN_LOGIN_URL = 'https://gooktolove-debug.github.io/HM-Launch-page/';
       let authenticatedFirstName = 'user';
       function authFirstName(email) { return (String(email || '').trim().split('@')[0].split('.')[0] || 'user').trim().toLowerCase() || 'user'; }
+        const ACCESS_FUNCTION_URL = 'https://wgwlnutnstrfuiiunlcu.supabase.co/functions/v1/hyper-responder';
+        const ACCESS_APP_NAME = 'Wreck';
+        const ACCESS_SESSION_KEY = 'wreckAccessSession';
+        const ACCESS_SESSION_DURATION_MS = 8 * 60 * 60 * 1000;
+        function hasValidWreckAccessSession(){
+          try { const raw=sessionStorage.getItem(ACCESS_SESSION_KEY); if(!raw)return false; const item=JSON.parse(raw); if(item.granted!==true||typeof item.expiresAt!=='number'||Date.now()>=item.expiresAt){sessionStorage.removeItem(ACCESS_SESSION_KEY);return false} return true; }
+          catch(error){sessionStorage.removeItem(ACCESS_SESSION_KEY);return false}
+        }
+        function saveWreckAccessSession(){sessionStorage.setItem(ACCESS_SESSION_KEY,JSON.stringify({granted:true,expiresAt:Date.now()+ACCESS_SESSION_DURATION_MS}))}
+        async function verifyWreckAccessCode(code){
+          const controller=new AbortController(); const timer=setTimeout(()=>controller.abort(),10000);
+          try { const response=await fetch(ACCESS_FUNCTION_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({app:ACCESS_APP_NAME,code}),signal:controller.signal}); const payload=await response.json().catch(()=>({})); if(!response.ok)throw new Error(payload.error||`Verification failed (${response.status})`); return payload; }
+          finally { clearTimeout(timer); }
+        }
+        function requireWreckAccessCode(){
+          return new Promise(resolve=>{
+            if(hasValidWreckAccessSession()){document.body.classList.remove('access-locked');resolve(true);return;}
+            sessionStorage.removeItem(ACCESS_SESSION_KEY);
+            const form=document.getElementById('wreckAccessForm'),input=document.getElementById('wreckAccessCode'),errorBox=document.getElementById('wreckAccessError'),button=form.querySelector('button[type="submit"]');
+            setTimeout(()=>input.focus(),60);
+            form.addEventListener('submit',async event=>{
+              event.preventDefault(); const code=(input.value||'').trim();
+              if(code.length<8){errorBox.textContent='Please enter a valid access code.';input.focus();return;}
+              errorBox.style.color='#8fa8bd';errorBox.textContent='Checking access code...';input.disabled=true;button.disabled=true;button.textContent='Checking...';
+              try { const result=await verifyWreckAccessCode(code); if(result.valid){saveWreckAccessSession();document.body.classList.remove('access-locked');errorBox.textContent='';input.value='';resolve(true);return;} errorBox.style.color='#ff827b';errorBox.textContent='Incorrect access code. Please try again.';input.value=''; }
+              catch(error){console.error('Wreck access verification failed:',error);errorBox.style.color='#ff827b';errorBox.textContent=error.name==='AbortError'?'The request timed out. Please try again.':'Unable to verify access. Please try again.';}
+              finally {input.disabled=false;button.disabled=false;button.textContent='Unlock';input.focus();}
+            });
+          });
+        }
 
     const state = {
       records: [],
@@ -1970,6 +2036,7 @@
       authenticatedFirstName = authFirstName(authData.session.user?.email || '');
       document.body.style.visibility = '';
       supabaseClient.auth.onAuthStateChange((event, session) => { if (!session && event === 'SIGNED_OUT') location.replace(MAIN_LOGIN_URL); });
+      await requireWreckAccessCode();
       initEvents();
       initMapResizeObserver();
       await initializeData();
