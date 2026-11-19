@@ -959,6 +959,24 @@ function openWreckPage(){window.open('./wreck/','_blank','noopener,noreferrer');
   const AUTH_KEY='sb_publishable_iC7kbinoy61_5eQCnrV25Q_OioA7Y1x';
   const $=id=>document.getElementById(id);
   const client=window.supabase.createClient(AUTH_URL,AUTH_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+  async function updateUserActivity(session){
+    try{
+      const user=session?.user;
+      if(!user?.id||!user?.email)return;
+      const metadata=user.user_metadata||{};
+      const emailName=String(user.email).split('@')[0].split(/[._-]+/)[0];
+      const displayName=metadata.first_name||metadata.display_name||metadata.full_name||metadata.name||(emailName?emailName.charAt(0).toUpperCase()+emailName.slice(1):user.email);
+      const {error}=await client.from('user_activity').upsert({
+        user_id:user.id,
+        email:user.email,
+        display_name:displayName,
+        last_seen:new Date().toISOString()
+      },{onConflict:'user_id'});
+      if(error)console.error('User activity update failed:',error);
+    }catch(error){
+      console.error('User activity update failed:',error);
+    }
+  }
   let authEmail='';
   let appScriptPromise=null;
   function loadMainApplication(){
@@ -997,6 +1015,7 @@ function openWreckPage(){window.open('./wreck/','_blank','noopener,noreferrer');
     if(error||!data?.session){console.error('OTP verification error:',error);$('mainAuthMessage').textContent='The code is incorrect or has expired. Request a new code and try again.';return}
   }
   async function showApplication(session){
+    await updateUserActivity(session);
     $('mainAuthScreen').classList.add('auth-hidden');
     $('mainAppShell').classList.remove('auth-app-hidden');
     
