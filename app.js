@@ -538,7 +538,7 @@ document.getElementById('legalQuery')?.addEventListener('keydown',e=>{if((e.ctrl
 const WRECK_SUPABASE_URL=SUPABASE_URL;
 const WRECK_SUPABASE_KEY=SUPABASE_KEY;
 const WRECK_TABLE='wreck_abandoned_vessels';
-function openWreckPage(){window.open('https://gooktolove-debug.github.io/HM-wreck-abandoned/','_blank','noopener')}
+function openWreckPage(){window.open('./wreck/','_blank','noopener,noreferrer')}
 async function fetchWreckAbandonedCounts(){
  const query=WRECK_TABLE+'?select=type&deleted_at=is.null&limit=1000';
  const response=await fetch(WRECK_SUPABASE_URL+'/rest/v1/'+query,{
