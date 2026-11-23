@@ -283,7 +283,8 @@ const MAIN_LOGIN_URL='https://gooktolove-debug.github.io/HM-Launch-page/';
 const sb=window.supabase.createClient('https://wgwlnutnstrfuiiunlcu.supabase.co','sb_publishable_iC7kbinoy61_5eQCnrV25Q_OioA7Y1x',{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
 const {data:sharedAuthData,error:sharedAuthError}=await sb.auth.getSession();
 if(sharedAuthError||!sharedAuthData?.session){location.replace(MAIN_LOGIN_URL);throw new Error('OTP session required');}
-const authenticatedFirstName=((sharedAuthData.session.user?.email||'').trim().split('@')[0].split('.')[0]||'user').toLowerCase();
+const authenticatedUserId=sharedAuthData.session.user?.id||null;
+if(!authenticatedUserId){location.replace(MAIN_LOGIN_URL);throw new Error('Authenticated user ID required');}
 document.body.style.visibility='';
 sb.auth.onAuthStateChange((event,session)=>{if(!session&&event==='SIGNED_OUT')location.replace(MAIN_LOGIN_URL);});
 const V=['HM3','HM4','HM5','HM6','HM7','HM8','HM9','HM10'];
@@ -471,7 +472,7 @@ async function verifyAccessCode(code){
   try{
     const response=await fetch(ACCESS_FUNCTION_URL,{
       method:'POST',
-      headers:{'Content-Type':'application/json'},
+      headers:{'Content-Type':'application/json','apikey':'sb_publishable_iC7kbinoy61_5eQCnrV25Q_OioA7Y1x','Authorization':'Bearer '+sharedAuthData.session.access_token},
       body:JSON.stringify({app:ACCESS_APP_NAME,code}),
       signal:controller.signal
     });
