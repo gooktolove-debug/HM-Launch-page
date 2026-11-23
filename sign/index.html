@@ -463,7 +463,6 @@
       const [lightboxOffset, setLightboxOffset] = useState({ x: 0, y: 0 });
 
       const [showPanel, setShowPanel] = useState(false);
-      const [draftState, setDraftState] = useState(null);
 
       const mapRef = useRef(null);
       const mapInstanceRef = useRef(null);
@@ -570,38 +569,8 @@
         setSelectedFile(null);
       }
 
-      function hasUnsavedDraft() {
-        return !!(tempCoords || comment || selectedImage || selectedFile);
-      }
-
-      function stashCurrentDraft() {
-        if (!hasUnsavedDraft()) return false;
-        setDraftState({
-          tempCoords,
-          comment,
-          selectedImage,
-          selectedFile,
-        });
-        return true;
-      }
-
-      function restoreDraft() {
-        if (!draftState) return;
-        setSelectedLocation(null);
-        setTempCoords(draftState.tempCoords || null);
-        setComment(draftState.comment || '');
-        setSelectedImage(draftState.selectedImage || null);
-        setSelectedFile(draftState.selectedFile || null);
-        setIsAddingMode(true);
-        setShowPanel(true);
-        setDraftState(null);
-      }
-
       function handleBackToMap() {
-        if (isAddingMode) {
-          stashCurrentDraft();
-          clearComposer();
-        }
+        if (isAddingMode) clearComposer({ revokePreview: true });
         setShowPanel(false);
       }
 
@@ -612,9 +581,8 @@
       }
 
       function openPinPanel(markerData) {
-        if (hasUnsavedDraft()) {
-          stashCurrentDraft();
-          clearComposer();
+        if (isAddingMode || tempCoords || comment || selectedImage || selectedFile) {
+          clearComposer({ revokePreview: true });
         }
         setSelectedLocation(markerData);
         setShowPanel(true);
@@ -1171,7 +1139,6 @@
         setComment('');
         setSelectedImage(null);
         setSelectedFile(null);
-        setDraftState(null);
         setShowPanel(false);
         setIsUploading(false);
       };
@@ -1496,43 +1463,6 @@
                     <Icons.Send size={18} />
                   </button>
                 </div>
-              </div>
-            </div>
-          )}
-
-          {!showPanel && (selectedLocation || draftState) && (
-            <div className="absolute bottom-4 left-4 right-4 z-[7000] flex flex-col sm:flex-row gap-2 pointer-events-none ui-layer">
-              <div className="flex flex-col sm:flex-row gap-2 pointer-events-auto ui-content">
-                {draftState && (
-                  <button
-                    type="button"
-                    onClick={restoreDraft}
-                    className="bg-blue-600 text-white px-4 py-3 rounded-2xl shadow-lg hover:bg-blue-700 transition font-semibold text-sm"
-                  >
-                    Return to draft
-                  </button>
-                )}
-
-                {selectedLocation && (
-                  <button
-                    type="button"
-                    onClick={() => setShowPanel(true)}
-                    className="bg-white/95 backdrop-blur-sm text-gray-800 px-4 py-3 rounded-2xl shadow-lg hover:bg-gray-100 transition font-semibold text-sm border"
-                  >
-                    Back to pin
-                  </button>
-                )}
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSelectedLocation(null);
-                    setDraftState(null);
-                  }}
-                  className="bg-white/95 backdrop-blur-sm text-gray-600 px-4 py-3 rounded-2xl shadow-lg hover:bg-gray-100 transition font-semibold text-sm border"
-                >
-                  Clear hidden screen
-                </button>
               </div>
             </div>
           )}
