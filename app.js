@@ -50,7 +50,15 @@ loadTides();
 const REST_BASE=SUPABASE_URL+'/rest/v1/';
 const REST_HEADERS={apikey:SUPABASE_KEY,Authorization:'Bearer '+SUPABASE_KEY,'Content-Type':'application/json'};
 let rosterMembers=[], editorAssignments=[];
-async function rest(path,options={}){const r=await fetch(REST_BASE+path,{...options,headers:{...REST_HEADERS,...(options.headers||{})}});if(!r.ok)throw new Error((await r.text())||('HTTP '+r.status));if(r.status===204)return null;const t=await r.text();return t?JSON.parse(t):null}
+async function rest(path,options={}){
+ const sessionResult=await window.hmSupabaseClient?.auth?.getSession?.();
+ const accessToken=sessionResult?.data?.session?.access_token;
+ if(!accessToken)throw new Error('Your signed-in session is unavailable. Please sign in again.');
+ const r=await fetch(REST_BASE+path,{...options,headers:{...REST_HEADERS,Authorization:'Bearer '+accessToken,...(options.headers||{})}});
+ if(!r.ok)throw new Error((await r.text())||('HTTP '+r.status));
+ if(r.status===204)return null;
+ const t=await r.text();return t?JSON.parse(t):null;
+}
 function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 async function loadMembers(){rosterMembers=await rest('roster_members?select=*&order=display_order.asc.nullslast,full_name.asc');return rosterMembers}
 async function fetchRosterDay(d){return rest('roster_days?roster_date=eq.'+d+'&select=roster_date,day_note,roster_assignments(id,team_no,assignment_role,is_present,absence_reason,note,source,member_id,roster_members(full_name,role,member_group))');}

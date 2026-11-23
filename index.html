@@ -959,6 +959,7 @@ function openWreckPage(){window.open('./wreck/','_blank','noopener,noreferrer');
   const AUTH_KEY='sb_publishable_iC7kbinoy61_5eQCnrV25Q_OioA7Y1x';
   const $=id=>document.getElementById(id);
   const client=window.supabase.createClient(AUTH_URL,AUTH_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+  window.hmSupabaseClient=client;
   async function updateUserActivity(session){
     try{
       const user=session?.user;
@@ -981,7 +982,7 @@ function openWreckPage(){window.open('./wreck/','_blank','noopener,noreferrer');
   let appScriptPromise=null;
   function loadMainApplication(){
     if(appScriptPromise)return appScriptPromise;
-    appScriptPromise=new Promise((resolve,reject)=>{const s=document.createElement('script');s.src='./app.js?v=otp-1';s.onload=resolve;s.onerror=()=>reject(new Error('The main application could not be loaded.'));document.body.appendChild(s)});
+    appScriptPromise=new Promise((resolve,reject)=>{const s=document.createElement('script');s.src='./app%201.js?v=otp-2';s.onload=resolve;s.onerror=()=>reject(new Error('The main application could not be loaded.'));document.body.appendChild(s)});
     return appScriptPromise;
   }
   function setBusy(busy,message=''){
