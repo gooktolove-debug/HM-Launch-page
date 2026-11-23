@@ -525,7 +525,12 @@
       .wreck-access-actions input:focus{border-color:#29d3c2;box-shadow:0 0 0 4px rgba(41,211,194,.10)}
       .wreck-access-actions button{height:46px;min-width:96px;background:linear-gradient(135deg,#178c88,#0d6a71);border-color:#29d3c2;color:#fff}
       .wreck-access-error{min-height:20px;margin-top:10px;color:#ff827b;font-size:13px;font-weight:700}
-      @media(max-width:520px){.wreck-access-card{padding:21px}.wreck-access-actions{flex-direction:column}.wreck-access-actions input,.wreck-access-actions button{width:100%}}
+      @media(max-width:520px){
+.wreck-access-card{width:100%;max-width:430px;padding:21px;box-sizing:border-box}
+.wreck-access-actions{display:grid;grid-template-columns:1fr;gap:10px;width:100%;align-items:stretch}
+.wreck-access-actions input,.wreck-access-actions button{display:block;width:100%;min-width:0;height:46px;box-sizing:border-box;margin:0}
+.wreck-access-actions button{padding:0 14px}
+}
 </style></head>
 <body class="access-locked" style="visibility:hidden">
     <div id="wreckAccessGate" role="dialog" aria-modal="true" aria-labelledby="wreckAccessTitle">
