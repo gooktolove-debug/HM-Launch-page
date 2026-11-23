@@ -982,7 +982,7 @@ function openWreckPage(){window.open('./wreck/','_blank','noopener,noreferrer');
   let appScriptPromise=null;
   function loadMainApplication(){
     if(appScriptPromise)return appScriptPromise;
-    appScriptPromise=new Promise((resolve,reject)=>{const s=document.createElement('script');s.src='./app%201.js?v=otp-2';s.onload=resolve;s.onerror=()=>reject(new Error('The main application could not be loaded.'));document.body.appendChild(s)});
+    appScriptPromise=new Promise((resolve,reject)=>{const s=document.createElement('script');s.src='./app%202.js?v=otp-3';s.onload=resolve;s.onerror=()=>reject(new Error('The main application could not be loaded.'));document.body.appendChild(s)});
     return appScriptPromise;
   }
   function setBusy(busy,message=''){

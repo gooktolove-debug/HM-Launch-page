@@ -48,13 +48,21 @@ loadTides();
 
 // ===== Supabase roster management =====
 const REST_BASE=SUPABASE_URL+'/rest/v1/';
-const REST_HEADERS={apikey:SUPABASE_KEY,Authorization:'Bearer '+SUPABASE_KEY,'Content-Type':'application/json'};
+const REST_HEADERS={apikey:SUPABASE_KEY,'Content-Type':'application/json'};
 let rosterMembers=[], editorAssignments=[];
-async function rest(path,options={}){
+async function getSignedInAccessToken(){
  const sessionResult=await window.hmSupabaseClient?.auth?.getSession?.();
  const accessToken=sessionResult?.data?.session?.access_token;
  if(!accessToken)throw new Error('Your signed-in session is unavailable. Please sign in again.');
- const r=await fetch(REST_BASE+path,{...options,headers:{...REST_HEADERS,Authorization:'Bearer '+accessToken,...(options.headers||{})}});
+ return accessToken;
+}
+async function signedInHeaders(extra={}){
+ const accessToken=await getSignedInAccessToken();
+ return {apikey:SUPABASE_KEY,Authorization:'Bearer '+accessToken,...extra};
+}
+async function rest(path,options={}){
+ const headers=await signedInHeaders({...REST_HEADERS,...(options.headers||{})});
+ const r=await fetch(REST_BASE+path,{...options,headers});
  if(!r.ok)throw new Error((await r.text())||('HTTP '+r.status));
  if(r.status===204)return null;
  const t=await r.text();return t?JSON.parse(t):null;
@@ -140,7 +148,7 @@ function closeRosterManagement(){if(rosterSaveInProgress)return;if(rosterEditMod
 function toggleRosterEdit(){if(rosterEditMode){saveRosterDraft();return}if(rosterAccessVerified){beginRosterDraft();return}const input=document.getElementById('rosterAccessCode'),status=document.getElementById('accessCodeStatus');if(input){input.value='';input.type='password'}if(status){status.textContent='';status.className='access-code-status'}openModal('accessCodeModal');setTimeout(()=>input?.focus(),50)}
 function cancelAccessCode(){closeModal('accessCodeModal');const input=document.getElementById('rosterAccessCode');if(input)input.value=''}
 function toggleAccessCodeVisibility(){const input=document.getElementById('rosterAccessCode');if(!input)return;input.type=input.type==='password'?'text':'password';input.focus()}
-async function verifyRosterAccess(event){event.preventDefault();const input=document.getElementById('rosterAccessCode'),status=document.getElementById('accessCodeStatus'),btn=document.getElementById('accessCodeSubmit'),code=input.value.trim();if(!code){status.textContent='Enter the access code.';status.className='access-code-status error';input.focus();return}btn.disabled=true;btn.textContent='Verifying...';status.textContent='Checking access code...';status.className='access-code-status';try{const response=await fetch(VERIFY_ACCESS_URL,{method:'POST',mode:'cors',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify({app:'roster',code:code})});const raw=await response.text();let data={};try{data=raw?JSON.parse(raw):{}}catch(_){data={message:raw}}const explicitlyDenied=data.valid===false||data.verified===false||data.authorized===false||data.success===false||data.allowed===false||data.ok===false||data.access===false||data.denied===true;if(!response.ok||explicitlyDenied){const serverMessage=data.message||data.error||data.detail||raw||'Access denied.';throw new Error('HTTP '+response.status+': '+serverMessage)};rosterAccessVerified=true;status.textContent='Access verified.';status.className='access-code-status success';input.value='';closeModal('accessCodeModal');beginRosterDraft()}catch(error){rosterAccessVerified=false;status.textContent=error.message||'Access verification failed. Please try again.';status.className='access-code-status error';input.select()}finally{btn.disabled=false;btn.textContent='Verify & Edit'}}
+async function verifyRosterAccess(event){event.preventDefault();const input=document.getElementById('rosterAccessCode'),status=document.getElementById('accessCodeStatus'),btn=document.getElementById('accessCodeSubmit'),code=input.value.trim();if(!code){status.textContent='Enter the access code.';status.className='access-code-status error';input.focus();return}btn.disabled=true;btn.textContent='Verifying...';status.textContent='Checking access code...';status.className='access-code-status';try{const response=await fetch(VERIFY_ACCESS_URL,{method:'POST',mode:'cors',headers:await signedInHeaders({'Content-Type':'application/json','Accept':'application/json'}),body:JSON.stringify({app:'roster',code:code})});const raw=await response.text();let data={};try{data=raw?JSON.parse(raw):{}}catch(_){data={message:raw}}const explicitlyDenied=data.valid===false||data.verified===false||data.authorized===false||data.success===false||data.allowed===false||data.ok===false||data.access===false||data.denied===true;if(!response.ok||explicitlyDenied){const serverMessage=data.message||data.error||data.detail||raw||'Access denied.';throw new Error('HTTP '+response.status+': '+serverMessage)};rosterAccessVerified=true;status.textContent='Access verified.';status.className='access-code-status success';input.value='';closeModal('accessCodeModal');beginRosterDraft()}catch(error){rosterAccessVerified=false;status.textContent=error.message||'Access verification failed. Please try again.';status.className='access-code-status error';input.select()}finally{btn.disabled=false;btn.textContent='Verify & Edit'}}
 function dateHeaderClick(date){return}
 function crewCellState(cell){if(cell.classList.contains('crew-on'))return 'green';if(cell.classList.contains('crew-off'))return 'red';if(cell.classList.contains('absent'))return 'beige';return 'white'}
 function nextCrewCellState(state){return state==='green'?'red':state==='red'?'beige':state==='beige'?'white':'green'}
@@ -406,7 +414,7 @@ const CONTACT_VERIFY_ACCESS_URL='https://wgwlnutnstrfuiiunlcu.supabase.co/functi
 function startContactEdit(){const input=document.getElementById('contactAccessCode'),status=document.getElementById('contactAccessStatus');input.value='';input.type='password';status.textContent='';status.className='access-code-status';openModal('contactAccessModal');setTimeout(()=>input.focus(),50)}
 function cancelContactAccess(){closeModal('contactAccessModal');const input=document.getElementById('contactAccessCode');if(input)input.value=''}
 function toggleContactAccessVisibility(){const input=document.getElementById('contactAccessCode');if(!input)return;input.type=input.type==='password'?'text':'password';input.focus()}
-async function verifyContactAccess(event){event.preventDefault();const input=document.getElementById('contactAccessCode'),status=document.getElementById('contactAccessStatus'),btn=document.getElementById('contactAccessSubmit'),code=input.value.trim();if(!code){status.textContent='Enter the access code.';status.className='access-code-status error';input.focus();return}btn.disabled=true;btn.textContent='Verifying...';status.textContent='Checking access code...';status.className='access-code-status';try{const response=await fetch(CONTACT_VERIFY_ACCESS_URL,{method:'POST',mode:'cors',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify({app:'contact_edit',code})});const raw=await response.text();let data={};try{data=raw?JSON.parse(raw):{}}catch(_){data={message:raw}}const denied=data.valid===false||data.verified===false||data.authorized===false||data.success===false||data.allowed===false||data.ok===false||data.access===false||data.denied===true;if(!response.ok||denied)throw new Error(data.message||data.error||data.detail||raw||'Access denied.');input.value='';closeModal('contactAccessModal');contactSnapshot=JSON.stringify(contactRows);contactEditing=true;syncContactMode();renderContacts();document.getElementById('contactStatus').textContent='Edit access verified'}catch(error){status.textContent=error.message||'Access verification failed.';status.className='access-code-status error';input.select()}finally{btn.disabled=false;btn.textContent='Verify & Edit'}}
+async function verifyContactAccess(event){event.preventDefault();const input=document.getElementById('contactAccessCode'),status=document.getElementById('contactAccessStatus'),btn=document.getElementById('contactAccessSubmit'),code=input.value.trim();if(!code){status.textContent='Enter the access code.';status.className='access-code-status error';input.focus();return}btn.disabled=true;btn.textContent='Verifying...';status.textContent='Checking access code...';status.className='access-code-status';try{const response=await fetch(CONTACT_VERIFY_ACCESS_URL,{method:'POST',mode:'cors',headers:await signedInHeaders({'Content-Type':'application/json','Accept':'application/json'}),body:JSON.stringify({app:'contact_edit',code})});const raw=await response.text();let data={};try{data=raw?JSON.parse(raw):{}}catch(_){data={message:raw}}const denied=data.valid===false||data.verified===false||data.authorized===false||data.success===false||data.allowed===false||data.ok===false||data.access===false||data.denied===true;if(!response.ok||denied)throw new Error(data.message||data.error||data.detail||raw||'Access denied.');input.value='';closeModal('contactAccessModal');contactSnapshot=JSON.stringify(contactRows);contactEditing=true;syncContactMode();renderContacts();document.getElementById('contactStatus').textContent='Edit access verified'}catch(error){status.textContent=error.message||'Access verification failed.';status.className='access-code-status error';input.select()}finally{btn.disabled=false;btn.textContent='Verify & Edit'}}
 
 
 // ===== MAYDAY Harbourmaster Team group call =====
@@ -548,17 +556,7 @@ const WRECK_SUPABASE_KEY=SUPABASE_KEY;
 const WRECK_TABLE='wreck_abandoned_vessels';
 function openWreckPage(){window.open('./wreck/','_blank','noopener,noreferrer')}
 async function fetchWreckAbandonedCounts(){
- const query=WRECK_TABLE+'?select=type&deleted_at=is.null&limit=1000';
- const response=await fetch(WRECK_SUPABASE_URL+'/rest/v1/'+query,{
-  cache:'no-store',
-  headers:{
-   apikey:WRECK_SUPABASE_KEY,
-   Authorization:'Bearer '+WRECK_SUPABASE_KEY,
-   Accept:'application/json'
-  }
- });
- if(!response.ok)throw new Error((await response.text())||('HTTP '+response.status));
- const active=await response.json();
+ const active=await rest(WRECK_TABLE+'?select=type&deleted_at=is.null&limit=1000');
  return{
   available:true,
   wreck:active.filter(row=>row.type==='Wreck').length,
