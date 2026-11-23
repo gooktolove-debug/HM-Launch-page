@@ -186,7 +186,22 @@ h1:after{content:"AUCKLAND HARBOURMASTER";display:block;margin-top:7px;color:#8f
       if(!isMobile())document.body.classList.remove("mobile-full-map");
       setTimeout(()=>{if(s.map)s.map.invalidateSize()},80)
     });
-    $("locateBtn").onclick=locate;if($("locateTop"))$("locateTop").onclick=locate;$("closeHistory").onclick=()=>$("historyModal").style.display="none";$("historyModal").onclick=e=>{if(e.target===$("historyModal"))$("historyModal").style.display="none"};$("closePhoto").onclick=closePhotoModal;$("photoModal").onclick=e=>{if(e.target===$("photoModal"))closePhotoModal()};$("zoomIn").onclick=()=>setPhotoZoom(photoZoom+.25);$("zoomOut").onclick=()=>setPhotoZoom(photoZoom-.25);$("zoomReset").onclick=()=>setPhotoZoom(1);$("photoViewer").ondblclick=()=>setPhotoZoom(photoZoom>1.01?1:2);$("photoViewer").addEventListener("wheel",e=>{if($("photoModal").style.display!=="flex")return;e.preventDefault();setPhotoZoom(photoZoom+(e.deltaY<0?.15:-.15))},{passive:false});document.addEventListener("keydown",e=>{if($("photoModal").style.display==="flex"){if(e.key==="Escape")closePhotoModal();if(e.key==="+"||e.key==="=")setPhotoZoom(photoZoom+.25);if(e.key==="-"||e.key==="_")setPhotoZoom(photoZoom-.25);if(e.key==="0")setPhotoZoom(1);return}if(e.key==="Escape"&&document.body.classList.contains("detail-modal-open"))closeDetailModal()});$("detail").addEventListener("click",e=>{if(isMobile()&&e.target===$("detail"))closeDetailModal()});async function initialiseAuthentication(){const {data,error}=await db.auth.getSession();if(error||!data?.session){redirectToMainLogin();return;}currentAuthName=authNameFromEmail(data.session.user?.email||'');document.body.style.visibility='';initMap();setMobileFullMap(isMobile());await loadData();db.auth.onAuthStateChange((event,session)=>{if(!session&&event==='SIGNED_OUT')redirectToMainLogin();});}initialiseAuthentication();
+    $("locateBtn").onclick=locate;if($("locateTop"))$("locateTop").onclick=locate;$("closeHistory").onclick=()=>$("historyModal").style.display="none";$("historyModal").onclick=e=>{if(e.target===$("historyModal"))$("historyModal").style.display="none"};$("closePhoto").onclick=closePhotoModal;$("photoModal").onclick=e=>{if(e.target===$("photoModal"))closePhotoModal()};$("zoomIn").onclick=()=>setPhotoZoom(photoZoom+.25);$("zoomOut").onclick=()=>setPhotoZoom(photoZoom-.25);$("zoomReset").onclick=()=>setPhotoZoom(1);$("photoViewer").ondblclick=()=>setPhotoZoom(photoZoom>1.01?1:2);$("photoViewer").addEventListener("wheel",e=>{if($("photoModal").style.display!=="flex")return;e.preventDefault();setPhotoZoom(photoZoom+(e.deltaY<0?.15:-.15))},{passive:false});document.addEventListener("keydown",e=>{if($("photoModal").style.display==="flex"){if(e.key==="Escape")closePhotoModal();if(e.key==="+"||e.key==="=")setPhotoZoom(photoZoom+.25);if(e.key==="-"||e.key==="_")setPhotoZoom(photoZoom-.25);if(e.key==="0")setPhotoZoom(1);return}if(e.key==="Escape"&&document.body.classList.contains("detail-modal-open"))closeDetailModal()});$("detail").addEventListener("click",e=>{if(isMobile()&&e.target===$("detail"))closeDetailModal()});
+  async function recordOtpPageVisit(session){
+    if(!session?.user?.id)return;
+    const email=session.user.email||'';
+    const metadata=session.user.user_metadata||{};
+    const displayName=metadata.display_name||metadata.full_name||email.split('@')[0].split('.')[0]||'User';
+    try{
+      const {error}=await db.from('user_activity').upsert({
+        user_id:session.user.id,email,display_name:displayName,
+        last_seen:new Date().toISOString(),last_page_key:'emergency-mooring',
+        last_page_name:'Emergency Mooring Board',last_page_path:window.location.pathname
+      },{onConflict:'user_id'});
+      if(error)console.error('Page activity update failed:',error);
+    }catch(error){console.error('Page activity update failed:',error);}
+  }
+async function initialiseAuthentication(){const {data,error}=await db.auth.getSession();if(error||!data?.session){redirectToMainLogin();return;}await recordOtpPageVisit(data.session);currentAuthName=authNameFromEmail(data.session.user?.email||'');document.body.style.visibility='';initMap();setMobileFullMap(isMobile());await loadData();db.auth.onAuthStateChange((event,session)=>{if(!session&&event==='SIGNED_OUT')redirectToMainLogin();});}initialiseAuthentication();
   </script>
 </body>
 </html>

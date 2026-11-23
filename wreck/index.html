@@ -2026,11 +2026,31 @@
     function oaInit(){el('ownerApprovedBtn').onclick=async()=>{el('oaBg').classList.remove('hidden');document.body.style.overflow='hidden';try{await oaLoad()}catch(e){alert(e.message)}};el('oaClose').onclick=()=>{el('oaBg').classList.add('hidden');document.body.style.overflow=''};el('oaNew').onclick=()=>oaOpen();el('oaFormClose').onclick=()=>el('oaFormBg').classList.add('hidden');el('oaForm').onsubmit=e=>oaSave(e).catch(x=>alert(x.message));el('oaDelete').onclick=oaDelete;el('oaFrom').onchange=oaRender;el('oaTo').onchange=oaRender;el('oaClear').onclick=()=>{el('oaFrom').value='';el('oaTo').value='';oaRender()};el('oaDisposed').onchange=()=>el('oaStatusView').value=el('oaDisposed').value?'Completed':'Ready to dispose'}
     window.addEventListener('DOMContentLoaded',oaInit);
 
+    async function recordOtpPageVisit(session) {
+      if (!session?.user?.id) return;
+      const email = session.user.email || '';
+      const metadata = session.user.user_metadata || {};
+      const displayName = metadata.display_name || metadata.full_name || email.split('@')[0].split('.')[0] || 'User';
+      try {
+        const { error } = await supabaseClient.from('user_activity').upsert({
+          user_id: session.user.id,
+          email,
+          display_name: displayName,
+          last_seen: new Date().toISOString(),
+          last_page_key: 'wreck-abandoned',
+          last_page_name: 'Wreck / Abandoned Summary Board',
+          last_page_path: window.location.pathname
+        }, { onConflict: 'user_id' });
+        if (error) console.error('Page activity update failed:', error);
+      } catch (error) { console.error('Page activity update failed:', error); }
+    }
+
     (async function bootstrap() {
       await initializeSupabase();
       if (!supabaseClient) { location.replace(MAIN_LOGIN_URL); return; }
       const { data: authData, error: authError } = await supabaseClient.auth.getSession();
       if (authError || !authData?.session) { location.replace(MAIN_LOGIN_URL); return; }
+      await recordOtpPageVisit(authData.session);
       authenticatedFirstName = authFirstName(authData.session.user?.email || '');
         authenticatedUserId = authData.session.user?.id || null;
         if (!authenticatedUserId) { location.replace(MAIN_LOGIN_URL); return; }

@@ -721,9 +721,21 @@ body:not(.access-locked) #accessGate{display:none!important;}
   $('lightbox').addEventListener('click', e=>{ if(e.target.id==='lightbox') closeLightbox(); });
   let unknownFilterTimer=null;
   $('unknownSearch').addEventListener('input', ()=>{ clearTimeout(unknownFilterTimer); unknownFilterTimer=setTimeout(applyUnknownFilter, 180); });
+  async function recordOtpPageVisit(session){
+    if(!session?.user?.id)return;
+    const email=session.user.email||'';
+    const metadata=session.user.user_metadata||{};
+    const displayName=metadata.display_name||metadata.full_name||email.split('@')[0].split('.')[0]||'User';
+    try{const {error}=await supabaseClient.from('user_activity').upsert({
+      user_id:session.user.id,email,display_name:displayName,last_seen:new Date().toISOString(),
+      last_page_key:'vessel-search',last_page_name:'Vessel Search',last_page_path:window.location.pathname
+    },{onConflict:'user_id'});if(error)console.error('Page activity update failed:',error);}
+    catch(error){console.error('Page activity update failed:',error);}
+  }
   async function bootstrapSharedOtp(){
     const {data,error}=await supabaseClient.auth.getSession();
     if(error||!data?.session){location.replace(MAIN_LOGIN_URL);return;}
+    await recordOtpPageVisit(data.session);
     authenticatedFirstName=authFirstName(data.session.user?.email||'');
     document.body.style.visibility='';
     initAccessGate();

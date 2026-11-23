@@ -168,9 +168,25 @@ async function openGuidelinesForSelectedYear(){
   }
 }
 $('openGuidelinesBtn').onclick=openGuidelinesForSelectedYear;
-$('closeGuidelinesBtn').onclick=()=>$('guidelinesModal').classList.remove('open');$('generateRiskBtn').onclick=genRisk;$('printRiskBtn').onclick=exportRiskPdf;$('openMapBtn').onclick=async()=>{$('mapYearLabel').textContent=year;$('mapModal').classList.add('open');$('mapSaveStatus').textContent='Loading shared geofences...';await loadZoneGeo();$('mapSaveStatus').textContent='';renderZoneMap()};$('closeMapBtn').onclick=()=>{$('mapModal').classList.remove('open')};$('editMapBtn').onclick=startMapEdit;$('saveMapBtn').onclick=saveMapEdit;$('cancelMapEditBtn').onclick=cancelMapEdit;$('resetMapBtn').onclick=resetMapGeofence;$('addVertexBtn').onclick=addVertex;$('deleteVertexBtn').onclick=deleteVertex;async function initApp(){
+$('closeGuidelinesBtn').onclick=()=>$('guidelinesModal').classList.remove('open');$('generateRiskBtn').onclick=genRisk;$('printRiskBtn').onclick=exportRiskPdf;$('openMapBtn').onclick=async()=>{$('mapYearLabel').textContent=year;$('mapModal').classList.add('open');$('mapSaveStatus').textContent='Loading shared geofences...';await loadZoneGeo();$('mapSaveStatus').textContent='';renderZoneMap()};$('closeMapBtn').onclick=()=>{$('mapModal').classList.remove('open')};$('editMapBtn').onclick=startMapEdit;$('saveMapBtn').onclick=saveMapEdit;$('cancelMapEditBtn').onclick=cancelMapEdit;$('resetMapBtn').onclick=resetMapGeofence;$('addVertexBtn').onclick=addVertex;$('deleteVertexBtn').onclick=deleteVertex;
+  async function recordOtpPageVisit(session){
+    if(!session?.user?.id)return;
+    const email=session.user.email||'';
+    const metadata=session.user.user_metadata||{};
+    const displayName=metadata.display_name||metadata.full_name||email.split('@')[0].split('.')[0]||'User';
+    try{
+      const {error}=await sb.from('user_activity').upsert({
+        user_id:session.user.id,email,display_name:displayName,
+        last_seen:new Date().toISOString(),last_page_key:'accident',
+        last_page_name:'Accident / Incident',last_page_path:window.location.pathname
+      },{onConflict:'user_id'});
+      if(error)console.error('Page activity update failed:',error);
+    }catch(error){console.error('Page activity update failed:',error);}
+  }
+async function initApp(){
     const {data,error}=await sb.auth.getSession();
     if(error||!data?.session){location.replace(MAIN_LOGIN_URL);return;}
+    await recordOtpPageVisit(data.session);
     document.body.style.visibility='';
     sb.auth.onAuthStateChange((event,session)=>{if(!session&&event==='SIGNED_OUT')location.replace(MAIN_LOGIN_URL);});
     await requireAccidentAccessCode();
