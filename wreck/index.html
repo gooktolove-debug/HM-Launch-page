@@ -708,7 +708,7 @@
   </div>
 
   <div id="oaBg" class="oa-bg hidden"><div class="oa-shell"><div class="oa-head"><div><div class="oa-title">Owner Approved</div><div class="panel-desc">Independent owner approval register</div></div><div class="actions"><button id="oaNew" class="primary">Add Record</button><button id="oaClose" class="danger">Close</button></div></div><div class="oa-tools"><div class="oa-filter"><div><label class="field-label">Owner Approval Date From</label><input id="oaFrom" class="field" type="date"></div><div><label class="field-label">Owner Approval Date To</label><input id="oaTo" class="field" type="date"></div><button id="oaClear">Clear Dates</button></div><div class="oa-counts"><div class="oa-count"><small>Wreck</small><strong id="oaWC">0</strong></div><div class="oa-count"><small>Abandoned</small><strong id="oaAC">0</strong></div><div class="oa-count"><small>Total</small><strong id="oaTC">0</strong></div></div></div><div class="oa-body"><div id="oaList" class="oa-pane"></div><div id="oaDetail" class="oa-pane"><div class="muted-box">Select a record.</div></div></div></div></div>
-  <div id="oaFormBg" class="oa-form-bg hidden"><form id="oaForm" class="oa-form"><div class="oa-head"><h3 id="oaFormTitle" class="modal-title">Owner Approved Record</h3><button id="oaFormClose" type="button" class="danger">Close</button></div><div class="oa-form-grid"><div><label class="field-label">Vessel Name</label><input id="oaName" class="field" required></div><div><label class="field-label">Classification</label><select id="oaType" class="field"><option>Abandoned</option><option>Wreck</option></select></div><div class="full"><label class="field-label">Owner Details</label><textarea id="oaOwner" class="field"></textarea></div><div><label class="field-label">Latitude</label><input id="oaLat" class="field" type="number" step="any"></div><div><label class="field-label">Longitude</label><input id="oaLon" class="field" type="number" step="any"></div><div><label class="field-label">Notified to HM</label><input id="oaNotified" class="field" type="date"></div><div><label class="field-label">Owner Approval Date</label><input id="oaApproval" class="field" type="date" required></div><div><label class="field-label">Date Disposed of</label><input id="oaDisposed" class="field" type="date"></div><div><label class="field-label">Status</label><input id="oaStatusView" class="field" readonly></div><div class="full"><label class="field-label">Add Photos</label><input id="oaFiles" class="field" type="file" accept="image/*" multiple></div></div><div class="modal-actions"><button id="oaDelete" type="button" class="danger hidden">Delete</button><button class="primary">Save</button></div></form></div>
+  <div id="oaFormBg" class="oa-form-bg hidden"><form id="oaForm" class="oa-form"><div class="oa-head"><h3 id="oaFormTitle" class="modal-title">Owner Approved Record</h3><button id="oaFormClose" type="button" class="danger">Close</button></div><div class="oa-form-grid"><div><label class="field-label">Vessel Name</label><input id="oaName" class="field" required></div><div><label class="field-label">Classification</label><select id="oaType" class="field"><option>Abandoned</option><option>Wreck</option></select></div><div class="full"><label class="field-label">Owner Details</label><textarea id="oaOwner" class="field"></textarea></div><div><label class="field-label">Latitude</label><input id="oaLat" class="field" type="number" step="any"></div><div><label class="field-label">Longitude</label><input id="oaLon" class="field" type="number" step="any"></div><div><label class="field-label">Owner Approval Date</label><input id="oaApproval" class="field" type="date" required></div><div><label class="field-label">Date Disposed of</label><input id="oaDisposed" class="field" type="date"></div><div><label class="field-label">Status</label><input id="oaStatusView" class="field" readonly></div><div class="full"><label class="field-label">Add Photos</label><input id="oaFiles" class="field" type="file" accept="image/*" multiple></div></div><div class="modal-actions"><button id="oaDelete" type="button" class="danger hidden">Delete</button><button class="primary">Save</button></div></form></div>
   <div id="vesselModalBackdrop" class="modal-backdrop hidden" aria-hidden="true">
     <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="vesselModalTitle">
       <div class="modal-head">
@@ -734,10 +734,6 @@
             <div class="full">
               <label class="field-label" for="ownerInput">Owner details</label>
               <textarea id="ownerInput" class="field" placeholder="Owner name / contact / remarks"></textarea>
-            </div>
-            <div>
-              <label class="field-label" for="notifiedHmInput">Notified to HM</label>
-              <input id="notifiedHmInput" class="field" type="date" />
             </div>
             <div>
               <label class="field-label" for="mtaIssuedInput">MTA Notice issued</label>
@@ -830,6 +826,7 @@
     const SUPABASE_BUCKET = 'wreck-abandoned-photos';
       const MAIN_LOGIN_URL = 'https://gooktolove-debug.github.io/HM-Launch-page/';
       let authenticatedFirstName = 'user';
+      let authenticatedUserId = null;
       function authFirstName(email) { return (String(email || '').trim().split('@')[0].split('.')[0] || 'user').trim().toLowerCase() || 'user'; }
         const ACCESS_FUNCTION_URL = 'https://wgwlnutnstrfuiiunlcu.supabase.co/functions/v1/hyper-responder';
         const ACCESS_APP_NAME = 'Wreck';
@@ -842,7 +839,7 @@
         function saveWreckAccessSession(){sessionStorage.setItem(ACCESS_SESSION_KEY,JSON.stringify({granted:true,expiresAt:Date.now()+ACCESS_SESSION_DURATION_MS}))}
         async function verifyWreckAccessCode(code){
           const controller=new AbortController(); const timer=setTimeout(()=>controller.abort(),10000);
-          try { const response=await fetch(ACCESS_FUNCTION_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({app:ACCESS_APP_NAME,code}),signal:controller.signal}); const payload=await response.json().catch(()=>({})); if(!response.ok)throw new Error(payload.error||`Verification failed (${response.status})`); return payload; }
+          try { const {data,error}=await supabaseClient.auth.getSession(); const accessToken=data?.session?.access_token; if(error||!accessToken)throw new Error('Your signed-in session is unavailable. Please sign in again.'); const response=await fetch(ACCESS_FUNCTION_URL,{method:'POST',headers:{'Content-Type':'application/json','apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+accessToken},body:JSON.stringify({app:ACCESS_APP_NAME,code}),signal:controller.signal}); const payload=await response.json().catch(()=>({})); if(!response.ok)throw new Error(payload.error||`Verification failed (${response.status})`); return payload; }
           finally { clearTimeout(timer); }
         }
         function requireWreckAccessCode(){
@@ -1225,7 +1222,6 @@
                   </div>
                   <div class="mobile-vessel-meta">${typePill}${statusPill}</div>
                   <div class="mobile-vessel-row"><div class="mobile-vessel-key">Owner</div><div class="mobile-vessel-value">${ownerText}</div></div>
-                  <div class="mobile-vessel-row"><div class="mobile-vessel-key">Notified to HM</div><div class="mobile-vessel-value">${escapeHtml(formatDate(r.notifiedToHm))}</div></div>
                   <div class="mobile-vessel-row"><div class="mobile-vessel-key">MTA expiry</div><div class="mobile-vessel-value">${expiryText}</div></div>
                 </div>`;
             }).join('') : `<div class="mobile-list-empty">No ${title} vessels match the current filter.</div>`;
@@ -1358,7 +1354,6 @@
       html += detailItem('Owner details', escapeHtml(rec.owner || '-'));
       html += detailItem('Lat', hasCoordinates(rec) ? `<div class="gps-dmm">${escapeHtml(formatDMM(Number(rec.lat), 'lat'))}</div><div class="gps-dd">${escapeHtml(Number(rec.lat).toFixed(6))}</div>` : '-', rec.deletedAt && !hasCoordinates(rec) ? 'Cleared after deletion / completion' : '');
       html += detailItem('Long', hasCoordinates(rec) ? `<div class="gps-dmm">${escapeHtml(formatDMM(Number(rec.lon), 'lon'))}</div><div class="gps-dd">${escapeHtml(Number(rec.lon).toFixed(6))}</div>` : '-', rec.deletedAt && !hasCoordinates(rec) ? 'Cleared after deletion / completion' : '');
-      html += detailItem('Notified to HM', escapeHtml(formatDate(rec.notifiedToHm)));
       html += detailItem('MTA Notice issued', escapeHtml(formatDate(rec.mtaIssued)));
       html += detailItem('MTA Notice expiry', expiryHtml, isExpired(rec.mtaExpiry) && !rec.deletedAt ? 'Expired based on today' : '', isExpired(rec.mtaExpiry) && !rec.deletedAt);
       if (rec.type === 'Abandoned') {
@@ -1480,7 +1475,6 @@
       el('vesselNameInput').value = record?.vesselName || '';
       setDmmInputs(hasCoordinates(record || {}) ? record : null);
       el('ownerInput').value = record?.owner || '';
-      el('notifiedHmInput').value = record?.notifiedToHm || '';
       el('mtaIssuedInput').value = record?.mtaIssued || '';
       el('mtaExpiryInput').value = record?.mtaExpiry || '';
       el('policeInput').value = record?.policeNotification || '';
@@ -1537,7 +1531,6 @@
         type,
         lat, lon,
         owner: el('ownerInput').value.trim() || null,
-        notified_to_hm: el('notifiedHmInput').value || null,
         mta_issued: el('mtaIssuedInput').value || null,
         mta_expiry: el('mtaExpiryInput').value || null,
         police_notification: type === 'Abandoned' ? (el('policeInput').value || null) : null,
@@ -1670,7 +1663,7 @@
         const path = `vessels/${vesselId}/${Date.now()}-${makeRandomId()}-${safeName}`;
         const { error } = await supabaseClient.storage.from(SUPABASE_BUCKET).upload(path, item.file, { cacheControl: '3600', upsert: false, contentType: item.file.type || undefined });
         if (error) throw error;
-        rows.push({ vessel_id: vesselId, storage_path: path, original_filename: item.file.name || safeName, mime_type: item.file.type || null, file_size: item.file.size || null, created_by: authenticatedFirstName });
+        rows.push({ vessel_id: vesselId, storage_path: path, original_filename: item.file.name || safeName, mime_type: item.file.type || null, file_size: item.file.size || null, created_by: authenticatedUserId });
       }
       if (rows.length) {
         const { error } = await supabaseClient.from('wreck_abandoned_photos').insert(rows);
@@ -1689,13 +1682,13 @@
           const editingRecord = state.modalMode === 'edit' ? (state.records.find(r => r.id === state.editingId) || null) : null;
           let savedRow = null;
           if (state.modalMode === 'edit') {
-            payload.updated_by = authenticatedFirstName;
+            payload.updated_by = authenticatedUserId;
             const { data, error } = await supabaseClient.from('wreck_abandoned_vessels').update(payload).eq('id', state.editingId).select('*').single();
             if (error) throw error;
             savedRow = data;
           } else {
-            payload.created_by = authenticatedFirstName;
-            payload.updated_by = authenticatedFirstName;
+            payload.created_by = authenticatedUserId;
+            payload.updated_by = authenticatedUserId;
             const { data, error } = await supabaseClient.from('wreck_abandoned_vessels').insert(payload).select('*').single();
             if (error) throw error;
             savedRow = data;
@@ -1703,7 +1696,7 @@
           const keptExistingIds = new Set(state.pendingPhotos.filter(item => item.existingId).map(item => item.existingId).filter(Boolean));
           if (state.modalMode === 'edit' && editingRecord) await deleteRemovedExistingPhotos(editingRecord, keptExistingIds);
           const newPhotoItems = state.pendingPhotos.filter(item => item.file);
-          if (newPhotoItems.length) await uploadPendingPhotos(savedRow.id, newPhotoItems);if(completingNow){const {error}=await supabaseClient.from('wreck_abandoned_notes').insert({vessel_id:savedRow.id,note_text:completionNote,created_by:null});if(error)throw error}
+          if (newPhotoItems.length) await uploadPendingPhotos(savedRow.id, newPhotoItems);if(completingNow){const {error}=await supabaseClient.from('wreck_abandoned_notes').insert({vessel_id:savedRow.id,note_text:completionNote,created_by:authenticatedUserId});if(error)throw error}
           state.selectedId = savedRow.id;
           state.detailPhotoIndex = 0;
           closeModal();
@@ -1744,7 +1737,7 @@
       }
       if (isSupabaseActive()) {
         try {
-          const { error } = await supabaseClient.from('wreck_abandoned_notes').insert({ vessel_id: rec.id, note_text: text, created_by: authenticatedFirstName });
+          const { error } = await supabaseClient.from('wreck_abandoned_notes').insert({ vessel_id: rec.id, note_text: text, created_by: authenticatedUserId });
           if (error) throw error;
           await loadDataFromSupabase();
           renderAll(true, false, false);
@@ -1819,9 +1812,9 @@
       const noteText = `Delete Timestamp: ${formatDateTime(now)} — Vessel marked Completed. Coordinates cleared from map.`;
       if (isSupabaseActive()) {
         try {
-          const { error: vesselError } = await supabaseClient.from('wreck_abandoned_vessels').update({ lat: null, lon: null, deleted_at: now, updated_by: authenticatedFirstName }).eq('id', state.editingId);
+          const { error: vesselError } = await supabaseClient.from('wreck_abandoned_vessels').update({ lat: null, lon: null, deleted_at: now, updated_by: authenticatedUserId }).eq('id', state.editingId);
           if (vesselError) throw vesselError;
-          const { error: noteError } = await supabaseClient.from('wreck_abandoned_notes').insert({ vessel_id: state.editingId, note_text: noteText, created_by: authenticatedFirstName });
+          const { error: noteError } = await supabaseClient.from('wreck_abandoned_notes').insert({ vessel_id: state.editingId, note_text: noteText, created_by: authenticatedUserId });
           if (noteError) throw noteError;
           state.selectedId = state.editingId;
           closeModal();
@@ -2025,10 +2018,10 @@
         });
     }
     function oaRender(){const q=oaFiltered(),w=q.filter(x=>x.type==='Wreck'),a=q.filter(x=>x.type==='Abandoned');el('oaWC').textContent=w.length;el('oaAC').textContent=a.length;el('oaTC').textContent=q.length;const sec=(t,z)=>`<h3 class="oa-section"><span>${t}</span><span>${z.length}</span></h3><div class="oa-list">${z.map(x=>`<div class="oa-row ${x.id===oas.id?'active':''}" data-id="${x.id}"><b>${escapeHtml(x.vessel_name)}</b><div class="oa-meta"><span class="oa-status ${x.disposed_date?'completed':'ready'}">${oast(x)}</span> · Approval ${formatDate(x.owner_approval_date)}${x.disposed_date?' · Disposed '+formatDate(x.disposed_date):''}</div></div>`).join('')||'<div class="muted-box">No records</div>'}</div>`;el('oaList').innerHTML=sec('Wreck',w)+sec('Abandoned',a);el('oaList').querySelectorAll('[data-id]').forEach(x=>x.onclick=()=>{oas.id=x.dataset.id;oaRender()});oaDetail()}
-    function oaDetail(){const r=oas.rows.find(x=>x.id===oas.id),h=el('oaDetail');if(!r){h.innerHTML='<div class="muted-box">Select a record.</div>';return}const it=(k,v,f='')=>`<div class="oa-item ${f}"><div class="oa-k">${k}</div><div class="oa-v">${escapeHtml(v||'-')}</div></div>`;h.innerHTML=`<div class="detail-top-row"><div><span class="oa-status ${r.disposed_date?'completed':'ready'}">${oast(r)}</span><div class="oa-detail-title">${escapeHtml(r.vessel_name)}</div></div><button id="oaEdit">Edit</button></div><div class="oa-grid">${it('Classification',r.type)}${it('Status',oast(r))}${it('Owner Details',r.owner,'full')}${it('Latitude',r.lat)}${it('Longitude',r.lon)}${it('Notified to HM',formatDate(r.notified_to_hm))}${it('Owner Approval Date',formatDate(r.owner_approval_date))}${it('Date Disposed of',formatDate(r.disposed_date))}<div class="oa-item full"><div class="oa-k">Photos</div>${r.photos.map(p=>`<img class="oa-photo" src="${p.url||''}" data-url="${p.url||''}">`).join('')||'<div class="oa-v">No photos</div>'}</div><div class="oa-item full"><div class="oa-k">Add Note</div><textarea id="oaNote" class="field"></textarea><button id="oaNoteAdd" class="primary">Add Note</button></div><div class="oa-item full"><div class="oa-k">Notes</div>${r.notes.map(n=>`<div class="note-item"><div class="note-item-meta">${formatDateTime(n.created_at)}</div>${escapeHtml(n.note_text)}</div>`).join('')||'<div class="oa-v">No notes</div>'}</div></div>`;el('oaEdit').onclick=()=>oaOpen(r);el('oaNoteAdd').onclick=()=>oaAddNote(r.id);h.querySelectorAll('[data-url]').forEach(x=>x.onclick=()=>window.open(x.dataset.url,'_blank','noopener'))}
-    function oaOpen(r=null){oas.edit=r?.id||null;el('oaFormTitle').textContent=r?'Edit Owner Approved Record':'Add Owner Approved Record';el('oaName').value=r?.vessel_name||'';el('oaType').value=r?.type||'Abandoned';el('oaOwner').value=r?.owner||'';el('oaLat').value=r?.lat??'';el('oaLon').value=r?.lon??'';el('oaNotified').value=oad(r?.notified_to_hm);el('oaApproval').value=oad(r?.owner_approval_date)||todayForDateInput();el('oaDisposed').value=oad(r?.disposed_date);el('oaStatusView').value=r&&r.disposed_date?'Completed':'Ready to dispose';el('oaFiles').value='';el('oaDelete').classList.toggle('hidden',!r);el('oaFormBg').classList.remove('hidden')}
-    async function oaSave(e){e.preventDefault();const disp=el('oaDisposed').value||null,p={vessel_name:el('oaName').value.trim(),type:el('oaType').value,owner:el('oaOwner').value.trim()||null,lat:el('oaLat').value===''?null:Number(el('oaLat').value),lon:el('oaLon').value===''?null:Number(el('oaLon').value),notified_to_hm:el('oaNotified').value||null,owner_approval_date:el('oaApproval').value,disposed_date:disp,status:disp?'completed':'ready_to_dispose'},q=oas.edit?await supabaseClient.from(OA).update(p).eq('id',oas.edit).select().single():await supabaseClient.from(OA).insert(p).select().single();if(q.error)throw q.error;for(const f of el('oaFiles').files){const path=`owner-approved/${q.data.id}/${Date.now()}-${makeRandomId()}-${sanitizeFileName(f.name)}`;const up=await supabaseClient.storage.from(SUPABASE_BUCKET).upload(path,f,{contentType:f.type,upsert:false});if(up.error)throw up.error;const db=await supabaseClient.from(OAP).insert({owner_approved_id:q.data.id,storage_path:path,original_filename:f.name,mime_type:f.type||null,file_size:f.size||null});if(db.error)throw db.error}oas.id=q.data.id;el('oaFormBg').classList.add('hidden');await oaLoad()}
-    async function oaAddNote(id){const x=el('oaNote'),t=x.value.trim();if(!t)return;const q=await supabaseClient.from(OAN).insert({owner_approved_id:id,note_text:t,created_by:authenticatedFirstName});if(q.error)return alert(q.error.message);await oaLoad()}
+    function oaDetail(){const r=oas.rows.find(x=>x.id===oas.id),h=el('oaDetail');if(!r){h.innerHTML='<div class="muted-box">Select a record.</div>';return}const it=(k,v,f='')=>`<div class="oa-item ${f}"><div class="oa-k">${k}</div><div class="oa-v">${escapeHtml(v||'-')}</div></div>`;h.innerHTML=`<div class="detail-top-row"><div><span class="oa-status ${r.disposed_date?'completed':'ready'}">${oast(r)}</span><div class="oa-detail-title">${escapeHtml(r.vessel_name)}</div></div><button id="oaEdit">Edit</button></div><div class="oa-grid">${it('Classification',r.type)}${it('Status',oast(r))}${it('Owner Details',r.owner,'full')}${it('Latitude',r.lat)}${it('Longitude',r.lon)}${it('Owner Approval Date',formatDate(r.owner_approval_date))}${it('Date Disposed of',formatDate(r.disposed_date))}<div class="oa-item full"><div class="oa-k">Photos</div>${r.photos.map(p=>`<img class="oa-photo" src="${p.url||''}" data-url="${p.url||''}">`).join('')||'<div class="oa-v">No photos</div>'}</div><div class="oa-item full"><div class="oa-k">Add Note</div><textarea id="oaNote" class="field"></textarea><button id="oaNoteAdd" class="primary">Add Note</button></div><div class="oa-item full"><div class="oa-k">Notes</div>${r.notes.map(n=>`<div class="note-item"><div class="note-item-meta">${formatDateTime(n.created_at)}</div>${escapeHtml(n.note_text)}</div>`).join('')||'<div class="oa-v">No notes</div>'}</div></div>`;el('oaEdit').onclick=()=>oaOpen(r);el('oaNoteAdd').onclick=()=>oaAddNote(r.id);h.querySelectorAll('[data-url]').forEach(x=>x.onclick=()=>window.open(x.dataset.url,'_blank','noopener'))}
+    function oaOpen(r=null){oas.edit=r?.id||null;el('oaFormTitle').textContent=r?'Edit Owner Approved Record':'Add Owner Approved Record';el('oaName').value=r?.vessel_name||'';el('oaType').value=r?.type||'Abandoned';el('oaOwner').value=r?.owner||'';el('oaLat').value=r?.lat??'';el('oaLon').value=r?.lon??'';el('oaApproval').value=oad(r?.owner_approval_date)||todayForDateInput();el('oaDisposed').value=oad(r?.disposed_date);el('oaStatusView').value=r&&r.disposed_date?'Completed':'Ready to dispose';el('oaFiles').value='';el('oaDelete').classList.toggle('hidden',!r);el('oaFormBg').classList.remove('hidden')}
+    async function oaSave(e){e.preventDefault();const disp=el('oaDisposed').value||null,p={vessel_name:el('oaName').value.trim(),type:el('oaType').value,owner:el('oaOwner').value.trim()||null,lat:el('oaLat').value===''?null:Number(el('oaLat').value),lon:el('oaLon').value===''?null:Number(el('oaLon').value),owner_approval_date:el('oaApproval').value,disposed_date:disp,status:disp?'completed':'ready_to_dispose'},q=oas.edit?await supabaseClient.from(OA).update(p).eq('id',oas.edit).select().single():await supabaseClient.from(OA).insert(p).select().single();if(q.error)throw q.error;for(const f of el('oaFiles').files){const path=`owner-approved/${q.data.id}/${Date.now()}-${makeRandomId()}-${sanitizeFileName(f.name)}`;const up=await supabaseClient.storage.from(SUPABASE_BUCKET).upload(path,f,{contentType:f.type,upsert:false});if(up.error)throw up.error;const db=await supabaseClient.from(OAP).insert({owner_approved_id:q.data.id,storage_path:path,original_filename:f.name,mime_type:f.type||null,file_size:f.size||null});if(db.error)throw db.error}oas.id=q.data.id;el('oaFormBg').classList.add('hidden');await oaLoad()}
+    async function oaAddNote(id){const x=el('oaNote'),t=x.value.trim();if(!t)return;const q=await supabaseClient.from(OAN).insert({owner_approved_id:id,note_text:t,created_by:authenticatedUserId});if(q.error)return alert(q.error.message);await oaLoad()}
     async function oaDelete(){const r=oas.rows.find(x=>x.id===oas.edit);if(!r||!confirm(`Delete ${r.vessel_name}?`))return;const ps=r.photos.map(x=>x.storage_path);if(ps.length){const q=await supabaseClient.storage.from(SUPABASE_BUCKET).remove(ps);if(q.error)return alert(q.error.message)}const q=await supabaseClient.from(OA).delete().eq('id',r.id);if(q.error)return alert(q.error.message);el('oaFormBg').classList.add('hidden');oas.id=null;await oaLoad()}
     function oaInit(){el('ownerApprovedBtn').onclick=async()=>{el('oaBg').classList.remove('hidden');document.body.style.overflow='hidden';try{await oaLoad()}catch(e){alert(e.message)}};el('oaClose').onclick=()=>{el('oaBg').classList.add('hidden');document.body.style.overflow=''};el('oaNew').onclick=()=>oaOpen();el('oaFormClose').onclick=()=>el('oaFormBg').classList.add('hidden');el('oaForm').onsubmit=e=>oaSave(e).catch(x=>alert(x.message));el('oaDelete').onclick=oaDelete;el('oaFrom').onchange=oaRender;el('oaTo').onchange=oaRender;el('oaClear').onclick=()=>{el('oaFrom').value='';el('oaTo').value='';oaRender()};el('oaDisposed').onchange=()=>el('oaStatusView').value=el('oaDisposed').value?'Completed':'Ready to dispose'}
     window.addEventListener('DOMContentLoaded',oaInit);
@@ -2039,6 +2032,8 @@
       const { data: authData, error: authError } = await supabaseClient.auth.getSession();
       if (authError || !authData?.session) { location.replace(MAIN_LOGIN_URL); return; }
       authenticatedFirstName = authFirstName(authData.session.user?.email || '');
+        authenticatedUserId = authData.session.user?.id || null;
+        if (!authenticatedUserId) { location.replace(MAIN_LOGIN_URL); return; }
       document.body.style.visibility = '';
       supabaseClient.auth.onAuthStateChange((event, session) => { if (!session && event === 'SIGNED_OUT') location.replace(MAIN_LOGIN_URL); });
       await requireWreckAccessCode();
