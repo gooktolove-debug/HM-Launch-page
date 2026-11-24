@@ -1547,6 +1547,9 @@
             email: normalizedEmail,
             display_name: displayName,
             last_seen: new Date().toISOString(),
+            last_page_key: 'landsign',
+            last_page_name: 'HM Signs',
+            last_page_path: window.location.pathname || '/',
           },
           { onConflict: 'user_id' }
         );
