@@ -971,7 +971,10 @@ function openWreckPage(){window.open('./wreck/','_blank','noopener,noreferrer');
         user_id:user.id,
         email:user.email,
         display_name:displayName,
-        last_seen:new Date().toISOString()
+        last_seen:new Date().toISOString(),
+        last_page_key:'hm-launch-page',
+        last_page_name:'HM-Launch-page',
+        last_page_path:window.location.pathname||'/HM-Launch-page/'
       },{onConflict:'user_id'});
       if(error)console.error('User activity update failed:',error);
     }catch(error){
