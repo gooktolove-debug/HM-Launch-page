@@ -989,47 +989,48 @@
         setSelectedFile(file);
       };
 
-      const VERIFY_ACCESS_URL = 'https://wgwlnutnstrfuiiunlcu.supabase.co/functions/v1/hyper-responder';
-      const ACCESS_APP_NAME = 'Landsign';
+      const DELETE_FUNCTION_URL = `${SUPABASE_URL}/functions/v1/app-permission`;
 
-      async function verifyDeleteAccess() {
+      async function callProtectedDelete(payload) {
         const accessCode = window.prompt('Enter access code to continue:');
-        if (accessCode === null) return false;
-
+        if (accessCode === null) return null;
         const cleanCode = accessCode.trim();
         if (!cleanCode) {
           alert('Please enter an access code.');
-          return false;
+          return null;
         }
 
+        const { data: sessionData, error: sessionError } = await sb.auth.getSession();
+        const accessToken = sessionData?.session?.access_token;
+        if (sessionError || !accessToken) {
+          alert('Your login session is unavailable or has expired. Please sign in again.');
+          return null;
+        }
+
+        let response;
         try {
-          const response = await fetch(VERIFY_ACCESS_URL, {
+          response = await fetch(DELETE_FUNCTION_URL, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              app: ACCESS_APP_NAME,
-              code: cleanCode,
-            }),
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${accessToken}`,
+              'apikey': SUPABASE_KEY,
+            },
+            body: JSON.stringify({ appName: 'Landsign', ...payload, accessCode: cleanCode }),
           });
-
-          let result = null;
-          try {
-            result = await response.json();
-          } catch (_) {
-            result = null;
-          }
-
-          if (!response.ok || result?.valid !== true) {
-            alert(result?.message || result?.error || 'Access denied.');
-            return false;
-          }
-
-          return true;
         } catch (error) {
-          console.error('Access-code verification failed:', error);
-          alert('Unable to verify the access code. Please check your connection and try again.');
-          return false;
+          console.error('Protected delete request failed:', error);
+          alert('The delete service could not be reached. Please check your connection and try again.');
+          return null;
         }
+
+        let result = null;
+        try { result = await response.json(); } catch (_) { result = null; }
+        if (!response.ok || result?.ok !== true) {
+          alert(result?.error || result?.message || 'Delete access was denied.');
+          return null;
+        }
+        return result;
       }
 
       const handleDelete = async (e) => {
@@ -1039,35 +1040,15 @@
           e.stopPropagation();
         }
         if (!selectedLocation) return;
-        if (!(await verifyDeleteAccess())) return;
-        if (!confirm('Are you sure you want to delete this pin?')) return;
+        if (!confirm('Are you sure you want to delete this pin and all of its records?')) return;
 
-        let history = selectedLocation.history || [];
-        if (!selectedLocation.historyLoaded) {
-          const { data, error } = await sb.from(ENTRIES_TABLE)
-            .select('id,image_path').eq('pin_id', selectedLocation.id);
-          if (error) {
-            alert('Could not load files for deletion: ' + error.message);
-            return;
-          }
-          history = data || [];
-        }
-        const filePaths = [...new Set([
-          selectedLocation.latestImagePath,
-          ...history.map((entry) => entry.imagePath || entry.image_path)
-        ].map(imagePath).filter(Boolean))];
+        const result = await callProtectedDelete({
+          action: 'delete_pin',
+          pinId: selectedLocation.id,
+        });
+        if (!result) return;
 
-        const { error: deleteError } = await sb.from(PINS_TABLE).delete().eq('id', selectedLocation.id);
-        if (deleteError) {
-          console.error('Failed to delete pin:', deleteError);
-          alert('Pin deletion failed: ' + deleteError.message);
-          return;
-        }
-        if (filePaths.length) {
-          const { error: storageError } = await sb.storage.from(IMAGE_BUCKET).remove(filePaths);
-          if (storageError) console.warn('Pin deleted, but some storage files could not be removed:', storageError);
-        }
-        setMarkers((current) => current.filter((m) => m.id !== selectedLocation.id));
+        setMarkers((current) => current.filter((marker) => marker.id !== selectedLocation.id));
         setSelectedLocation(null);
         setShowPanel(false);
         setSyncMessage('Synced');
@@ -1082,46 +1063,31 @@
         if (!selectedLocation || !Array.isArray(selectedLocation.history)) return;
         const entryToDelete = selectedLocation.history[entryIndex];
         if (!entryToDelete?.id) return;
-        if (!(await verifyDeleteAccess())) return;
         if (!confirm('Are you sure you want to delete this note/photo?')) return;
 
-        const { error: deleteError } = await sb.from(ENTRIES_TABLE).delete().eq('id', entryToDelete.id);
-        if (deleteError) {
-          console.error('Failed to delete record:', deleteError);
-          alert('Record deletion failed: ' + deleteError.message);
-          return;
-        }
-        const filePath = imagePath(entryToDelete.imagePath || entryToDelete.image);
-        if (filePath) {
-          const { error: storageError } = await sb.storage.from(IMAGE_BUCKET).remove([filePath]);
-          if (storageError) console.warn('Record deleted, but the image file could not be removed:', storageError);
-        }
+        const result = await callProtectedDelete({
+          action: 'delete_entry',
+          entryId: entryToDelete.id,
+        });
+        if (!result) return;
 
-        const nextHistory = selectedLocation.history.filter((_, idx) => idx !== entryIndex);
-        if (nextHistory.length === 0) {
-          const { error: pinDeleteError } = await sb.from(PINS_TABLE).delete().eq('id', selectedLocation.id);
-          if (pinDeleteError) {
-            alert('The record was deleted, but the empty pin could not be deleted: ' + pinDeleteError.message);
-            return;
-          }
-          setMarkers((current) => current.filter((m) => m.id !== selectedLocation.id));
+        if (result.pinDeleted) {
+          setMarkers((current) => current.filter((marker) => marker.id !== selectedLocation.id));
           setSelectedLocation(null);
           setShowPanel(false);
+          setSyncMessage('Synced');
           return;
         }
 
-        const { data: refreshedPin, error: refreshError } = await sb.from(PINS_TABLE)
-          .select('id,latitude,longitude,latest_note,latest_image_path,created_by_name,created_at,updated_at')
-          .eq('id', selectedLocation.id).single();
-        if (refreshError) {
-          alert('Record deleted, but refreshing the pin failed: ' + refreshError.message);
-          return;
-        }
-        const refreshedMarker = pinRowToMarker(refreshedPin);
-        refreshedMarker.history = nextHistory;
-        refreshedMarker.historyLoaded = true;
-        setMarkers((current) => current.map((m) => m.id === refreshedMarker.id ? refreshedMarker : m));
-        setSelectedLocation(refreshedMarker);
+        const nextHistory = selectedLocation.history.filter((_, index) => index !== entryIndex);
+        const updatedMarker = {
+          ...rebuildMarkerAfterHistoryChange(selectedLocation, nextHistory),
+          historyLoaded: true,
+        };
+        setMarkers((current) => current.map((marker) =>
+          marker.id === updatedMarker.id ? updatedMarker : marker
+        ));
+        setSelectedLocation(updatedMarker);
         setSyncMessage('Synced');
       };
 
