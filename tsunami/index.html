@@ -231,12 +231,12 @@ async function runScenario(s,inputMag,origin){
   const card=document.getElementById('tideCard');
   if(card)card.innerHTML=tideCardHtml(estimateTide(arrival));
 }
-function resetView(){map.fitBounds(bounds,{padding:[10,10]});closeResult()}function fillTable(){sourceTbody.innerHTML=sources.map(s=>`<tr><td>${s.id}<br>${hasOvertoppingHazard(s)?'<span class="hazard-pill">Overtopping</span><br>':''}<span class="muted">${s.region}<br>${s.sourceLabel}</span></td><td>${String(s.library).trim()}</td><td>Min ${s.minMag.toFixed(1)}<br>${s.mags.map(x=>x.toFixed(1)).join(', ')}</td></tr>`).join('');coverage.innerHTML=`Pacific PDF source links: <b>${sources.filter(s=>String(s.library).trim()==='pacific').length}</b><br>Regional PDF source/magnitude links: <b>${sources.filter(s=>String(s.library).trim()==='regional').length}</b><br>Total plotted clickable pins: <b>${sources.length}</b><br>Overtopping hazard pins: <b>${sources.filter(hasOvertoppingHazard).length}</b>`}async function recordOtpPageVisit(session){
+function resetView(){map.fitBounds(bounds,{padding:[10,10]});closeResult()}function fillTable(){sourceTbody.innerHTML=sources.map(s=>`<tr><td>${s.id}<br>${hasOvertoppingHazard(s)?'<span class="hazard-pill">Overtopping</span><br>':''}<span class="muted">${s.region}<br>${s.sourceLabel}</span></td><td>${String(s.library).trim()}</td><td>Min ${s.minMag.toFixed(1)}<br>${s.mags.map(x=>x.toFixed(1)).join(', ')}</td></tr>`).join('');coverage.innerHTML=`Pacific PDF source links: <b>${sources.filter(s=>String(s.library).trim()==='pacific').length}</b><br>Regional PDF source/magnitude links: <b>${sources.filter(s=>String(s.library).trim()==='regional').length}</b><br>Total plotted clickable pins: <b>${sources.length}</b><br>Overtopping hazard pins: <b>${sources.filter(hasOvertoppingHazard).length}</b>`}async function recordOtpPageVisit(client,session){
   if(!session?.user?.id)return;
   const email=session.user.email||'';
   const metadata=session.user.user_metadata||{};
   const displayName=metadata.display_name||metadata.full_name||email.split('@')[0].split('.')[0]||'User';
-  try{const {error}=await authClient.from('user_activity').upsert({
+  try{const {error}=await client.from('user_activity').upsert({
     user_id:session.user.id,email,display_name:displayName,last_seen:new Date().toISOString(),
     last_page_key:'tsunami',last_page_name:'Auckland Tsunami Modelling',last_page_path:window.location.pathname
   },{onConflict:'user_id'});if(error)console.error('Page activity update failed:',error);}
@@ -247,7 +247,7 @@ function resetView(){map.fitBounds(bounds,{padding:[10,10]});closeResult()}funct
     const authClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
     const {data:authData,error:authError}=await authClient.auth.getSession();
     if(authError||!authData?.session){location.replace(MAIN_LOGIN_URL);return;}
-    await recordOtpPageVisit(authData.session);
+    await recordOtpPageVisit(authClient,authData.session);
     authenticatedFirstName=authFirstName(authData.session.user?.email||'');
     document.body.style.visibility='';
     authClient.auth.onAuthStateChange((event,session)=>{if(!session&&event==='SIGNED_OUT')location.replace(MAIN_LOGIN_URL);});

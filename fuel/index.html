@@ -281,8 +281,20 @@ import * as pdfjsLib from 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38
 pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs';
 const MAIN_LOGIN_URL='https://gooktolove-debug.github.io/HM-Launch-page/';
 const sb=window.supabase.createClient('https://wgwlnutnstrfuiiunlcu.supabase.co','sb_publishable_iC7kbinoy61_5eQCnrV25Q_OioA7Y1x',{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+async function recordOtpPageVisit(session){
+  if(!session?.user?.id)return;
+  const email=session.user.email||'';
+  const metadata=session.user.user_metadata||{};
+  const displayName=metadata.display_name||metadata.full_name||email.split('@')[0].split('.')[0]||'User';
+  try{const {error}=await sb.from('user_activity').upsert({
+    user_id:session.user.id,email,display_name:displayName,last_seen:new Date().toISOString(),
+    last_page_key:'fuel',last_page_name:'Fuel',last_page_path:window.location.pathname
+  },{onConflict:'user_id'});if(error)console.error('Page activity update failed:',error);}
+  catch(error){console.error('Page activity update failed:',error);}
+}
 const {data:sharedAuthData,error:sharedAuthError}=await sb.auth.getSession();
 if(sharedAuthError||!sharedAuthData?.session){location.replace(MAIN_LOGIN_URL);throw new Error('OTP session required');}
+await recordOtpPageVisit(sharedAuthData.session);
 const authenticatedUserId=sharedAuthData.session.user?.id||null;
 if(!authenticatedUserId){location.replace(MAIN_LOGIN_URL);throw new Error('Authenticated user ID required');}
 document.body.style.visibility='';
