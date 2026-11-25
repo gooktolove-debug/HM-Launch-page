@@ -1052,10 +1052,11 @@ async function saveEdit(){
   const edits={};
   document.querySelectorAll('[data-edit-field]').forEach(el=>{edits[el.dataset.editField]=el.value});
   let dbUpdate;
+  let targetClass='';
   try{
     edits['Lat (Decimal Degrees)']=readDdmCoordinate('lat');
     edits['Long (Decimal Degrees)']=readDdmCoordinate('lng');
-    dbUpdate=appEditsToDb(edits);const currentRecord=selectedRecord();const targetClass=String(edits['Class']??currentRecord?.Class??'').trim().toLowerCase();if(editMode==='edit'&&currentRecord){const oldVisual=visualPeriodMonths(currentRecord);const nextVisual=Number(dbUpdate.visual_inspection_period_months??oldVisual);if(dbUpdate.visual_inspection_period_months!==undefined&&nextVisual!==oldVisual){dbUpdate.visual_inspection_due_date=recalculateDueFromPeriod(currentRecord.__visual_inspection_due_date,oldVisual,nextVisual,currentRecord['Last edited'])}if(targetClass!=='beacon'){const oldFull=fullPeriodMonths(currentRecord);const nextFull=Number(dbUpdate.full_inspection_period_months??oldFull);if(dbUpdate.full_inspection_period_months!==undefined&&nextFull!==oldFull){dbUpdate.full_inspection_due_date=recalculateDueFromPeriod(currentRecord.__full_inspection_due_date||currentRecord.__inspection_due_date,oldFull,nextFull,currentRecord['Last edited']);dbUpdate.inspection_due_date=dbUpdate.full_inspection_due_date}}}if(targetClass==='beacon'){dbUpdate.full_inspection_period_months=null;dbUpdate.full_inspection_due_date=null;dbUpdate.inspection_due_date=null;delete edits['Full Inspection Period']}
+    dbUpdate=appEditsToDb(edits);const currentRecord=selectedRecord();targetClass=String(edits['Class']??currentRecord?.Class??'').trim().toLowerCase();if(editMode==='edit'&&currentRecord){const oldVisual=visualPeriodMonths(currentRecord);const nextVisual=Number(dbUpdate.visual_inspection_period_months??oldVisual);if(dbUpdate.visual_inspection_period_months!==undefined&&nextVisual!==oldVisual){dbUpdate.visual_inspection_due_date=recalculateDueFromPeriod(currentRecord.__visual_inspection_due_date,oldVisual,nextVisual,currentRecord['Last edited'])}if(targetClass!=='beacon'){const oldFull=fullPeriodMonths(currentRecord);const nextFull=Number(dbUpdate.full_inspection_period_months??oldFull);if(dbUpdate.full_inspection_period_months!==undefined&&nextFull!==oldFull){dbUpdate.full_inspection_due_date=recalculateDueFromPeriod(currentRecord.__full_inspection_due_date||currentRecord.__inspection_due_date,oldFull,nextFull,currentRecord['Last edited']);dbUpdate.inspection_due_date=dbUpdate.full_inspection_due_date}}}if(targetClass==='beacon'){dbUpdate.full_inspection_period_months=null;dbUpdate.full_inspection_due_date=null;dbUpdate.inspection_due_date=null;delete edits['Full Inspection Period']}
   }catch(error){alert(error.message||error);return}
   const saveBtn=$('editSaveBtn');
   const originalText=saveBtn?.textContent||'Save Changes';
@@ -1074,10 +1075,6 @@ async function saveEdit(){
     }
     const r=selectedRecord();
     if(!r?.__db_id)throw new Error('The selected NavAid does not have a valid Supabase record ID.');
-    Object.entries(edits).forEach(([k,v])=>{r[k]=v===''?null:v});
-    if(dbUpdate.lat!==undefined)r['Lat (Decimal Degrees)']=dbUpdate.lat;
-    if(dbUpdate.lng!==undefined)r['Long (Decimal Degrees)']=dbUpdate.lng;
-    closeEdit();renderAll(false);
     const {error:updateError}=await sbClient.from(CONFIG.SUPABASE_TABLE).update(dbUpdate).eq('id',r.__db_id);
     if(updateError)throw updateError;
     const {data:serverRow,error:readError}=await sbClient.from(CONFIG.SUPABASE_TABLE).select('*').eq('id',r.__db_id).single();
@@ -1098,10 +1095,10 @@ async function saveEdit(){
     const index=state.records.findIndex(x=>String(x.__id)===String(r.__id));
     if(index>=0)state.records[index]=saved;
     state.selectedId=saved.__id;
-    buildClassFilter();renderAll(false);
+    buildClassFilter();closeEdit();renderAll(false);
   }catch(error){
     console.error('NavAid save failed:',error);
-    alert('The values may be visible only on this screen, but permanent save failed: '+(error.message||error));
+    alert('Permanent save failed: '+(error.message||error));
   }finally{
     if(saveBtn){saveBtn.disabled=false;saveBtn.textContent=originalText}
   }
