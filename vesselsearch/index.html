@@ -705,7 +705,28 @@ body:not(.access-locked) #accessGate{display:none!important;}
   function setStatus(message, isError=false) { $('statusText').textContent = message; $('statusText').style.color = isError ? 'var(--danger)' : 'var(--muted)'; }
   async function searchRecords() { const text=$('searchText').value.trim(); if(!text){renderTable([]);setStatus('Please enter a vessel name, mooring code, or customer name.',true);return;} setStatus('Searching...'); const safeText=text.replace(/[,%()]/g,' ').trim(); const searchFilter=`boat_vessel_name.ilike.%${safeText}%,mooring_code.ilike.%${safeText}%,customer_name.ilike.%${safeText}%`; const {data,error}=await supabaseClient.from('vessel_search_records').select('*').or(searchFilter).order('boat_vessel_name', {ascending:true}).limit(300); if(error){console.error(error);setStatus(error.message,true);return;} currentRows=data||[]; renderTable(currentRows); setStatus(`Search complete. ${currentRows.length} record(s) found across vessel name, mooring code, and customer name.`); }
   function renderTable(rows) { $('resultCount').textContent=`${rows.length} record${rows.length===1?'':'s'}`; if(!rows.length){ $('tableWrap').innerHTML='<div class="empty">No matching records.</div>'; return; } const thead=`<thead><tr>${displayColumns.map(c=>`<th>${c[1]}</th>`).join('')}<th>Action</th></tr></thead>`; const tbody=rows.map((row,idx)=>`<tr>${displayColumns.map(([key])=>`<td>${esc(row[key])}</td>`).join('')}<td><button class="secondary" onclick="openEdit(${idx})">Edit / Notes</button></td></tr>`).join(''); $('tableWrap').innerHTML=`<table>${thead}<tbody>${tbody}</tbody></table>`; }
-  async function openEdit(index) { activeRecord=currentRows[index]; $('modalTitle').textContent='Edit Vessel'; $('recordId').value=activeRecord.id; fieldIds.forEach(id=>$(id).value=activeRecord[id]||''); const lat=activeRecord.mooring_latitude, lon=activeRecord.mooring_longitude; $('mooring_gps').value=(lat!==null&&lat!==undefined&&lon!==null&&lon!==undefined)?`${lat}, ${lon}`:''; $('newNote').value=''; $('photoUploadStatus').textContent=''; await loadNotes(activeRecord.id); $('recordDialog').showModal(); loadRecordPhotos(activeRecord); }
+  function formatCoordinateDdm(value, isLatitude) {
+    if (value === null || value === undefined || String(value).trim() === '') return '';
+    const coordinate = Number(value);
+    if (!Number.isFinite(coordinate)) return '';
+    const max = isLatitude ? 90 : 180;
+    if (coordinate < -max || coordinate > max) return '';
+    const absolute = Math.abs(coordinate);
+    let degrees = Math.floor(absolute);
+    let minutes = Math.round(((absolute - degrees) * 60) * 1000) / 1000;
+    if (minutes >= 60) { degrees += 1; minutes = 0; }
+    const hemisphere = isLatitude
+      ? (coordinate < 0 ? 'S' : 'N')
+      : (coordinate < 0 ? 'W' : 'E');
+    const degreeWidth = isLatitude ? 2 : 3;
+    return `${String(degrees).padStart(degreeWidth, '0')}° ${minutes.toFixed(3).padStart(6, '0')}' ${hemisphere}`;
+  }
+  function formatGpsDdm(latitude, longitude) {
+    const formattedLatitude = formatCoordinateDdm(latitude, true);
+    const formattedLongitude = formatCoordinateDdm(longitude, false);
+    return formattedLatitude && formattedLongitude ? `${formattedLatitude}, ${formattedLongitude}` : '';
+  }
+  async function openEdit(index) { activeRecord=currentRows[index]; $('modalTitle').textContent='Edit Vessel'; $('recordId').value=activeRecord.id; fieldIds.forEach(id=>$(id).value=activeRecord[id]||''); const lat=activeRecord.mooring_latitude, lon=activeRecord.mooring_longitude; $('mooring_gps').value=formatGpsDdm(lat, lon); $('newNote').value=''; $('photoUploadStatus').textContent=''; await loadNotes(activeRecord.id); $('recordDialog').showModal(); loadRecordPhotos(activeRecord); }
   function openInsert() { activeRecord=null; $('modalTitle').textContent='Insert New Vessel'; $('recordId').value=''; fieldIds.forEach(id=>$(id).value=''); $('mooring_gps').value=''; $('newNote').value=''; $('photoUploadStatus').textContent=''; renderNotes([]); $('photoGallery').innerHTML='<div class="photo-empty">Save the vessel first to attach photos.</div>'; $('recordDialog').showModal(); }
   function closeDialog() { $('recordDialog').close(); }
   function getFormPayload() { const payload={}; fieldIds.forEach(id=>payload[id]=$(id).value.trim()||null); payload.updated_at=new Date().toISOString(); return payload; }
