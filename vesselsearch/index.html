@@ -400,6 +400,8 @@ body:not(.access-locked) #accessGate{display:none!important;}
   let authenticatedFirstName = 'user';
   function authFirstName(email){ return (String(email||'').trim().split('@')[0].split('.')[0]||'user').trim().toLowerCase()||'user'; }
   const PHOTO_BUCKET = 'vessel-photos';
+  const APP_PERMISSION_URL = 'https://wgwlnutnstrfuiiunlcu.supabase.co/functions/v1/app-permission';
+  const APP_PERMISSION_NAME = 'vesselsearch';
   const IMAGE_EXT = ['jpg','jpeg','png','gif','webp','bmp','heic'];
   const MOORING_RE = /^\s*([A-Za-z]{2}\d{2,3})(?![A-Za-z0-9])/;
   let photoIndex = null;      // cached parsed list of ALL objects (root + subfolders)
@@ -565,19 +567,38 @@ body:not(.access-locked) #accessGate{display:none!important;}
     return (data||[]).filter(f=>f.name && f.id!==null && f.name!=='.emptyFolderPlaceholder')
       .map(f=>({ ...parsePhotoName(f.name), path:f.name }));
   }
+  function cleanStorageNamePart(value, fallback){
+    const cleaned = String(value || '')
+      .trim()
+      .replace(/[\/\\]/g, ' ')
+      .replace(/[\u0000-\u001f\u007f]/g, '')
+      .replace(/\s+/g, ' ')
+      .replace(/^\.+|\.+$/g, '')
+      .trim();
+    return cleaned || fallback;
+  }
+  function buildUploadedPhotoName(file, mooringCode, vesselName, collisionToken=''){
+    const mc = cleanStorageNamePart(mooringCode, 'NO-MOORING-CODE');
+    const vn = cleanStorageNamePart(vesselName, 'NO-VESSEL-NAME');
+    const original = cleanStorageNamePart(file?.name, 'photo');
+    const middle = collisionToken ? ('_' + collisionToken) : '';
+    return `${mc} ${vn}${middle}_${original}`;
+  }
   async function handlePhotoUpload(files){
     if(!activeRecord || !activeRecord.id){ alert('Please save the vessel first, then add photos.'); return; }
     const status=$('photoUploadStatus'); const list=[...files]; if(!list.length) return;
     const mc=(activeRecord.mooring_code||'').trim(), vn=(activeRecord.boat_vessel_name||'').trim();
-    const prefix=[mc,vn].filter(Boolean).join(' ').replace(/[\\/]/g,' ').trim() || 'vessel';
     let done=0;
     for(const file of list){
       status.textContent='Uploading '+(done+1)+'/'+list.length+'...';
-      const dot=file.name.lastIndexOf('.'); const ext=dot>0?file.name.slice(dot):'';
-      const stamp=Date.now().toString(36)+Math.floor(Math.random()*1000);
-      const path=(prefix+' '+stamp+ext).replace(/\s+/g,' ').trim();
-      const { error } = await supabaseClient.storage.from(PHOTO_BUCKET).upload(path, file, { upsert:false, contentType:file.type||undefined });
-      if(error){ console.error('upload', error); alert('Upload failed for '+file.name+': '+error.message); break; }
+      let path=buildUploadedPhotoName(file, mc, vn);
+      let result=await supabaseClient.storage.from(PHOTO_BUCKET).upload(path, file, { upsert:false, contentType:file.type||undefined });
+      if(result.error && (result.error.statusCode===409 || /already exists|duplicate/i.test(result.error.message||''))){
+        const token=new Date().toISOString().replace(/[-:TZ.]/g,'').slice(0,14)+'-'+Math.random().toString(36).slice(2,6);
+        path=buildUploadedPhotoName(file, mc, vn, token);
+        result=await supabaseClient.storage.from(PHOTO_BUCKET).upload(path, file, { upsert:false, contentType:file.type||undefined });
+      }
+      if(result.error){ console.error('upload', result.error); alert('Upload failed for '+file.name+': '+result.error.message); break; }
       done++;
     }
     status.textContent = done? ('Uploaded '+done+' photo'+(done===1?'':'s')+'.') : '';
@@ -587,8 +608,38 @@ body:not(.access-locked) #accessGate{display:none!important;}
   }
   async function deletePhoto(path){
     if(!confirm('Delete this photo?\n\n'+path)) return;
-    const { error } = await supabaseClient.storage.from(PHOTO_BUCKET).remove([path]);
-    if(error){ console.error('delete', error); alert('Delete failed: '+error.message); return; }
+    const accessCode=(prompt('Enter the deletion access code:')||'').trim();
+    if(!accessCode) return;
+    const { data: sessionData, error: sessionError } = await supabaseClient.auth.getSession();
+    const accessToken=sessionData?.session?.access_token||'';
+    if(sessionError || !accessToken){ alert('Your login session has expired. Please sign in again.'); return; }
+    let response, result={};
+    try{
+      response=await fetch(APP_PERMISSION_URL, {
+        method:'POST',
+        headers:{
+          'Content-Type':'application/json',
+          'apikey':SUPABASE_ANON_KEY,
+          'Authorization':'Bearer '+accessToken
+        },
+        body:JSON.stringify({
+          appName:APP_PERMISSION_NAME,
+          action:'delete_photo',
+          accessCode,
+          storagePath:path
+        })
+      });
+      try{ result=await response.json(); }catch(e){}
+    }catch(error){
+      console.error('delete request', error);
+      alert('Delete service is unavailable. Please try again.');
+      return;
+    }
+    if(!response.ok || result.ok!==true){
+      console.error('delete denied', result);
+      alert(result.error || result.detail || 'You are not authorised to delete this photo.');
+      return;
+    }
     photoIndex=null;
     if(activeRecord) await loadRecordPhotos(activeRecord);
     if(document.getElementById('unknownDialog').open) await openUnknownOwners(true);
