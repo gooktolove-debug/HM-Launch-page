@@ -568,78 +568,48 @@ body:not(.access-locked) #accessGate{display:none!important;}
       .map(f=>({ ...parsePhotoName(f.name), path:f.name }));
   }
   function cleanStorageNamePart(value, fallback){
-    const cleaned = String(value || '')
-      .trim()
-      .replace(/[\/\\]/g, ' ')
-      .replace(/[\u0000-\u001f\u007f]/g, '')
-      .replace(/\s+/g, ' ')
-      .replace(/^\.+|\.+$/g, '')
-      .trim();
-    return cleaned || fallback;
+    const cleaned=String(value||'').trim().replace(/[\/\\]/g,' ').replace(/[\u0000-\u001f\u007f]/g,'').replace(/\s+/g,' ').replace(/^\.+|\.+$/g,'').trim();
+    return cleaned||fallback;
   }
-  function buildUploadedPhotoName(file, mooringCode, vesselName, collisionToken=''){
-    const mc = cleanStorageNamePart(mooringCode, 'NO-MOORING-CODE');
-    const vn = cleanStorageNamePart(vesselName, 'NO-VESSEL-NAME');
-    const original = cleanStorageNamePart(file?.name, 'photo');
-    const middle = collisionToken ? ('_' + collisionToken) : '';
-    return `${mc} ${vn}${middle}_${original}`;
+  function buildUploadedPhotoName(file,mooringCode,vesselName,collisionToken=''){
+    const mc=cleanStorageNamePart(mooringCode,'NO-MOORING-CODE');
+    const vn=cleanStorageNamePart(vesselName,'NO-VESSEL-NAME');
+    const original=cleanStorageNamePart(file?.name,'photo');
+    return `${mc} ${vn}${collisionToken?'_'+collisionToken:''}_${original}`;
   }
   async function handlePhotoUpload(files){
-    if(!activeRecord || !activeRecord.id){ alert('Please save the vessel first, then add photos.'); return; }
-    const status=$('photoUploadStatus'); const list=[...files]; if(!list.length) return;
+    if(!activeRecord||!activeRecord.id){ alert('Please save the vessel first, then add photos.'); return; }
+    const status=$('photoUploadStatus'), list=[...files]; if(!list.length) return;
     const mc=(activeRecord.mooring_code||'').trim(), vn=(activeRecord.boat_vessel_name||'').trim();
     let done=0;
     for(const file of list){
       status.textContent='Uploading '+(done+1)+'/'+list.length+'...';
-      let path=buildUploadedPhotoName(file, mc, vn);
-      let result=await supabaseClient.storage.from(PHOTO_BUCKET).upload(path, file, { upsert:false, contentType:file.type||undefined });
-      if(result.error && (result.error.statusCode===409 || /already exists|duplicate/i.test(result.error.message||''))){
+      let path=buildUploadedPhotoName(file,mc,vn);
+      let result=await supabaseClient.storage.from(PHOTO_BUCKET).upload(path,file,{upsert:false,contentType:file.type||undefined});
+      if(result.error&&(result.error.statusCode===409||/already exists|duplicate/i.test(result.error.message||''))){
         const token=new Date().toISOString().replace(/[-:TZ.]/g,'').slice(0,14)+'-'+Math.random().toString(36).slice(2,6);
-        path=buildUploadedPhotoName(file, mc, vn, token);
-        result=await supabaseClient.storage.from(PHOTO_BUCKET).upload(path, file, { upsert:false, contentType:file.type||undefined });
+        path=buildUploadedPhotoName(file,mc,vn,token);
+        result=await supabaseClient.storage.from(PHOTO_BUCKET).upload(path,file,{upsert:false,contentType:file.type||undefined});
       }
-      if(result.error){ console.error('upload', result.error); alert('Upload failed for '+file.name+': '+result.error.message); break; }
+      if(result.error){ console.error('upload',result.error); alert('Upload failed for '+file.name+': '+result.error.message); break; }
       done++;
     }
-    status.textContent = done? ('Uploaded '+done+' photo'+(done===1?'':'s')+'.') : '';
-    photoIndex=null; recordKeyCache=null; // invalidate caches
+    status.textContent=done?('Uploaded '+done+' photo'+(done===1?'':'s')+'.'):'';
+    photoIndex=null; recordKeyCache=null;
     await loadRecordPhotos(activeRecord);
-    setTimeout(()=>{ status.textContent=''; }, 4000);
+    setTimeout(()=>{status.textContent='';},4000);
   }
   async function deletePhoto(path){
     if(!confirm('Delete this photo?\n\n'+path)) return;
-    const accessCode=(prompt('Enter the deletion access code:')||'').trim();
-    if(!accessCode) return;
-    const { data: sessionData, error: sessionError } = await supabaseClient.auth.getSession();
+    const {data:sessionData,error:sessionError}=await supabaseClient.auth.getSession();
     const accessToken=sessionData?.session?.access_token||'';
-    if(sessionError || !accessToken){ alert('Your login session has expired. Please sign in again.'); return; }
-    let response, result={};
+    if(sessionError||!accessToken){ alert('Your login session has expired. Please sign in again.'); return; }
+    let response,result={};
     try{
-      response=await fetch(APP_PERMISSION_URL, {
-        method:'POST',
-        headers:{
-          'Content-Type':'application/json',
-          'apikey':SUPABASE_ANON_KEY,
-          'Authorization':'Bearer '+accessToken
-        },
-        body:JSON.stringify({
-          appName:APP_PERMISSION_NAME,
-          action:'delete_photo',
-          accessCode,
-          storagePath:path
-        })
-      });
-      try{ result=await response.json(); }catch(e){}
-    }catch(error){
-      console.error('delete request', error);
-      alert('Delete service is unavailable. Please try again.');
-      return;
-    }
-    if(!response.ok || result.ok!==true){
-      console.error('delete denied', result);
-      alert(result.error || result.detail || 'You are not authorised to delete this photo.');
-      return;
-    }
+      response=await fetch(APP_PERMISSION_URL,{method:'POST',headers:{'Content-Type':'application/json','apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+accessToken},body:JSON.stringify({appName:APP_PERMISSION_NAME,action:'delete_photo',storagePath:path})});
+      try{result=await response.json();}catch(e){}
+    }catch(error){ console.error('delete request',error); alert('Delete service is unavailable. Please try again.'); return; }
+    if(!response.ok||result.ok!==true){ console.error('delete denied',result); alert(result.error||result.detail||'You are not authorised to delete this photo.'); return; }
     photoIndex=null;
     if(activeRecord) await loadRecordPhotos(activeRecord);
     if(document.getElementById('unknownDialog').open) await openUnknownOwners(true);
