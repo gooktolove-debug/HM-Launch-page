@@ -719,6 +719,50 @@ body:not(.access-locked) #accessGate{display:none!important;}
   function openLightbox(src, cap){ $('lightboxImg').src=src; $('lightboxCap').textContent=cap||''; const lb=$('lightbox'); if(!lb.open) lb.showModal(); }
   function closeLightbox(){ const lb=$('lightbox'); if(lb.open) lb.close(); $('lightboxImg').src=''; }
   const fieldIds = ['boat_vessel_name','mooring_code','mooring_permit_date_of_issue','customer_name','customer_phonemob','customer_email','customer_phoneah','customer_phonewk'];
+  let matchedMooringGps = { latitude:null, longitude:null };
+  let mooringGpsLookupTimer = null;
+  let mooringGpsLookupSequence = 0;
+
+  function clearMatchedMooringGps(message='') {
+    matchedMooringGps = { latitude:null, longitude:null };
+    $('mooring_gps').value = message;
+    $('mooring_gps').placeholder = 'No GPS information';
+  }
+
+  async function lookupMooringGps() {
+    const code = ($('mooring_code').value || '').trim();
+    const sequence = ++mooringGpsLookupSequence;
+    if (!code) { clearMatchedMooringGps(); return; }
+    $('mooring_gps').value = 'Looking up GPS...';
+    const { data, error } = await supabaseClient
+      .from('vessel_search_records')
+      .select('mooring_latitude,mooring_longitude')
+      .ilike('mooring_code', code)
+      .not('mooring_latitude', 'is', null)
+      .not('mooring_longitude', 'is', null)
+      .limit(1)
+      .maybeSingle();
+    if (sequence !== mooringGpsLookupSequence) return;
+    if (error) {
+      console.error('Mooring GPS lookup failed', error);
+      clearMatchedMooringGps('No GPS information');
+      return;
+    }
+    const latitude = data?.mooring_latitude;
+    const longitude = data?.mooring_longitude;
+    if (latitude == null || longitude == null) {
+      clearMatchedMooringGps('No GPS information');
+      return;
+    }
+    matchedMooringGps = { latitude, longitude };
+    $('mooring_gps').value = formatGpsDdm(latitude, longitude);
+  }
+
+  function scheduleMooringGpsLookup() {
+    clearTimeout(mooringGpsLookupTimer);
+    mooringGpsLookupTimer = setTimeout(lookupMooringGps, 350);
+  }
+
   const displayColumns = [['boat_vessel_name','Vessel name'],['mooring_code','Mooring code'],['mooring_permit_date_of_issue','Permit date'],['customer_name','Customer name'],['customer_phonemob','Mobile'],['customer_email','Email'],['customer_phoneah','Phone A/H'],['customer_phonewk','Phone Work']];
   let currentRows = [], activeRecord = null;
   const $ = id => document.getElementById(id);
@@ -747,16 +791,18 @@ body:not(.access-locked) #accessGate{display:none!important;}
     const formattedLongitude = formatCoordinateDdm(longitude, false);
     return formattedLatitude && formattedLongitude ? `${formattedLatitude}, ${formattedLongitude}` : '';
   }
-  async function openEdit(index) { activeRecord=currentRows[index]; $('modalTitle').textContent='Edit Vessel'; $('recordId').value=activeRecord.id; fieldIds.forEach(id=>$(id).value=activeRecord[id]||''); const lat=activeRecord.mooring_latitude, lon=activeRecord.mooring_longitude; $('mooring_gps').value=formatGpsDdm(lat, lon); $('newNote').value=''; $('photoUploadStatus').textContent=''; await loadNotes(activeRecord.id); $('recordDialog').showModal(); loadRecordPhotos(activeRecord); }
-  function openInsert() { activeRecord=null; $('modalTitle').textContent='Insert New Vessel'; $('recordId').value=''; fieldIds.forEach(id=>$(id).value=''); $('mooring_gps').value=''; $('newNote').value=''; $('photoUploadStatus').textContent=''; renderNotes([]); $('photoGallery').innerHTML='<div class="photo-empty">Save the vessel first to attach photos.</div>'; $('recordDialog').showModal(); }
+  async function openEdit(index) { activeRecord=currentRows[index]; $('modalTitle').textContent='Edit Vessel'; $('recordId').value=activeRecord.id; fieldIds.forEach(id=>$(id).value=activeRecord[id]||''); matchedMooringGps={latitude:activeRecord.mooring_latitude??null,longitude:activeRecord.mooring_longitude??null}; $('mooring_gps').value=formatGpsDdm(matchedMooringGps.latitude, matchedMooringGps.longitude); $('newNote').value=''; $('photoUploadStatus').textContent=''; await loadNotes(activeRecord.id); $('recordDialog').showModal(); loadRecordPhotos(activeRecord); if(activeRecord.mooring_code) lookupMooringGps(); }
+  function openInsert() { activeRecord=null; $('modalTitle').textContent='Insert New Vessel'; $('recordId').value=''; fieldIds.forEach(id=>$(id).value=''); clearMatchedMooringGps(); $('newNote').value=''; $('photoUploadStatus').textContent=''; renderNotes([]); $('photoGallery').innerHTML='<div class="photo-empty">Save the vessel first to attach photos.</div>'; $('recordDialog').showModal(); }
   function closeDialog() { $('recordDialog').close(); }
-  function getFormPayload() { const payload={}; fieldIds.forEach(id=>payload[id]=$(id).value.trim()||null); payload.updated_at=new Date().toISOString(); return payload; }
+  function getFormPayload() { const payload={}; fieldIds.forEach(id=>payload[id]=$(id).value.trim()||null); payload.mooring_latitude=matchedMooringGps.latitude; payload.mooring_longitude=matchedMooringGps.longitude; payload.updated_at=new Date().toISOString(); return payload; }
   async function saveRecord() { const id=$('recordId').value, payload=getFormPayload(); if(!payload.boat_vessel_name&&!payload.mooring_code&&!payload.customer_name){alert('Please enter at least Vessel name, Mooring code, or Customer name.');return;} let result=id?await supabaseClient.from('vessel_search_records').update(payload).eq('id',id).select().single():await supabaseClient.from('vessel_search_records').insert({...payload,created_at:new Date().toISOString()}).select().single(); if(result.error){console.error(result.error);alert(result.error.message);return;} activeRecord=result.data; $('recordId').value=activeRecord.id; if($('newNote').value.trim()) await addNote(true); recordKeyCache=null; closeDialog(); await searchRecords(); }
   async function loadNotes(vesselId) { const {data,error}=await supabaseClient.from('vessel_search_notes').select('*').eq('vessel_id',vesselId).order('created_at',{ascending:false}); if(error){console.error(error); renderNotes([]); return;} renderNotes(data||[]); }
   function renderNotes(notes) { if(!notes.length){ $('notesList').innerHTML='<div class="empty">No notes.</div>'; return; } $('notesList').innerHTML=notes.map(n=>`<div class="note-item"><div class="note-time">${esc(new Date(n.created_at).toLocaleString())}</div><div>${esc(n.note).replace(/\n/g,'<br>')}</div></div>`).join(''); }
   async function addNote(silent=false) { const vesselId=$('recordId').value, note=$('newNote').value.trim(); if(!vesselId){if(!silent)alert('Please save the new vessel first, then add notes.'); return;} if(!note){if(!silent)alert('Please type a note.'); return;} const {error}=await supabaseClient.from('vessel_search_notes').insert({vessel_id:vesselId,note}); if(error){console.error(error);alert(error.message);return;} $('newNote').value=''; await loadNotes(vesselId); }
   $('searchBtn').addEventListener('click', searchRecords); $('insertBtn').addEventListener('click', openInsert); $('photoSearchBtn').addEventListener('click', () => window.open(PHOTO_SEARCH_URL, '_blank', 'noopener,noreferrer')); $('unknownBtn').addEventListener('click', () => openUnknownOwners(true)); $('saveBtn').addEventListener('click', saveRecord); $('addNoteBtn').addEventListener('click', () => addNote(false)); $('searchText').addEventListener('keydown', e => { if(e.key==='Enter') searchRecords(); });
   $('photoUploadInput').addEventListener('change', e => { const f=e.target.files; if(f&&f.length) handlePhotoUpload(f); e.target.value=''; });
+  $('mooring_code').addEventListener('input', scheduleMooringGpsLookup);
+  $('mooring_code').addEventListener('change', lookupMooringGps);
   $('renameSaveBtn').addEventListener('click', doRename);
   $('renameMooring').addEventListener('input', updateRenamePreview);
   $('renameVessel').addEventListener('input', updateRenamePreview);
